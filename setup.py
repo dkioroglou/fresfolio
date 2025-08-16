@@ -11,7 +11,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(here, "README.md"), encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 DESCRIPTION = 'Flask and Vue3 based notebook for personal and research projects.'
 LONG_DESCRIPTION = 'A Flask and Vue3 based notebook for managing and sharing personal and research projects.'
 
