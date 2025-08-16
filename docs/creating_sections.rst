@@ -7,6 +7,14 @@ Create sections
 
 To create sections withing a given chapter, the user should select the corresponding chapter from the "**Chapters**" column.
 
+.. image:: images/create_section.png
+   :width: 1000
+   :height: 400
+   :alt: create_section
+   :align: center
+
+|br|
+
 
 Section anatomy
 ===============
