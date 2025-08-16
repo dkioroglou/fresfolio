@@ -1,0 +1,407 @@
+const ProjectLayout = defineComponent({
+    components: {
+        SectionCard
+    },
+    props:['selectedProject', 'userInfo'],
+    data () {
+        return {
+            leftDrawerOpen: true,
+            notebooksFetched: false,
+            notebooks: [],
+            sectionsDataFetched: false,
+            sections: [],
+            showCreateNotebookDialog: false,
+            newNotebookName: "",
+            showCreateChapterDialog: false,
+            newChapterName: "",
+            renderedNotebookIDX: "",
+            renderedChapterIDX: "",
+            notebookIDXOfNewChapter: ""
+        }
+    },
+    methods: {
+        userCanEdit() {
+            if (this.userInfo['can_edit'] == 1){
+                return true
+            } else {
+                return false
+            }
+        },
+        async loadChapterSections(notebookIDX, chapterIDX) {
+            this.renderedNotebookIDX = notebookIDX;
+            this.renderedChapterIDX = chapterIDX;
+            this.sectionsDataFetched = true;
+            console.log(notebookIDX)
+            console.log(chapterIDX)
+            // this.currentNotebook = notebook;
+            // this.currentChapter = chapter;
+            //
+            // if (localStorage.getItem("currentProjectSections") !== null && 
+            //     localStorage['currentProjectSections'].getItem(notebook) !== null &&
+            //     localStorage['currentProjectSections'][notebook].getItem(chapter) !== null) {
+            //     this.sections = localStorage.getItem['currentProjectSections'][notebook][chapter];
+            // } else {
+            //     try {
+            //         const response = await fetch(`/fresfolio/api/sections/${this.project}/${notebook}/${chapter}`, {
+            //             method: "POST",
+            //             headers: {
+            //                 "Content-Type": "application/json",
+            //             }
+            //         });
+            //
+            //         if (response.ok) {
+            //                 const data = await response.json();
+            //                 this.notebooks = data;
+            //                 this.notebooksFetched = true;
+            //         } else {
+            //               console.error("Error: " + response.status);
+            //         }
+            //     } catch (error) {
+            //         console.error(error);
+            //     }
+            // }
+        },
+        toggleLeftDrawer () {
+            this.leftDrawerOpen = !this.leftDrawerOpen
+        },
+        changeProject () {
+            window.location.href = "/";
+        },
+        logout() {
+            localStorage.clear();
+            window.location.href = "/logout";
+        },
+        createNotebook() {
+            this.showCreateNotebookDialog = true;
+        },
+        createChapter(notebookIDX) {
+            this.notebookIDXOfNewChapter = notebookIDX;
+            this.showCreateChapterDialog = true;
+        },
+        async refreshSideBar() {
+            this.notebooksFetched = false;
+            this.fetch_notebooks();
+        },
+        closeCreateNotebookDialog() {
+            this.showCreateNotebookDialog = false;
+        },
+        closeCreateChapterDialog() {
+            this.notebookIDXOfNewChapter = "";
+            this.showCreateChapterDialog = false;
+        },
+        async submitCreateNotebook() {
+            try {
+                const response = await fetch("/api/store-new-notebook", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(
+                        {"project": this.selectedProject, "notebook":this.newNotebookName}
+                    )
+                });
+
+                if (response.ok) {
+                    this.closeCreateNotebookDialog();
+                    this.newNotebookName = "";
+                    this.notebooksFetched = false;
+                    this.fetch_notebooks();
+                } else {
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        },
+        async submitCreateChapter() {
+            try {
+                const response = await fetch("/api/store-new-chapter", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(
+                        {
+                            "project": this.selectedProject, 
+                            "notebookID":this.getNotebookAttribute(this.notebookIDXOfNewChapter, 'notebookID'),
+                            "chapterName":this.newChapterName
+                        }
+                    )
+                });
+
+                if (response.ok) {
+                    this.closeCreateChapterDialog();
+                    this.notebookIDXOfNewChapter = "";
+                    this.newChapterName = "";
+                    this.notebooksFetched = false;
+                    this.fetch_notebooks();
+                } else {
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        },
+        async fetch_notebooks(){
+            try {
+                const response = await fetch("/api/fetch-project-notebooks", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(
+                        {"project": this.selectedProject}
+                    )
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    this.notebooks = data;
+                    this.notebooksFetched = true;
+                } else {
+                    this.$q.notify({
+                        message: 'Error fetching notebooks.',
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        },
+        getNotebookAttribute(notebookIDX, attribute) {
+            return this.notebooks[notebookIDX][attribute]
+        },
+        getChapterAttribute(notebookIDX, chapterIDX, attribute) {
+            return this.notebooks[notebookIDX]['chapters'][chapterIDX][attribute]
+        }
+    },
+    async mounted () {
+        this.fetch_notebooks();
+    },
+    template: `
+<q-layout view="hHh lpR fFf">
+    <q-header elevated class="app-header-color">
+        <q-toolbar>
+
+            <q-btn
+                flat
+                dense
+                round
+                @click="toggleLeftDrawer"
+                aria-label="Menu"
+                icon="menu"
+            ></q-btn>
+
+            <q-toolbar-title>
+                {{selectedProject}}
+            </q-toolbar-title>
+
+            <q-btn color="primary" label="Menu">
+                <q-menu
+                    :offset="[0, 10]"
+                    transition-show="jump-down"
+                    transition-hide="jump-up"
+                    :style="{ backgroundColor: '#80759a', color: 'white'}"
+                >
+                    <q-list dense style="min-width: 100px">
+
+                        <q-item clickable v-close-popup @click="changeProject">
+                            <q-item-section>Change project</q-item-section>
+                        </q-item>
+
+                        <q-separator />
+
+                        <q-item clickable v-close-popup @click="logout">
+                            <q-item-section>Logout</q-item-section>
+                        </q-item>
+                    </q-list>
+                </q-menu>
+            </q-btn>
+
+        </q-toolbar>
+    </q-header>
+
+    <q-drawer v-model="leftDrawerOpen" class="app-bg-dark">
+
+            <q-scroll-area class="fit">
+                <Transition name="fade">
+                    <div v-if="!notebooksFetched" class="app-spinner-container q-mt-xl">
+                        <q-spinner
+                            color="white"
+                            size="2em"
+                        />
+                        <p class="app-spinner-text text-white">Loading data, please wait...</p>
+                    </div>
+
+                    <q-list v-else>
+
+                        <div class="row text-white q-ml-sm">
+                            Notebooks
+                        </div>
+                        <q-btn-group spread outline class="q-mb-sm q-pa-sm">
+                            <q-btn v-if="userCanEdit()" @click="createNotebook" color="teal" outline text-color="white" label="Notebook" icon="add">
+                                <q-tooltip class="bg-teal" :offset="[10, 10]">
+                                    Create new notebook.
+                                </q-tooltip>
+                            </q-btn>
+                            <q-btn @click="refreshSideBar" color="teal" outline text-color="white" label="Refresh" icon="update">
+                                <q-tooltip class="bg-teal" :offset="[10, 10]">
+                                    Refresh sidebar.
+                                </q-tooltip>
+                            </q-btn>
+                        </q-btn-group>
+
+                        <div class="q-mt-xl" v-if="notebooks.length === 0">
+                            <p class="row justify-center centers text-white">No available notebooks.</p>
+                        </div>
+                        <div v-else>
+                            <template v-for="(notebookJSON, notebookIDX) in notebooks" :key="notebookIDX">
+                                <q-expansion-item 
+                                    expand-separator 
+                                    header-class="bg-primary text-white" 
+                                    :label="notebookJSON['notebookName']" 
+                                    default-closed
+                                >
+
+                                    <div class="q-mt-sm" v-if="notebookJSON.chapters.length === 0">
+                                        <p class="row justify-center centers text-white">No available chapters.</p>
+                                    </div>
+                                    <div v-else>
+                                        <template v-for="(chapterJSON, chapterIDX) in notebookJSON.chapters" :key="chapterIDX">
+                                            <q-card v-ripple class="cursor-pointer q-hoverable app-bg-white" style="border-radius: 0px;">
+                                                <q-card-section @click="loadChapterSections(notebookIDX, chapterIDX)">
+                                                    {{chapterJSON['chapterName']}}
+                                                </q-card-section>
+                                            </q-card>
+                                        </template>
+                                    </div>
+
+                                    <div class="row justify-center q-pa-md">
+                                        <q-btn v-if="userCanEdit()" @click="createChapter(notebookIDX)" color="teal" outline text-color="white" label="Add Chapter"/>
+                                    </div>
+
+                                </q-expansion-item>
+                            </template>
+                        </div>
+                    </q-list>
+                </Transition>
+            </q-scroll-area>
+            
+    </q-drawer>
+
+    <q-page-container>
+        <q-page class="q-px-xl">
+            <div v-if="renderedChapterIDX !== ''">
+
+                <Transition name="fade">
+                    <div v-if="!sectionsDataFetched" class="app-spinner-container q-mt-xl">
+                        <q-spinner
+                            color="primary"
+                            size="2em"
+                        />
+                        <p class="app-spinner-text">Loading data, please wait...</p>
+                    </div>
+
+                    <div v-else>
+                        <div>{{getNotebookAttribute(renderedNotebookIDX, 'notebookName')}}</div>
+                        <div>{{getChapterAttribute(renderedNotebookIDX, renderedChapterIDX, 'chapterName')}}</div>
+
+                        <div>
+                        <!--section-card v-for="(sectionJSON, index) in sections" :key="index" v-model="sections[index]"-->
+                        </div>
+                    </div>
+
+                </Transition>
+            </div>
+
+            <!--DIALOGS-->
+
+
+            <!--CREATE NOTEBOOK DIALOG-->
+            <q-dialog v-model="showCreateNotebookDialog" persistent>
+                <q-card style="width: 700px; max-width: 80vw;background: #e6e6e6">
+                    <q-card-section>
+                        <div class="row items-start q-col-gutter-md">
+                            <div class="text-h6 col-11">
+                                Create new notebook
+                            </div>
+                            <div class="col-1 q-mb-lg">
+                                <q-btn round icon="close" @click="closeCreateNotebookDialog" color="grey-5"/>
+                            </div>
+                        </div>
+                        <q-form @submit.prevent="submitCreateNotebook">
+                            <q-input
+                                v-model="newNotebookName"
+                                label="Notebook name"
+                                filled
+                                dense
+                                no-error-icon="true"
+                                :rules="[val => !!val || 'Notebook name is required']"
+                                lazy-rules
+                            />
+
+                            <q-btn
+                                label="Create"
+                                color="primary"
+                                type="submit"
+                                class="full-width q-mt-md"
+                            />
+                        </q-form>
+                    </q-card-section>
+                </q-card>
+            </q-dialog>
+
+            <!--CREATE CHAPTER DIALOG-->
+            <q-dialog v-model="showCreateChapterDialog" persistent>
+                <q-card style="width: 700px; max-width: 80vw;background: #e6e6e6">
+                    <q-card-section>
+                        <div class="row items-start q-col-gutter-md">
+                            <div class="text-h6 col-11">
+                                Add new chapter to notebook
+                                 <q-item-label caption class="text-subtitle1" lines="2">{{getNotebookAttribute(notebookIDXOfNewChapter, 'notebookName')}}</q-item-label>
+                            </div>
+                            <div class="col-1 q-mb-lg">
+                                <q-btn round icon="close" @click="closeCreateChapterDialog" color="grey-5"/>
+                            </div>
+                        </div>
+                        <q-form @submit.prevent="submitCreateChapter">
+                            <q-input
+                                v-model="newChapterName"
+                                label="Chapter name"
+                                filled
+                                dense
+                                no-error-icon="true"
+                                :rules="[val => !!val || 'Chapter name is required']"
+                                lazy-rules
+                            />
+
+                            <q-btn
+                                label="Create"
+                                color="primary"
+                                type="submit"
+                                class="full-width q-mt-md"
+                            />
+                        </q-form>
+                    </q-card-section>
+                </q-card>
+            </q-dialog>
+
+        </q-page>
+    </q-page-container>
+
+</q-layout>
+  `
+});
+
+

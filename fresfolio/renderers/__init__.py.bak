@@ -1,0 +1,1127 @@
+from pathlib import Path
+import re
+from typing import List, Tuple, Dict
+import os
+
+def isFileImage(objPath):
+    imageExtensions = ['.jpg', '.jpeg', '.png', '.tiff', '.gif']
+    if objPath.suffix in imageExtensions:
+        return True
+    return False
+
+def isUrlImage(url):
+    imageExtensions = ['.jpg', '.jpeg', '.png', '.tiff']
+    for extension in imageExtensions:
+        if url.endswith(extension):
+            return True
+    return False
+
+def isUrlVideo(url, referenceText):
+    isVideo = False
+    if "video" in referenceText.lower():
+        isVideo = True
+    if not isVideo:
+        videoExtensions = ['.mp4', '.mov', '.mkv', '.wmv', '.webm', '.avi', '.flv']
+        for extension in videoExtensions:
+            if url.endswith(extension):
+                isVideo = True
+                break
+    return isVideo
+
+def isFileTable(objPath):
+    tableExtensions = ['.csv', '.tsv']
+    if objPath.suffix in tableExtensions:
+        return True
+    return False
+
+def isDirectory(objPath, configName):
+    try:
+        _, project, dirPath = objPath.split("/", 2)
+        notes = fresfolio.classes.Notebook(project, configName)
+        dirFullPath = notes.projectPath.joinpath(dirPath)
+    except Exception:
+        return False
+    else:
+        if Path(dirFullPath).is_dir():
+            return True
+        return False
+
+def isObjectFile(objPath):
+    if objPath.is_file():
+        return True
+    return False
+
+
+def getAllFilesInObjectPath(objPath):
+    filePaths = sorted(list(objPath.iterdir()))
+    filePaths = [fPath for fPath in filePaths if fPath.is_file()]
+    return filePaths
+
+def tableFileToJSON(objPath, delimeter):
+    def convert_value(x):
+        if "." in x:
+            try:
+                return float(x)
+            except Exception:
+                return x
+        elif x.isnumeric():
+            try:
+                return int(x)
+            except Exception:
+                return x
+        return x
+    fileContent = open(objPath).read().splitlines()
+
+    cols = fileContent[0].strip("\n")
+    cols = [x.strip(" ") for x in cols.split(delimeter)]
+    jsonCols = []
+    for idx,col in enumerate(cols, start=1):
+        jsonCols.append({"name":f"col{idx}", "field":f"col{idx}", "align":"left", "label":col, "sortable": True})
+
+    jsonRows = []
+    for line in fileContent[1:]:
+        line = line.strip("\n")
+        if line:
+            colsVals = [convert_value(item.strip(" ")) for item in line.split(delimeter)]
+            colsValsJSON = {f"col{idx}":val for idx,val in enumerate(colsVals, start=1)}
+            jsonRows.append(colsValsJSON)
+    return {"columns":jsonCols, "rows":jsonRows}
+
+def markupError(markup, message, markup_raw_text):
+    textHTML = f"""
+                <div>
+                    <img id="todoIcon" src="/static/fresfolio/icons/info_red.svg" alt="drawing" width="20"/>
+                    <span style="color:#ca4b4b">Markup "{markup}" error: {message}</span>
+                    <br>
+                    <span>{markup_raw_text}</span>
+                </div>
+                """
+    return textHTML
+
+
+svgIcons = {
+        '.pdf' : 'file-pdf-regular.svg',
+        '.docx': 'file-doc-solid.svg',
+        '.doc' : 'file-doc-solid.svg',
+        '.xcf' : 'file-xcf-solid.svg',
+        '.xls' : 'file-xls-solid.svg',
+        '.xlsx': 'file-xls-solid.svg',
+        '.csv' : 'file-csv-solid.svg',
+        '.tsv' : 'file-tsv-solid.svg',
+        '.txt' : 'file-txt-solid.svg',
+        '.md'  : 'file-md-solid.svg',
+        '.tex' : 'file-tex-solid.svg',
+        '.bib' : 'file-bib-solid.svg',
+        '.odt' : 'file-odt-solid.svg',
+        '.ods' : 'file-ods-solid.svg',
+        '.odp' : 'file-odp-solid.svg',
+        '.ppt' : 'file-ppt-solid.svg',
+        '.pptx' : 'file-ppt-solid.svg'
+}
+
+class InlineRenderers:
+
+    def render_markdown_bold_text_markups(self, text: str) -> str:
+        """Converts markdown bold markups to html bold markups."""
+        if "**" in text and text.count("**") % 2 == 0:
+            probe = '\*\*(.*?)\*\*'
+            boldTexts = re.findall(probe, text)
+
+            for boldText in boldTexts:
+                renderedText = f"<b>{boldText}</b>"
+                text = text.replace(f'**{boldText}**', renderedText)
+        return text
+
+    def render_markdown_italics_text_markups(self, text: str) -> str:
+        """Converts markdown italics markups to html italics markups."""
+        if "__" in text and text.count("__") % 2 == 0:
+            probe = '__(.*?)__'
+            italicsTexts = re.findall(probe, text)
+
+            for italicsText in italicsTexts:
+                renderedText = f"<i>{italicsText}</i>"
+                text = text.replace(f'__{italicsText}__', renderedText)
+        return text
+
+    def render_markdown_code_text_markups(self, text: str) -> str:
+        """Converts markdown code markups to html code markups."""
+        if "`" in text and text.count("`") % 2 == 0:
+            probe = '`(.*?)`'
+            codeTexts = re.findall(probe, text)
+
+            for codeText in codeTexts:
+                renderedText = f'<code id="frn-code-inline">{codeText}</code id="frn-code-inline">'
+                text = text.replace(f'`{codeText}`', renderedText)
+        return text
+
+    def render_markdown_headers_markups(self, text: str) -> str:
+        """Converts markdown header markups to html header markups."""
+        if text.startswith("# "):
+            text = "<h1>{}</h1>".format(text.split("# ", 1)[-1])
+        elif text.startswith("## "):
+            text = "<h2>{}</h2>".format(text.split("## ", 1)[-1])
+        elif text.startswith("### "):
+            text = "<h3>{}</h3>".format(text.split("### ", 1)[-1])
+        elif text.startswith("#### "):
+            text = "<h4>{}</h4>".format(text.split("#### ", 1)[-1])
+        return text
+
+    def render_markdown_ruler_markups(self, text: str) -> str:
+        """Converts markdown ruler markups to html ruler tags."""
+        if text.startswith('---'):
+            text = "<hr>"
+        return text
+
+    def render_red_text_markups(self, text: str) -> str:
+        """Converts latex style red text to html text style tag."""
+        if "\\red{" in text:
+            probe = '\\\\red{(.*?)}'
+            redTexts = re.findall(probe, text)
+
+            for redText in redTexts:
+                renderedText = f'<span style="color:#ff4646";>{redText}</span>'
+                text = text.replace(f'\\red{{{redText}}}', renderedText)
+        return text
+
+    def render_green_text_markups(self, text: str) -> str:
+        """Converts latex style green text to html text style tag."""
+        if "\\green{" in text:
+            probe = '\\\\green{(.*?)}'
+            greenTexts = re.findall(probe, text)
+
+            for greenText in greenTexts:
+                renderedText = f'<span style="color:#7ae376";>{greenText}</span>'
+                text = text.replace(f'\\green{{{greenText}}}', renderedText)
+        return text
+
+    def render_html_newline_markups(self, text: str) -> str:
+        """Converts br tag to html newline tag <br>."""
+        if "\\br " in text:
+            probe = '\\\\br '
+            redTexts = re.findall(probe, text)
+
+            for redText in redTexts:
+                renderedText = "<br> "
+                text = text.replace('\\br ', renderedText)
+        return text
+
+
+    def render_directory_html_markups(self, text:str) -> str:
+        """Convert directory html tag to <a> tag"""
+        if "\\directory-html{" in text:
+            probe = '\\\\directory-html{(.*?)}'
+            links = re.findall(probe, text)
+            for link in links:
+                try:
+                    project, directory = link.split(',', 1)
+                    project = project.strip(" ")
+                    directory = directory.strip(" ")
+                    renderedText = f'<a href="/fresfolio/render-directory-html/{project}/{directory}" target="_blank">View directory</a>'
+                except Exception:
+                    text = markupError("directory-html", "Error parsing markup.", text)
+                    return text
+
+                try:
+                    notes = fresfolio.classes.Notebook(project, self.configName, self.username)
+                except Exception:
+                    text = markupError("directory-html", "Project does not exist.", text)
+                    return text
+
+                dirFullPath = Path(notes.projectPath).joinpath(directory)
+                if not dirFullPath.exists():
+                    text = markupError("directory-html", "Directory path does not exist.", text)
+                    return text
+
+                text = text.replace(f'\\directory-html{{{link}}}', renderedText)
+        return text
+
+
+    def render_link_markups(self, text: str) -> str:
+        """Convert latex style link to html style <a> tag."""
+        if "\\link{" in text:
+            probe = '\\\\link{(.*?)}'
+            links = re.findall(probe, text)
+            for link in links:
+                try:
+                    if ',' in link:
+                        referenceText, url = link.split(',', 1)
+                        referenceText = referenceText.strip()
+                        url = url.strip()
+                        if url.startswith('/'):
+                            filename = Path(url).name
+                            extension = Path(url).suffix
+                            if extension in svgIcons:
+                                renderedText = '<a href="{}"><img id="todoIcon" src="/static/fresfolio/icons/{}" alt="drawing" width="20"/> {}</a>'.format(url, svgIcons[extension], referenceText)
+                            else:
+                                renderedText = '<a href="{}">{}</a>'.format(url, referenceText)
+                        else:
+                            if isUrlImage(url):
+                                renderedText = """
+                                <div class="row q-mb-md"><frn-tag>figures</frn-tag></div><div class="row q-gutter-md q-ml-xl items-start">
+                                    <div class="col-2">
+                                        <a href="{}" target="_blank">
+                                            <img src="{}" class="frn-image cursor-pointer q-hoverable"></img>
+                                        </a>
+                                        <div class="frn-image-caption">{}</div>
+                                    </div>
+                                </div>
+                                    """.format(url, url, referenceText)
+                            elif isUrlVideo(url, referenceText):
+                                renderedText = """
+                                <div class="row q-mb-md"><frn-tag>videos</frn-tag></div><div class="row q-gutter-md q-ml-xl items-start">
+                                    <div class="col-2">
+                                        <iframe src="{}" width="640" height="360" frameborder="0" scrolling="no" allowfullscreen title="{}"></iframe>
+                                    </div>
+                                </div>
+                                    """.format(url, referenceText)
+                            else:
+                                renderedText = '<a href="{}">{}</a>'.format(url, referenceText)
+                    else:
+                        if link.startswith('/'):
+                            filename = Path(link).name
+                            extension = Path(link).suffix
+                            if extension in svgIcons:
+                                renderedText = '<a href="{}"><img id="todoIcon" src="/static/fresfolio/icons/{}" alt="drawing" width="20"/> {}</a>'.format(link, svgIcons[extension], filename)
+                            else:
+                                renderedText = '<a href="{}">{}</a>'.format(link, filename)
+                        else:
+                            if isUrlImage(link):
+                                renderedText = """
+                                <div class="row q-mb-md"><frn-tag>figures</frn-tag></div><div class="row q-gutter-md q-ml-xl items-start">
+                                    <div class="col-2">
+                                        <a href="{}" target="_blank">
+                                            <img src="{}" class="frn-image cursor-pointer q-hoverable"></img>
+                                        </a>
+                                        <div class="frn-image-caption">{}</div>
+                                    </div>
+                                </div>
+                                    """.format(link, link, 'External image')
+                            else:
+                                renderedText = '<a href="{}">{}</a>'.format(link, link)
+                except Exception:
+                    text = markupError("link", "Error parsing markup.", text)
+                text = text.replace(f'\\link{{{link}}}', renderedText)
+        return text
+
+
+    def render_icon_markups(self, text: str) -> str:
+        icons = {
+                'todo' : '<img id="todoIcon" src="/static/fresfolio/icons/todo-circle-regular.svg" alt="drawing" width="20"/>',
+                'done' : '<img id="todoIcon" src="/static/fresfolio/icons/check-circle-regular.svg" alt="drawing" width="20"/>',
+                'error': '<img id="todoIcon" src="/static/fresfolio/icons/info_red.svg" alt="drawing" width="20"/>'
+                }
+        for icon in icons.keys():
+            if f"\{icon}" in text:
+                text = text.replace(f"\{icon}", icons[icon])
+        return text
+
+    def render_vertical_space_markup(self, text:str) -> str:
+        if "\\space" in text:
+            text = text.replace(f"\space", '<div class="frs-space></div>')
+        return text
+
+    def render_blockquote_markups(self, text: str) -> str:
+        if text.startswith(">"):
+            text = "<blockquote>{}</blockquote>".format(text[2:])
+        return text
+
+    def render_math_inline_markups(self, text: str) -> str:
+        if "$" in text and text.count("$") % 2 == 0:
+            probe = '\\$(.*?)\\$'
+            mathTexts = re.findall(probe, text)
+            for mathText in mathTexts:
+                renderedText = f"<span class='katex-math-inline'>{mathText}</span>"
+                text = text.replace(f'${mathText}$', renderedText)
+        elif "\(" in text and '\)' in text:
+            probe = '\\\\\((.*?)\\\\\)'
+            mathTexts = re.findall(probe, text)
+            for mathText in mathTexts:
+                renderedText = f"<span class='katex-math-inline'>{mathText}</span>"
+                text = text.replace(f'\({mathText}\)', renderedText)
+        return text
+
+    def render_script_markups(self, text: str) -> str:
+        if "\\script{" in text:
+            probe = '\\\\script{(.*?)}'
+            scriptTexts = re.findall(probe, text)
+
+            for scriptText in scriptTexts:
+                try:
+                    project, scriptPath = scriptText.split(",")
+                    project = project.strip()
+                    scriptPath = scriptPath.strip()
+                except Exception:
+                    text = markupError("script", "Error parsing markup. Include project and script path.", text)
+                    return text
+                scriptID = project+"-"+scriptPath.replace("/", "-").replace(".", "-")
+                sectionIndicator = f'<span class="badge badge-pill badge-info ">{project}: {scriptPath}</span>'
+                renderedText = (f'<a href="/fresfolio/view-script/{project}/{scriptPath}" target="_blank" class="frn-script-button frn-button-hover">view</a><code id="frn-code">{scriptPath}</code>')
+                text = text.replace(f'\\script{{{scriptText}}}', "")
+        return text
+
+    def render_button_markups(self, text: str) -> str:
+        if "\\button{" in text:
+            probe = '\\\\button{(.*?)}'
+            buttonTexts = re.findall(probe, text)
+
+            for buttonText in buttonTexts:
+                try:
+                    label, link = buttonText.split(",", 1)
+                    label = label.strip()
+                    link = link.strip()
+                except Exception:
+                    text = markupError("button", "Error parsing markup. Include label and url.", text)
+                    return text
+                renderedText = f'<a target="_blank" id="frn-files-html-button" class="q-btn q-mt-md" outline href="{link}">{label}</a>'
+                text = text.replace(f'\\button{{{buttonText}}}', "")
+        return text
+
+    def render_colored_note_markups(self, text: str) -> str:
+        """Converts latex style colored note to bootstrapped html text style tag."""
+        found_coloredNote = False
+        if "\\note-red{" in text:
+            probe = '\\\\note-red{(.*?)}'
+            color, alert = ('red', 'danger')
+            found_coloredNote = True
+        elif "\\note-green{" in text:
+            probe = '\\\\note-green{(.*?)}'
+            color, alert = ('green', 'success')
+            found_coloredNote = True
+        elif "\\note-blue{" in text:
+            probe = '\\\\note-blue{(.*?)}'
+            color, alert = ('blue', 'info')
+            found_coloredNote = True
+        elif "\\note-purple{" in text:
+            probe = '\\\\note-purple{(.*?)}'
+            color, alert = ('green', 'info')
+            found_coloredNote = True
+
+        if found_coloredNote:
+            coloredNotes = re.findall(probe, text)
+
+            for coloredNote in coloredNotes:
+                renderedText = f'<div class="frn-alert">{coloredNote}</div>'
+                text = text.replace(f'\\note-{color}{{{coloredNote}}}', renderedText)
+        return text
+
+
+class Renderer:
+
+    def __init__(self):
+        self.ID = ''
+        self.line = ''
+        self.containers = [{"container":"html", "content":[{"type":"html", "data":[]}]}]
+        self.sectionID = ''
+        self.flags= {'order':[], 
+                     'counts': {'fold': 0, 'figure':1, 'table':1},
+                     'errors': []
+                    }
+
+        """
+        NOTES:
+            A markup that extends multiple lines has start and end.
+            Then, text is rendered within the start and end markups.
+            Based on the markup, the text within the start and end points is rendered differently.
+        """
+
+        # Define start html for markups
+        self.renderStart_markup = {
+                'code': '<pre id="frn-pre">',
+                'list': '<ul>',
+                'math': '<span class="katex-math-equation">',
+                'note-red': '<div class="frn-note-red">',
+                'note-green': '<div class="frn-note-green">',
+                'note-blue': '<div class="frn-note-blue">',
+                'note-purple': '<div class="frn-note-purple">',
+                'files-html': '<a target="_blank" id="frn-files-html-button" class="q-btn" outline href="/fresfolio/render-files-html?file_paths=',
+      
+        }
+
+        # Define end html for markups
+        self.renderEnd_markup = {
+                'code': '</pre>',
+                'list': '</ul>',
+                'math': '</span>',
+                'note-red': '</div>',
+                'note-green': '</div>',
+                'note-blue': '</div>',
+                'note-purple': '</div>',
+                'files-html': '">View files</a>',
+        }
+
+        self.renderers = InlineRenderers()
+        self.renderersMethods = [method for method in dir(self.renderers) if callable(getattr(self.renderers, method)) and not method.startswith("__")]
+
+    @property
+    def lastContainer(self):
+        return self.containers[-1]
+
+    @property
+    def lastContainerContent(self):
+        return self.containers[-1]['content']
+
+    @property
+    def lastInsertedData(self):
+        return self.containers[-1]['content'][-1]["data"]
+
+    def addNewContainer(self, containerType):
+        self.containers.append({"container":containerType, "content":[{"type":"html", "data":[]}]})
+
+    def initialize_renderer(self):
+        self.ID = ''
+        self.line = ''
+        self.containers = [{"container":"html", "content":[{"type":"html", "data":[]}]}]
+        self.sectionID = ''
+        self.flags= {'order':[], 
+                     'counts': {'fold': 0, 'figure':1, 'table':1},
+                     'errors': []
+                    }
+
+
+    def is_last_flag(self, flag: str) -> bool:
+        if self.flags['order'] and self.flags['order'][-1] == flag:
+            return True
+        else:
+            return False
+
+    def pass_line_through_renderers(self) -> str:
+        self.line = self.line.strip("\n")
+        for method in self.renderersMethods:
+            render = getattr(self.renderers, method)
+            self.line = render(self.line)
+
+    def renderLine(self) -> None: 
+        if self.line.startswith('\\render{'):
+            pattern = '\\\\render{(.*?)}'
+            match = re.search(pattern, self.line)
+            if match:
+                foundErrors = False
+                try:
+                    extracted_string = match.group(1)
+                    project, fname = extracted_string.split(",")
+                    project = project.strip(" ")
+                    fname = fname.strip(" ")
+                except Exception:
+                    line = markupError("render", "Error parsing markup.", self.line)
+                    self.lastInsertedData.append(line)
+                    foundErrors = True
+
+                try:
+                    notes = fresfolio.classes.Notebook(project, self.configName, self.username)
+                except Exception:
+                    line = markupError("render", "Project does not exist.", self.line)
+                    self.lastInsertedData.append(line)
+                    foundErrors = True
+
+                if not foundErrors:
+                    fileFullPath = Path(notes.projectPath).joinpath(fname)
+                    if not fileFullPath.exists():
+                        line = self.line+'<br><span style="color:#FF0000";>File does not exist: '+str(fileFullPath)
+                        self.lastInsertedData.append(line)
+                    else:
+                        fileContent = open(fileFullPath, 'r').read()
+                        if '\n' in fileContent:
+                            contentLines = fileContent.splitlines(keepends=True)
+                            if contentLines[-1] != "\n":
+                                # It the content of the file does not end with an emtpy line
+                                # it causes a problem. The following is the solution to this problem.
+                                contentLines.append("\n")
+                            for line in contentLines:
+                                self.line = line
+                                self.renderLine()
+                        else:
+                            self.line = fileContent
+                            self.renderLine()
+            else:
+                line = markupError("render", "Error parsing markup.", self.line)
+                self.lastInsertedData.append(line)
+
+
+        if self.line.startswith('\\include-section{'):
+            markupText = self.line.strip("\n").split("{")[1].replace("}", "")
+            try:
+                project, sectionID = markupText.split(',', 1)
+                project = project.strip(' ')
+                sectionID = int(sectionID.strip(' '))
+            except Exception:
+                text = markupError("render", "Error parsing markup. Include project and section ID.", self.line)
+                self.lastContainerContent.append({"type":"html", "data":[text]})
+                return None
+
+            try:
+                notes = fresfolio.classes.Notebook(project, self.configName, self.username)
+            except Exception:
+                text = markupError("render", "Project does not exist.", self.line)
+                self.lastContainerContent.append({"type":"html", "data":[text]})
+                return None
+
+            sectionURL = f"/fresfolio/view/{project}={sectionID}" 
+            sectionLink = f'<a href="{sectionURL}" target="_blank" style="color:#5da5a8;">{sectionID}</a>'
+            tmpHTML = f"""
+                    <div class="frn-ruler-container">
+                        <span class="frn-word">
+                            <img id="rulerIcon" src="/static/fresfolio/icons/info_blue.svg" alt="drawing" width="20"/>
+                            <span style="color:#5da5a8;">{project}:{sectionLink}</span>
+                        </span>
+                        <hr class="frn-divider-ruler">
+                    </div>
+            """
+            self.lastContainerContent.append({"type":"html", "data":[tmpHTML]})
+            sectionContent = notes.get_section_content(sectionID, replace_newline=False)
+            if '\n' in sectionContent:
+                contentLines = sectionContent.splitlines(keepends=True)
+                if contentLines[-1] != "\n":
+                    # It the content of the file does not end with an emtpy line
+                    # it causes a problem. The following is the solution to this problem.
+                    contentLines.append("\n")
+                for line in contentLines:
+                    self.line = line
+                    self.renderLine()
+            else:
+                self.line = sectionContent
+                self.renderLine()
+            tmpHTML = f'<div class="frn-ruler-container"><hr class="frn-divider-ruler"></div>'
+            self.lastContainerContent.append({"type":"html", "data":[tmpHTML]})
+
+
+        if "\\begin-fold" in self.line:
+            if "=" in self.line:
+                foldTitle = self.line.split("=")[-1].strip(" ").strip("\n")
+                # Pass foldTitle through renderers.
+                self.line = foldTitle
+                self.pass_line_through_renderers()
+                # pass_line_through_renderers stores rendered line as self.line.
+                foldTitle = self.line
+            else:
+                foldTitle = "undefined fold title"
+            self.addNewContainer("fold")
+            self.lastContainer['title'] = foldTitle
+            return None
+
+        if "\\end-fold" in self.line:
+            self.addNewContainer("html")
+            return None
+
+        elif self.line.startswith('```'):
+            flag = 'code'
+        elif self.line.startswith('\\note-red{'):
+            flag = 'note-red'
+        elif self.line.startswith('\\note-green{'):
+            flag = 'note-green'
+        elif self.line.startswith('\\note-blue{'):
+            flag = 'note-blue'
+        elif self.line.startswith('\\note-purple{'):
+            flag = 'note-purple'
+        elif self.line.startswith('\\table{'):
+            flag = 'table'
+        elif self.line.startswith('\\table-from-file{'):
+            flag = 'table-from-file'
+        elif self.line.startswith('\\pipeline{'):
+            flag = 'pipeline'
+        elif self.line.startswith('\\files-html{'):
+            flag = 'files-html'
+        elif self.line.startswith('\\html{'):
+            flag = 'html'
+        elif self.line.startswith('\\files{'):
+            flag = 'files'
+        elif self.line.startswith('\\figures{'):
+            flag = 'figures'
+        elif self.line.startswith('\\files-from-directory{'):
+            flag = 'files-from-directory'
+        elif self.line.startswith('\\diagram{'):
+            flag = 'diagram'
+        elif self.line.startswith('\\omi-layer{'):
+            flag = 'omi-layer'
+        elif self.line.startswith('\\list{'):
+            flag = 'list'
+        elif self.line.startswith('$$'):
+            flag = 'math'
+        elif self.line.lstrip().startswith('}'):
+            if self.is_last_flag("code"):
+                flag = ''
+            else:
+                flag = 'end'
+        else:
+            flag = ''
+
+
+        # Define actions for markups that have the same start and ending markup
+        if flag == "code":
+            if self.is_last_flag("code"):
+                self.flags['order'].pop()
+                self.lastInsertedData.append(self.renderEnd_markup[flag])
+            else:
+                self.flags['order'].append(flag)
+                self.lastContainerContent.append({"type":flag, "data":[self.renderStart_markup[flag]]})
+
+        elif flag == "math":
+            if self.is_last_flag("math"):
+                self.flags['order'].pop()
+                self.lastInsertedData.append(self.renderEnd_markup[flag])
+            else:
+                self.flags['order'].append(flag)
+                self.lastContainerContent.append({"type":flag, "data":[self.renderStart_markup[flag]]})
+
+        # Define actions for table markups
+        elif flag == "table":
+            self.flags['order'].append(flag)
+            columns = self.line.split("{")[-1].split(",")
+            columns = [col.strip(' ').strip("\n") for col in columns]
+            jsonCols = []
+            for idx,col in enumerate(columns, start=1):
+                jsonCols.append({"name":f"col{idx}", "field":f"col{idx}", "align":"left", "label":col, "sortable": True})
+            tableNum = self.flags['counts']['table']
+            self.lastContainerContent.append({"type":flag, "data":{"title":f"Table {tableNum}", "columns":jsonCols, "rows":[]}})
+            self.flags['counts']['table'] += 1
+
+        elif flag == "pipeline":
+            self.flags['order'].append(flag)
+            return None
+
+        elif flag == "table-from-file":
+            self.line = self.line.strip("\n")
+            fileText = self.line.split("{")[1].replace("}", "")
+
+            try:
+                project, filePath = fileText.split(',', 1)
+                project = project.strip(' ')
+                filePath = filePath.strip(' ')
+            except Exception:
+                text = markupError("table-from-file", "Error parsing markup. Include project and path.", self.line)
+                self.lastContainerContent.append({"type":"html", "data":[text]})
+                self.flags['counts']['table'] += 1
+                return None
+
+            try:
+                notes = fresfolio.classes.Notebook(project, self.configName, self.username)
+            except Exception:
+                text = markupError("table-from-file", "Project does not exist.", self.line)
+                self.lastContainerContent.append({"type":"html", "data":[text]})
+                self.flags['counts']['table'] += 1
+                return None
+
+            fileFullPath = Path(notes.projectPath).joinpath(filePath)
+            if not fileFullPath.exists():
+                text = markupError("table-from-file", "File path does not exist.", f"{fileFullPath}<br>{self.line}")
+                self.lastContainerContent.append({"type":"html", "data":[text]})
+                self.flags['counts']['table'] += 1
+                return None
+
+            # infer delimeter
+            with open(fileFullPath, 'r') as inf:
+                header = inf.readline()
+            if "\t" in header:
+                delimeter = "\t"
+            else:
+                delimeter = ","
+            fname = fileFullPath.name
+            self.lastContainerContent.append({"type":"html", "data":[f'<code id="frn-code-inline">{fname}</code id="frn-code-inline">']})
+            tableJSON = tableFileToJSON(fileFullPath, delimeter)
+            self.lastContainerContent.append({"type":"table", "data":tableJSON})
+            tableNum = self.flags['counts']['table']
+            self.lastInsertedData['title'] = f"Table {tableNum}"
+            self.flags['counts']['table'] += 1
+            self.lastContainerContent.append({"type":"html", "data":['<div class="q-mb-md"></div>']})
+
+        elif flag == "omi-layer":
+            self.line = self.line.strip("\n")
+            markupText = self.line.split("{")[1].replace("}", "")
+
+            try:
+                omiDB, layerName = markupText.split(',', 1)
+                omiDB = omiDB.strip(' ')
+                layerName = layerName.strip(' ')
+            except Exception:
+                text = markupError("omi-layer", "Error parsing markup. Include database path and layer nae.", self.line)
+                self.lastContainerContent.append({"type":"html", "data":[text]})
+                self.flags['counts']['table'] += 1
+                return None
+
+            omi = Omilayers(omiDB)
+            try:
+                df = omi.layers[layerName].to_df().iloc[:5,:]
+            except Exception:
+                text = markupError("omi-layer", "Error loading layer. Perhaps layer does not exist in database.", self.line)
+                self.lastContainerContent.append({"type":"html", "data":[text]})
+                self.flags['counts']['table'] += 1
+                return None
+
+            jsonCols = []
+            for idx,col in enumerate(df.columns, start=1):
+                jsonCols.append({"name":f"col{idx}", "field":f"col{idx}", "align":"left", "label":col, "sortable": True})
+
+            jsonRows = []
+            for row in df.values.tolist():
+                jsonRows.append({f"col{idx}":val for idx,val in enumerate(row, start=1)})
+            self.lastContainerContent.append({"type":"html", "data":[f'<code id="frn-code-inline">omi-layer: {layerName}</code id="frn-code-inline">']})
+            tableNum = self.flags['counts']['table']
+            self.lastContainerContent.append({"type":"table", "data":{"title":f"Table {tableNum}", "columns":jsonCols, "rows":jsonRows}})
+            self.flags['counts']['table'] += 1
+            self.lastContainerContent.append({"type":"html", "data":[]})
+
+        elif flag == "files":
+            self.flags['order'].append(flag)
+            self.line = self.line.strip("\n")
+            self.lastContainerContent.append({"type":"files", "data":[]})
+            return None
+
+        elif flag == "html":
+            self.line = self.line.strip("\n")
+            markupText = self.line.split("{")[1].replace("}", "")
+            height = "500px"
+            fields = markupText.split(',')
+            if len(fields) == 2:
+                try:
+                    project, filePath = fields
+                    project = project.strip(' ')
+                    filePath = filePath.strip(' ')
+                except Exception:
+                    text = markupError("html", "Error parsing markup. Include project and path.", self.line)
+                    self.lastContainerContent.append({"type":"html", "data":[text]})
+                    return None
+            else:
+                try:
+                    project, filePath, height = fields
+                    project = project.strip(' ')
+                    filePath = filePath.strip(' ')
+                    height = f"{height.strip(' ')}px"
+                except Exception:
+                    text = markupError("html", "Error parsing markup. Include project, path and height.", self.line)
+                    self.lastContainerContent.append({"type":"html", "data":[text]})
+                    return None
+            url = '/' + str(Path(project).joinpath(filePath))
+            self.lastContainerContent.append({"type":"html-inline", "data":[{"url":url, "height":height}]})
+            self.lastContainerContent.append({"type":"html", "data":['<div class="q-mb-md"></div>']})
+
+        elif flag == "figures":
+            self.flags['order'].append(flag)
+            self.line = self.line.strip("\n")
+            self.lastContainerContent.append({"type":"figures", "data":[]})
+            return None
+
+        elif flag == "diagram":
+            self.line = self.line.strip("\n")
+            markupText = self.line.split("{")[1].replace("}", "")
+            try:
+                project, filename = markupText.split(',', 1)
+                project = project.strip(' ')
+                filename = filename.strip(' ')
+            except Exception:
+                text = markupError("diagram", "Error parsing markup. Include project and filename.", self.line)
+                self.lastContainerContent.append({"type":"html", "data":[text]})
+                return None
+            text = f'<a target="_blank" href=/fresfolio-diagram?project={project}&filename={filename}>Diagram: {filename}</a>'
+            self.lastContainerContent.append({"type":"html", "data":[text]})
+            self.lastContainerContent.append({"type":"html", "data":[]})
+            return None
+
+
+        elif flag == "files-from-directory":
+            self.line = self.line.strip("\n")
+            markupText = self.line.split("{")[1].replace("}", "")
+
+            try:
+                project, dirPath = markupText.split(',', 1)
+                project = project.strip(' ')
+                dirPath = dirPath.strip(' ')
+            except Exception:
+                text = markupError("files-from-directory", "Error parsing markup. Include project and path.", self.line)
+                self.lastContainerContent.append({"type":"html", "data":[text]})
+                return None
+
+            try:
+                notes = fresfolio.classes.Notebook(project, self.configName, self.username)
+            except Exception:
+                text = markupError("files-from-directory", "Project does not exist.", self.line)
+                self.lastContainerContent.append({"type":"html", "data":[text]})
+                return None
+
+            dirFullPath = Path(notes.projectPath).joinpath(dirPath)
+            if not dirFullPath.exists():
+                text = markupError("files-from-directory", "Directory path does not exist.", f"{dirFullPath}<br>{self.line}")
+                self.lastContainerContent.append({"type":"html", "data":[text]})
+                return None
+
+            imageFiles = []
+            tablesFiles = []
+            miscFiles = []
+
+            filesPaths = getAllFilesInObjectPath(dirFullPath)
+            for fPath in filesPaths:
+                if isFileImage(fPath):
+                    imageFiles.append(fPath)
+                elif isFileTable(fPath):
+                    tablesFiles.append(fPath)
+                else:
+                    miscFiles.append(fPath)
+
+            if not imageFiles and not tablesFiles and not miscFiles:
+                text = markupError("files-from-directory", "No files found.", self.line)
+                self.lastContainerContent.append({"type":"html", "data":[text]})
+                return None
+
+            if imageFiles:
+                self.lastContainerContent.append({"type":"figures", "data":[]})
+                for fPath in imageFiles:
+                    fname = Path(fPath).name
+                    url = '/' + str(Path(project).joinpath(dirPath, fname))
+                    figNum = self.flags['counts']['figure']
+                    self.lastInsertedData.append({"url":url, "error_found":0, "caption":f"figure {figNum}"})
+                    self.flags['counts']['figure'] += 1
+
+            if miscFiles:
+                self.lastContainerContent.append({"type":"files", "data":[]})
+                for fPath in miscFiles:
+                    fname = Path(fPath).name
+                    extension = Path(fname).suffix.replace(".", "").upper()
+                    description = "File from directory."
+                    url = '/' + str(Path(project).joinpath(dirPath, fname))
+                    self.lastInsertedData.append({"filename":fname, "url":url, "error_found":0, "description":description, "extension":extension})
+
+            if tablesFiles:
+                for tableFile in tablesFiles:
+                    with open(tableFile, 'r') as inf:
+                        header = inf.readline()
+                    if "\t" in header:
+                        delimeter = "\t"
+                    else:
+                        delimeter = ","
+                    fname = tableFile.name
+                    self.lastContainerContent.append({"type":"html", "data":[f'<code id="frn-code-inline">{fname}</code id="frn-code-inline">']})
+                    tableJSON = tableFileToJSON(tableFile, delimeter=delimeter)
+                    self.lastContainerContent.append({"type":"table", "data":tableJSON})
+                    tableNum = self.flags['counts']['table']
+                    self.lastInsertedData['title'] = f"Table {tableNum}"
+                    self.flags['counts']['table'] += 1
+
+            self.lastContainerContent.append({"type":"html", "data":['<div class="q-mb-md"></div>']})
+
+        # Define actions for markups that end with "}"
+        elif flag in ["note-red",
+                      "note-green",
+                      "note-blue",
+                      "note-purple"
+                      "files-html",
+                      "list"]:
+            self.flags['order'].append(flag)
+            self.lastContainerContent.append({"type":flag, "data":[self.renderStart_markup[flag]]})
+
+        elif flag == "end":
+            try:
+                lastFlag = self.flags['order'].pop() 
+            except Exception:
+                line = self.line+'<span style="color:#FF0000";>Extra ending markup found</span>'
+                if isinstance(self.lastInsertedData, list):
+                    self.lastInsertedData.append(line)
+                else:
+                    self.lastContainerContent.append({"type":"html", "data":[line]})
+            else:
+                if lastFlag == "files-html":
+                    tmpLine = self.renderStart_markup[lastFlag]+self.renderEnd_markup[lastFlag]
+                    self.lastInsertedData.append(tmpLine)
+                elif lastFlag == "table":
+                    self.lastContainerContent.append({"type":"html", "data":['<div class="q-mb-md"></div>']})
+                elif lastFlag == "files":
+                    self.lastContainerContent.append({"type":"html", "data":[]})
+                elif lastFlag == "figures":
+                    self.lastContainerContent.append({"type":"html", "data":[]})
+                elif lastFlag == "pipeline":
+                    return None
+                else:
+                    self.lastInsertedData.append(self.renderEnd_markup[lastFlag])
+
+        else:
+            if self.is_last_flag("code"):
+                self.lastInsertedData.append(self.line)
+            elif self.is_last_flag("math"):
+                self.lastInsertedData.append(self.line.strip("\n"))
+            elif self.line.strip().strip("\n"):
+
+                if self.is_last_flag('list'):
+                    if self.line.startswith("* "):
+                        self.line = self.line.replace("* ", '')
+                    else:
+                        if self.line.startswith("\\") and self.lastInsertedData[-1].startswith("<ul>"):
+                            self.lastInsertedData[-1] = '<ul style="list-style: none;padding-left:1em;">'
+                        elif not self.line.startswith("\\") and self.lastInsertedData[-1].startswith("<ul>"):
+                            self.lastInsertedData[-1] = '<ul style="list-style: none;padding-left:1.4em;">'
+                    self.pass_line_through_renderers()
+                    self.line = f'<li>{self.line}</li>'
+                    self.lastInsertedData.append(self.line)
+
+                elif self.is_last_flag("files-html"):
+                    if self.lastInsertedData[-1].endswith("="):
+                        self.lastInsertedData.append(self.line.strip("\n"))
+                    else:
+                        self.lastInsertedData.append(","+self.line.strip("\n"))
+
+                elif self.is_last_flag("table"):
+                    self.pass_line_through_renderers()
+                    colsVals = self.line.split(",")
+                    colsVals = [item.strip(" ") for item in colsVals]
+                    colsValsJSON = {f"col{idx}":val for idx,val in enumerate(colsVals, start=1)}
+                    self.lastInsertedData["rows"].append(colsValsJSON)
+
+                elif self.is_last_flag("files"):
+                    line = self.line.strip("\n")
+                    if line:
+                        if "http" not in line:
+                            if "," not in line:
+                                self.lastInsertedData.append({"filename":line, "url":"", "error_found":1, "description":"Missing comma in markup.", "extension":""})
+                                return None
+
+                            try:
+                                parts = line.split(',')
+                                if len(parts) == 2:
+                                    project, filePath = parts
+                                    description = "No description."
+                                else:
+                                    project, filePath, description = parts
+                                project = project.strip(' ')
+                                filePath = filePath.strip(' ')
+                                description = description.strip(' ')
+                            except Exception:
+                                self.lastInsertedData.append({"filename":line, "url":"", "error_found":1, "description":"Error parsing project and directory.", "extension":""})
+                                return None
+
+                            try:
+                                notes = fresfolio.classes.Notebook(project, self.configName, self.username)
+                            except Exception:
+                                self.lastInsertedData.append({"filename":line, "url":"", "error_found":1, "description":"Project does not exist.", "extension":""})
+                                return None
+
+                            fileFullPath = Path(notes.projectPath).joinpath(filePath)
+                            fname = fileFullPath.name
+                            extension = Path(fname).suffix.replace(".", "").upper()
+                            if len(extension) > 6: # Prevent very long extensions
+                                extension = "N/A"
+                            url = '/' + str(Path(project).joinpath(filePath))
+                            if not Path(fileFullPath).exists():
+                                self.lastInsertedData.append({"filename":line, "url":"", "error_found":1, "description":"File path does not exist.", "extension":""})
+                                return None
+                            self.lastInsertedData.append({"filename":fname, "url":url, "error_found":0, "description":description, "extension":extension})
+                        else:
+                            fname = line.split("/")[-1]
+                            extension = "HTML"
+                            description = "Online file."
+                            self.lastInsertedData.append({"filename":fname, "url":line, "error_found":0, "description":description, "extension":extension})
+                    else:
+                        return None
+
+                elif self.is_last_flag("figures"):
+                    line = self.line.strip("\n")
+                    if line:
+                        if "http" not in line:
+                            if "," not in line:
+                                self.lastInsertedData.append({"url":line, "error_found":1})
+                                self.flags['counts']['figure'] += 1
+                                return None
+
+                            try:
+                                project, filePath = line.split(',')
+                                project = project.strip(' ')
+                                filePath = filePath.strip(' ')
+                            except Exception:
+                                self.lastInsertedData.append({"url":line, "error_found":1})
+                                self.flags['counts']['figure'] += 1
+                                return None
+
+                            try:
+                                notes = fresfolio.classes.Notebook(project, self.configName, self.username)
+                            except Exception:
+                                self.lastInsertedData.append({"url":line, "error_found":1})
+                                self.flags['counts']['figure'] += 1
+                                return None
+
+                            fileFullPath = Path(notes.projectPath).joinpath(filePath)
+                            fname = fileFullPath.name
+                            url = '/' + str(Path(project).joinpath(filePath))
+                            if not Path(fileFullPath).exists():
+                                self.lastInsertedData.append({"url":url, "error_found":1})
+                                self.flags['counts']['figure'] += 1
+                                return None
+                            figNum = self.flags['counts']['figure']
+                            self.lastInsertedData.append({"url":url, "error_found":0, "caption":f"figure {figNum}"})
+                            self.flags['counts']['figure'] += 1
+                        else:
+                            figNum = self.flags['counts']['figure']
+                            self.lastInsertedData.append({"url":line, "error_found":0, "caption":f"figure {figNum}"})
+                            self.flags['counts']['figure'] += 1
+                    else:
+                        return None
+
+                elif self.is_last_flag("pipeline"):
+                    return None
+                else:
+                    self.pass_line_through_renderers()
+                    if not self.line.endswith("\\"):
+                        self.line = "<p>"+self.line+"</p>"
+                    else:
+                        self.line = self.line.strip('\\') + "<br>"
+                    self.lastInsertedData.append(self.line)
+
+
+    def convert_db_results_into_sections(self, sectionsResults: List, sectionsIDs: List, db: str) -> List[Dict]:
+        """Converts results returned from the project database to a list of dictionaries. Each dictionary corresponds to a section with various markups being converted to html markups."""
+
+        def convert_section_fields_to_dictionary(dbres: Tuple) -> Dict:
+            ID, section, tags, content, folded, creationDate = dbres
+            valuetoBoolean = {0: "false", 1: "true"}
+            sectionDict = {
+                    "ID"               : ID,
+                    "title"            : section,
+                    "tags"             : tags,
+                    "content"          : content,
+                    "isContentFolded"  : folded,
+                    "isInfoFolded"     : 0,
+                    "date"             : creationDate
+                    }
+            return sectionDict
+
+        # tmp is temporary so that sections are added later based on order.
+        tmp = dict()
+        for dbres in sectionsResults:
+            sectionDict = convert_section_fields_to_dictionary(dbres)
+
+            sectionDict['tags'] = sectionDict['tags']
+            """
+            NOTES:
+                In the following steps the content of the section is broken down in lines based on newlines.
+                In each line, the markups are converted to html.
+
+                The splitlines(keepends=True) converts a string like:
+                    'This is line 1\n\nThis is line2'
+                to:
+                    ['This is line 1\n', '\n', 'This is line2']
+            """
+            self.ID = sectionDict['ID']
+            if '\n' in sectionDict['content']:
+                contentLines = sectionDict['content'].splitlines(keepends=True)
+                for line in contentLines:
+                    self.line = line
+                    self.renderLine()
+            else:
+                self.line = sectionDict['content']
+                self.renderLine()
+
+            if self.flags['order'] or self.flags['errors']:
+                errorText = '<span style="color:#FF0000";>Errors {} while rendering section. Check {} markups.</span><br>'.format(self.flags['errors'], self.flags['order'])
+                self.containers.insert(0, {"container":"html", "content":[{"type":"html", "data":[errorText]}]})
+            for JSON in self.containers:
+                for item in JSON['content']:
+                    if item['type'] != "table" and item['type'] != "pipeline" and item['type'] != "files" and item['type'] != "figures":
+                        try:
+                            item['data'] = ''.join(item['data'])
+                        except Exception:
+                            item['data'] = item['data']
+
+            sectionDict['content'] = self.containers
+            tmp[sectionDict['ID']] = sectionDict
+            self.initialize_renderer()
+
+        sections = list()
+        for sID in sectionsIDs:
+            sections.append(tmp[sID])
+        return sections
+
+

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+
+        <!-- APP CSS -->
+        <link rel="stylesheet" href="{{url_for('static', filename='css/app.css')}}">
+
+        <!-- QUASAR PRODUCTION CSS -->
+        <link rel="stylesheet" href="{{url_for('static', filename='css/quasar.prod.css')}}">
+
+        <!-- FONTS CSS -->
+        <link rel="stylesheet" href="{{url_for('static', filename='css/fonts.css')}}">
+        <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons" rel="stylesheet" type="text/css">
+
+        <!-- KATEX CSS-JS -->
+        <link rel="stylesheet" href="{{url_for('static', filename='css/katex.min.css')}}">
+        <script src="{{ url_for('static', filename='js/katex.min.js') }}"></script>
+
+        <title>APP</title>
+    </head>
+
+    <body>
+
+
+        {% block content %}{% endblock %}
+
+        <!-- VUE JS PRODUCTION -->
+        <script type="text/javascript" src="{{url_for('static', filename='js/vue.global.prod.js')}}"></script>
+
+        <!-- QUASAR JS PRODUCTION -->
+        <script type="text/javascript" src="{{url_for('static', filename='js/quasar.umd.prod.js')}}"></script>
+
+        <!-- VUE JS IMPORTS -->
+        <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/components/vue_imports.js')}}"></script>
+
+        <!-- VUE JS LOGIN-LAYOUT -->
+        <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/components/signup_form.js')}}"></script>
+        <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/components/login_form.js')}}"></script>
+        <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/compositions/login_layout.js')}}"></script>
+
+        <!-- VUE JS PROJECT-LAYOUT -->
+        <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/components/section_content.js')}}"></script>
+        <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/components/section_card.js')}}"></script>
+        <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/compositions/project_layout.js')}}"></script>
+
+        <!-- VUE JS PROJECTS-LAYOUT -->
+        <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/compositions/projects_layout.js')}}"></script>
+
+        <!-- VUE JS EXPOSE-LAYOUTS -->
+        <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/vue_app.js')}}"></script>
+
+    </body>
+</html>
