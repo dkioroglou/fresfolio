@@ -2,19 +2,7 @@
 
    <br />
 
-Create sections
-===============
-
-To create sections withing a given chapter, the user should select the corresponding chapter from the "**Chapters**" column.
-
-.. image:: images/create_section.png
-   :width: 1000
-   :height: 400
-   :alt: create_section
-   :align: center
-
-|br|
-
+.. _Section anatomy:
 
 Section anatomy
 ===============
@@ -37,9 +25,9 @@ When a section is created the title "*New section*" is given. Clicking on the se
 Section toolbar
 ---------------
 
-The section's body starts with the toolbar. To the left the following are visible:
+The section's body starts with the toolbar. To the left, the following are visible:
 
-* ``id``: this is a unique number assigned to each section.
+* ``id``: this is a unique number *fresfolio* assigns to each section.
 * ``date``: the section's creating date. 
 * ``+Tags`` button: pressing this button the user can assign tags (separated with comma) to the section. Tags are useful for grouping sections.
 

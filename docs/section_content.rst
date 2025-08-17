@@ -39,7 +39,7 @@
 Section content
 ===============
 
-The section content is stored in the ``project.db`` as plain text and is converted to html for rendering. For typesetting, Markdown and Latex-like syntax can be used.
+The section content is stored in the ``project.db`` as plain text and is converted to HTML for rendering. For typesetting, Markdown and Latex-like syntax can be used.
 
 Inline markup syntax
 --------------------
@@ -50,16 +50,16 @@ Markdown syntax
 Markdown syntax can be used for following inline typesetting:
 
 ===================   ==============
-syntax                rendering
+syntax                HTML rendering
 ===================   ==============
-``# Title 1``         Title 1
-``## Title 2``        Title 2
-``### Title 3``       Title 3
-``**bold text**``     **bold text**
-``__italic text__``   *italic text*
-```inline code```     ``inline code``
-``[LINKNAME](url)``   URL link with name ``LINKNAME``
-``$MATH$``            Inline math symbols and equations.
+``# TITLE``           Create level 1 "TITLE"
+``## TITLE``          Create level 2 "TITLE"
+``### TITLE``         Create level 3 "TITLE"
+``**TEXT**``          Make "TEXT" bold
+``__TEXT__``          Make "TEXT" italics
+```CODE```            Write inlince "CODE"
+``[NAME](url)``       Create link with "NAME" that directst to "URL"
+``$MATH$``            Create inline "MATH" symbols and equations.
 ===================   ==============
 
 Latex like syntax
@@ -68,11 +68,11 @@ Latex like syntax
 Latex like syntax can be used for the following inline typesetting:
 
 ===================================   ==============
-syntax                                rendering
+syntax                                HTML rendering
 ===================================   ==============
-``\text-green{This is green text}``   :green:`This is green text`
-``\text-red{This is red text}``       :red:`This is red text`
-``\button{LABEL, URL}``               A button with label "LABEL" that directs to "URL"
+``\text-green{TEXT}``                 Make "TEXT" green
+``\text-red{TEXT}``                   Make "TEXT" red
+``\button{LABEL, URL}``               Create a button with "LABEL" that directs to "URL"
 ===================================   ==============
 
 Icons
@@ -81,7 +81,7 @@ Icons
 The following icons are available for inline use:
 
 ===================   ==============
-syntax                rendering
+syntax                HTML rendering
 ===================   ==============
 ``\todo``             |todoicon|
 ``\done``             |doneicon|
@@ -116,7 +116,7 @@ or using dashes:
    - item2
    - item3
 
-**Rendering**
+**HTML rendering**
 
 .. image:: images/list_rendering.png
    :width: 160
@@ -137,7 +137,7 @@ Code blocks
    print(foo(10))
    ```
 
-**Rendering**
+**HTML rendering**
 
 .. image:: images/code_block_rendering.png
    :width: 223
@@ -155,7 +155,7 @@ Multi-line math
    y + z = 4 
    $$
 
-**Rendering**
+**HTML rendering**
 
 .. image:: images/multiline-math-rendering.png
    :width: 140
@@ -191,7 +191,7 @@ Colored notes are available with blue, red and green background and the color is
 - ``\begin{note}[red]``
 - ``\begin{note}[green]``
 
-**Rendering**
+**HTML rendering**
 
 .. image:: images/colored_note_rendering.png
    :width: 854
@@ -204,6 +204,8 @@ Colored notes are available with blue, red and green background and the color is
 Tables
 ^^^^^^
 
+Create table manually:
+
 .. code-block:: latex
 
     \begin{table}[title: My title]
@@ -213,18 +215,24 @@ Tables
     100.21, 200.34, 300.55, 400.59
     \end{table}
 
+When creating tables manually, the following options can be passed:
+
+* ``title``: if omitted, the table header defaults to the title "**Table [NUMBER]**". If included, for instance ``title: My title``, it gives the possibility to add a custom title to the table "**Table [NUMBER]: My title**". The table number gets incremented based on the number of tables that exist in a given section.
+
+Load table from a file:
+
 .. code-block:: latex
 
     \begin{table}[project:PROJECT, file:FILE, title: My title]
     \end{table}
 
-Tables have the following options:
+When loading tables from file the following options are available:
 
-* ``title``: if omitted, the table header defaults to the title "**Table [NUMBER]**". If included, for instance ``title: My title``, it gives the possibility to add a custom title to the table "**Table [NUMBER]: My title**". The table number gets incremented based on the number of tables that exist in a given section.
+* ``title``: see above.
 * ``project``: it refers to the name of an existing project and is optional. If omitted, the current project is considered.
-* ``file``: this option gives the possibility to load a table from a file. It referes to the path of an existing file relative to the root directory of the project. For instance, ``file: dir1/dir2/foo.csv``. Wildcards can also be used, example ``file: dir1/dir2/*.csv``. In this case, a table will be created for each file. The delimiter can be comma or tab and is identified from the first line of each file that should contain the names of the table columns.
+* ``file``: the file path to load a table from. This path should be an existing file relative to the root directory of the project. For instance, ``file: sections/1/foo.csv``. Wildcards can also be used, example ``file: sections/1/*.csv``. In this case, a table will be created for each file. The delimiter can be comma or tab and is identified from the first line of each file that should contain the names of the table columns.
 
-**Rendering**
+**HTML rendering**
 
 .. image:: images/table_rendering.png
    :width: 855
@@ -236,6 +244,8 @@ Tables have the following options:
 
 Figures
 ^^^^^^^
+
+Specify figures manually. 
 
 .. code-block:: latex
 
@@ -249,28 +259,33 @@ Figures
     caption: This is the caption of the Figure 2
     \end{figures}
 
-.. code-block:: latex
-
-    \begin{figures}[project:PROJECT, file:FILE, title:My title]
-    \end{figures}
-
-
 Figures can have one or more entries. Each entry is consisted of the following fields:
 
 * ``project``: refers to the name of an existing project and is optional. If omitted, the current project is considered.
 * ``figure``: should be the path to an existing figure relative to the root directory of the project.
 * ``caption``: refers to the caption of the figure and is optional. If omitted, the caption "**Caption not available**" is rendered. 
 
-Figures can have the following options:
+When creating figures manually, the following options are available:
 
 * ``title``: if omitted, the figures header defaults to the title "**Figures**". If included, for instance ``title: My title``, it gives the possibility to add a custom title to the figures header "**Figures: My title**".
-* ``project``: refers to the name of an existing project and is optional. If omitted, the current project is considered.
-* ``file``: it refers to the path relative to the root directory of the project, and it gives the possibility to load figures using wildcards, example ``file: dir1/dir2/*.jpg``. Using this options it is not possible to add caption to each figure.
 
+Specify figures using wildcards:
+
+.. code-block:: latex
+
+    \begin{figures}[project:PROJECT, file:FILE, title:My title]
+    \end{figures}
+
+
+When specifying figures using wildcards, the user cannot add captions to each figure and the following options are available:
+
+* ``title``: see above.
+* ``project``: refers to the name of an existing project and is optional. If omitted, the current project is considered.
+* ``file``: it refers to the path relative to the root directory of the project, example ``file: sections/1/*.jpg``.
 
 Figures are rendered as clickable thumbnails.
 
-**Rendering**
+**HTML rendering**
 
 .. image:: images/figures_rendering_1.png
    :width: 356
@@ -278,5 +293,46 @@ Figures are rendered as clickable thumbnails.
    :alt: figures_rendering_1
    :align: center
 
+Files
+^^^^^
 
+Files can have one or more entries. 
+
+.. code-block:: latex
+
+    \begin{files}[title:My title]
+    project: PROJECT
+    file: sections/2/file1.csv
+    caption: This is the caption for file1.
+
+    project: PROJECT
+    file: sections/2/file2.xlsx
+    caption: This is the caption for file2.
+
+    project: PROJECT
+    file: sections/2/file3.pdf
+    caption: This is the caption for file3.
+    \end{figures}
+
+Each entry is consisted of the following fields:
+
+* ``project``: refers to the name of an existing project and is optional. If omitted, the current project is considered.
+* ``file``: should be the path to an existing file relative to the root directory of the project.
+* ``caption``: refers to the caption of the figure and is optional. If omitted, the caption "**Caption not available**" is rendered. 
+
+Files can have the following options:
+
+* ``title``: if omitted, the files header defaults to the title "**Files**". If included, for instance ``title: My title``, it gives the possibility to add a custom title to the files header "**Files: My title**".
+
+**HTML rendering**
+
+.. image:: images/files_rendering.png
+   :width: 854
+   :height: 218
+   :alt: files_rendering
+   :align: center
+
+|br|
+
+When files are clicked, they open with the default program.
 
