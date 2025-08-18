@@ -336,3 +336,23 @@ Files can have the following options:
 
 When files are clicked, they open with the default program.
 
+Foldable content
+^^^^^^^^^^^^^^^^
+
+To create foldable content the following syntax should be used:
+
+.. code-block:: latex
+
+   \begin{fold}[Fold title]
+   TEXT
+   \end{fold}
+
+**HTML rendering**
+
+.. image:: images/fold_rendering.png
+   :width: 854
+   :height: 218
+   :alt: fold_rendering
+   :align: center
+
+|br|

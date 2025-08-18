@@ -8,6 +8,7 @@ To install *fresfolio* run:
     pip install fresfolio
 
 
+.. _Optional packages:
 
 Optional packages
 -----------------

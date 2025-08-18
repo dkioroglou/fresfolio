@@ -16,6 +16,7 @@ Welcome to fresfolio documentation!
    creating_notebooks_chapters_and_sections
    section_anatomy
    section_content
+   omilayers
 
 |br|
 

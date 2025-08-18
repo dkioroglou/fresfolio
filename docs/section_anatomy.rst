@@ -51,5 +51,5 @@ To the right the following are visible:
 
   * **View section directory tree**: when pressed, a dialog pops-up showing the file structure of the section's directory.
   * **Upload files**: when pressed, a dialog pops-up to upload files to the section's directory. Note that this will copy the uploaded file from its location to the section's directory. This option is especially useful for broadcasting.
-* 3rd button can be used to edit the section's content.
+* The 3rd button when pressed an editor appears, allowing the user to modify the section’s content.
 

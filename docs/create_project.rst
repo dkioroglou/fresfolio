@@ -49,7 +49,7 @@ When creating a new project, *fresfolio* creates the following file structure fo
     ├── project.db
     └── sections
 
-* ``project.db`` is a SQLite database where *fresfolio* will store the created notebooks, chapters and sections.
+* ``project.db`` is a SQLite database where *fresfolio* will store the created notebooks, chapters and sections of the project.
 * The directory ``sections`` is explained in :ref:`Section anatomy`.
 
 The user can create any directory within the project directory.
