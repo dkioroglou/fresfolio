@@ -20,4 +20,14 @@ The above installation provides all the necessary functionality for creating and
    pip install omilayers
    pip install bokeh
 
+working with excel files with *omilayers* requires the following packages:
+
+.. code-block:: bash
+
+    pip install xlrd
+    pip install openpyxl
+
+
+``xlrd`` is necessary for working with ``.xls`` files, whereas ``openpyxl`` is necessary for ``.xlsx`` files.
+
 

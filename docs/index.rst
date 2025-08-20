@@ -17,6 +17,7 @@ Welcome to fresfolio documentation!
    section_anatomy
    section_content
    omilayers
+   omiplots
 
 |br|
 

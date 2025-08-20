@@ -101,7 +101,6 @@ Pressing the menu button on the top right corner:
 
 shows a menu with the option "**Create new layer**". Selecting this option a dialog pops-up to create the layer:
 
-
 .. image:: images/omilayers_rendering_6.png
    :width: 400
    :height: 300
@@ -109,4 +108,43 @@ shows a menu with the option "**Create new layer**". Selecting this option a dia
    :align: center
 
 |br|
+
+Pressing the button "**ADD ROW**" will add a new row to the form for specifying a new column. Columns can be of datatype "TEXT", "INTEGER" or "FLOAT".
+
+Add data to layer
+-----------------
+
+After selecting a layer, two options become available in the menu for adding data to the selected layer:
+
+1. Insert data from form to layer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Choosing this option a dialog pops-up with as many inputs as the number of the layer's columns.
+
+.. image:: images/omilayers_rendering_7.png
+   :width: 350
+   :height: 250
+   :alt: omilayers_rendering_7
+   :align: center
+
+|br|
+
+
+2. Insert data from file to layer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Choosing this option a dialog pops-up to upload data from a file to the selected layer.
+
+.. image:: images/omilayers_rendering_8.png
+   :width: 600
+   :height: 200
+   :alt: omilayers_rendering_8
+   :align: center
+
+|br|
+
+The uploaded file should meet the following requirements:
+
+* first row should be the column names of the layer (order does not matter).
+* values should match the datatype of their corresponding columns.
 
