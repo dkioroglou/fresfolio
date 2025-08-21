@@ -18,6 +18,8 @@ Welcome to fresfolio documentation!
    section_content
    omilayers
    omiplots
+   import_projects
+   broadcasting
 
 |br|
 

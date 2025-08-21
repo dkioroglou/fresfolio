@@ -47,5 +47,10 @@ The path ``$HOME/fresfolio/projects`` is the default path where *fresfolio* stor
    fresfolio set-projects-dir .
 
 Based on the example above, *fresfolio* will store created projects in the path ``$HOME/dir1/dir2/dir3``.
+To view the paths *fresfolio* uses run:
+
+.. code-block:: bash
+
+   fresfolio info
 
 
