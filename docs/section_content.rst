@@ -56,7 +56,7 @@ syntax                HTML rendering
 ``## TITLE``          Create level 2 "TITLE"
 ``### TITLE``         Create level 3 "TITLE"
 ``**TEXT**``          Make "TEXT" bold
-``__TEXT__``          Make "TEXT" italics
+``__TEXT__``          Make "TEXT" italic
 ```CODE```            Write inlince "CODE"
 ``[NAME](url)``       Create link with "NAME" that directst to "URL"
 ``$MATH$``            Create inline "MATH" symbols and equations.
@@ -245,7 +245,7 @@ When loading tables from file the following options are available:
 Figures
 ^^^^^^^
 
-Specify figures manually. 
+Specify figures manually:
 
 .. code-block:: latex
 

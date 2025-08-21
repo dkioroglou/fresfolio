@@ -28,7 +28,7 @@ Section toolbar
 The section's body starts with the toolbar. To the left, the following are visible:
 
 * ``id``: this is a unique number *fresfolio* assigns to each section.
-* ``date``: the section's creating date. 
+* ``date``: the section's creation date. 
 * ``+Tags`` button: pressing this button the user can assign tags (separated with comma) to the section. Tags are useful for grouping sections.
 
 To the right the following are visible:
@@ -47,7 +47,7 @@ To the right the following are visible:
 
   * **Delete section**: deletes the section in ``project.db`` and its directory if it exists.
 
-    Additional options that become available if the section directory is created:
+    Additional options that become available when the section directory is created:
 
   * **View section directory tree**: when pressed, a dialog pops-up showing the file structure of the section's directory.
   * **Upload files**: when pressed, a dialog pops-up to upload files to the section's directory. Note that this will copy the uploaded file from its location to the section's directory. This option is especially useful for broadcasting.

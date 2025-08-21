@@ -15,7 +15,7 @@ Omilayers
 Render stored data
 ------------------
 
-To render stored layers the following syntax can be used:
+To render stored layers the following syntax should be used:
 
 .. code-block:: latex
 
@@ -83,7 +83,7 @@ The user can also set a layer as the default layer:
 
 |br|
 
-this way the user have the option to directly render the default layer or select a different layer to render.
+this way the user has the option to directly render the default layer or select a different layer to render.
 
 
 Create new layers

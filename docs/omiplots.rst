@@ -38,11 +38,11 @@ To create an interactive plot use the following syntax:
 
 |br|
 
-* ``plot-type``: required field specifying type of plot. Currently supported scatter and line plots.
+* ``plot-type``: required field specifying type of plot. Currently supported types are scatter and line plots.
 * ``x-axis``: required field for specifying column from the stored data that will be plotted on the x-axis.
 * ``y-axis``: required field for specifying column from the stored data that will be plotted on the y-axis.
-* ``groupby``: optional field for specifying categorical column for plottting x and y-axis data for each category.
-* ``hover``: optional field for specifying one or more columns to display when hovering over the data points of the plot.
+* ``groupby``: optional field for specifying categorical column. Each category will be plotted separately.
+* ``hover``: optional field for specifying one or more columns to display when hovering over the data points on the plot.
 
 When required fields are set, the user can render the plot:
 
@@ -64,5 +64,5 @@ As soon as the plot is rendered, the user can view the plot:
 
 |br|
 
-*fresfolio* will store the plot in the path ``[save-dir]/[name].html``. In the same path, the selected "**Plot**" and "**Figure**" options will be stored ``[save-dir]/[name].json``. The next time the section is loaded, if the ``[name].html`` exists the "**VIEW PLOT**" button will be available. If the ``[name].json`` exists, the stored options will be loaded in the "**Plot**" and "**Figure**" options**".
+*fresfolio* will store the plot in the path ``[save-dir]/[name].html``. In the same path, the selected "**Plot**" and "**Figure**" options will be stored ``[save-dir]/[name].json``. When the section gets loaded, if the ``[name].html`` exists the "**VIEW PLOT**" button will be available. If the ``[name].json`` exists, the stored options will be loaded in the "**Plot**" and "**Figure**" options.
 
