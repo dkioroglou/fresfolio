@@ -17,6 +17,10 @@ The rationale behind *fresfolio* is the following:
 pip install fresfolio
 ```
 
+## Documentation
+
+* Documentation for [v0.2.1](https://fresfolio.readthedocs.io/en/v0.2.1/).
+
 # Project Status: Under Heavy Development
 
 This project is currently under active and heavy development. Features, APIs, and documentation are subject to change at any time.
