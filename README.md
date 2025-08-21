@@ -9,7 +9,7 @@ The rationale behind *fresfolio* is the following:
 * Each notebook has one or more **Chapters**. 
 * Each chapter has one or more **Sections**.
 
-*fresfolio* uses Flask as a backend and Vue3 are frontend.
+*fresfolio* uses Flask as a backend and Vue3 as a frontend.
 
 ## Installation
 
