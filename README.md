@@ -1,6 +1,6 @@
 <p align="center">
   <br>
-  <img width="400" src="./docs/images/fresfolio_overview.png" alt="logo of fresfolio repository">
+  <img width="800" src="./docs/images/fresfolio_overview.png" alt="logo of fresfolio repository">
   <br>
   <br>
 </p>
