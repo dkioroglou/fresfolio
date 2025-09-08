@@ -24,6 +24,15 @@ The rationale behind *fresfolio* is the following:
 pip install fresfolio
 ```
 
+## Demo
+
+<p align="center">
+  <br>
+  <img width="800" src="./docs/images/fresfolio_demo.gif" alt="demo of fresfolio">
+  <br>
+  <br>
+</p>
+
 ## Documentation
 
 You can read the full documentation here: [https://fresfolio.readthedocs.io](https://fresfolio.readthedocs.io/en/latest/)
