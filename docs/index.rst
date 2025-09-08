@@ -13,9 +13,13 @@ Welcome to fresfolio documentation!
    first_step_after_installation
    start_fresfolio
    create_project
-   creating_notebooks_and_chapters
-   creating_sections
+   creating_notebooks_chapters_and_sections
+   section_anatomy
    section_content
+   omilayers
+   omiplots
+   import_projects
+   broadcasting
 
 |br|
 
