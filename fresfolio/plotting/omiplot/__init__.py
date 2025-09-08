@@ -5,12 +5,10 @@ from pathlib import Path
 from fresfolio.utils import tools
 
 with app.app_context():
-    if current_app.config['has_omilayers']:
+    if current_app.config['has_omilayers'] and current_app.config['has_bokeh']:
         from omilayers import Omilayers
-        from pandas.api.types import is_string_dtype
-
-    if current_app.config['has_bokeh']:
         import pandas
+        from pandas.api.types import is_string_dtype
         from bokeh.models import ColumnDataSource, Legend
         from bokeh.plotting import figure, show, output_file, save
         from bokeh.models import HoverTool

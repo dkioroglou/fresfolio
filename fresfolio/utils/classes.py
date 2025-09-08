@@ -14,7 +14,6 @@ from collections import OrderedDict
 import re
 import traceback
 import secrets
-from numpy import record
 from fresfolio.utils import tools
 
 

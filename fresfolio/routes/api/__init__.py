@@ -12,12 +12,14 @@ from platform import system
 import subprocess
 from fresfolio.utils import tools
 from fresfolio.utils.classes import AppUtils, UserUtils, ProjectsUtils
-from fresfolio.plotting import omiplot
 
 with app.app_context():
     if current_app.config['has_omilayers']:
         from omilayers import Omilayers
         import pandas as pd
+
+    if current_app.config['has_omilayers'] and current_app.config['has_bokeh']:
+        from fresfolio.plotting import omiplot
 
 apiroutes = Blueprint('apiroutes', __name__)
 AUTL = AppUtils()

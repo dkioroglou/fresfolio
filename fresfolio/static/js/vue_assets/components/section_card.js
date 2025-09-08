@@ -445,7 +445,7 @@ const SectionCard = defineComponent({
             edit.caret.restore()
             edit.runCmd(
             'insertHTML',
-                '\\begin{omitable}<br>file:<br>layer:<br>allRows<br>\\end{omitable}'
+                '\\begin{omitable}<br>file:<br>layer:<br>nrows: 5<br>\\end{omitable}'
             )
             edit.focus()
         },
@@ -454,7 +454,7 @@ const SectionCard = defineComponent({
             edit.caret.restore()
             edit.runCmd(
             'insertHTML',
-                '\\begin{omiplot}<br>file:<br>layer:<br>plot:<br>save-to:<br>x:<br>y:<br>color:<br>hover:<br>caption:<br>\\end{omiplot}'
+                '\\begin{omiplot}<br>file:<br>layer:<br>name:<br>save-dir:<br>\\end{omiplot}'
             )
             edit.focus()
         }
