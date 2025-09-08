@@ -1,5 +1,3 @@
-from fresfolio.main import app
-from operator import is_
 from pathlib import Path
 import contextlib
 import sqlite3
@@ -18,16 +16,19 @@ import traceback
 import secrets
 from numpy import record
 from fresfolio.utils import tools
-from fresfolio.renderers.html_renderer import HtmlRenderer
 
-with app.app_context():
-    if current_app.config['has_omilayers']:
-        from omilayers import Omilayers
-        import duckdb
-        import pandas as pd
 
 APPDIR = Path("~/fresfolio").expanduser()
 APPDB = APPDIR.joinpath("fresfolio.db")
+
+if APPDIR.exists():
+    from fresfolio.main import app
+    from fresfolio.renderers.html_renderer import HtmlRenderer
+    with app.app_context():
+        if current_app.config['has_omilayers']:
+            from omilayers import Omilayers
+            import duckdb
+            import pandas as pd
 
 
 class User(UserMixin):
