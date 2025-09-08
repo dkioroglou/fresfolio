@@ -11,7 +11,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(here, "README.md"), encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
-VERSION = '0.2.1'
+VERSION = '0.2.2'
 DESCRIPTION = 'Flask and Vue3 based notebook for personal and research projects.'
 LONG_DESCRIPTION = 'A Flask and Vue3 based notebook for managing and sharing personal and research projects.'
 
@@ -21,6 +21,7 @@ setup(
     version=VERSION,
     author="Dimitrios Kioroglou",
     author_email="<d.kioroglou@hotmail.com>",
+    url="https://github.com/dkioroglou/fresfolio/tree/main",
     license="GPL-3.0",
     description=DESCRIPTION,
     long_description_content_type="text/markdown",
