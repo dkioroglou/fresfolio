@@ -21,13 +21,12 @@ APPDIR = Path("~/fresfolio").expanduser()
 APPDB = APPDIR.joinpath("fresfolio.db")
 
 if APPDIR.exists():
-    from fresfolio.main import app
     from fresfolio.renderers.html_renderer import HtmlRenderer
-    with app.app_context():
-        if current_app.config['has_omilayers']:
-            from omilayers import Omilayers
-            import duckdb
-            import pandas as pd
+
+if tools.is_module_installed("omilayers"):
+    from omilayers import Omilayers
+    import duckdb
+    import pandas as pd
 
 
 class User(UserMixin):

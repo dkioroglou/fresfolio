@@ -1,8 +1,6 @@
-from fresfolio.main import app
-from flask import Blueprint, jsonify, request, send_from_directory, current_app, session
+from flask import Blueprint, jsonify, request, send_from_directory
 from pathlib import Path
 import json
-from time import sleep
 import contextlib
 import sqlite3
 from flask_login import login_required
@@ -13,13 +11,12 @@ import subprocess
 from fresfolio.utils import tools
 from fresfolio.utils.classes import AppUtils, UserUtils, ProjectsUtils
 
-with app.app_context():
-    if current_app.config['has_omilayers']:
-        from omilayers import Omilayers
-        import pandas as pd
+if tools.is_module_installed("omilayers"):
+    from omilayers import Omilayers
+    import pandas as pd
 
-    if current_app.config['has_omilayers'] and current_app.config['has_bokeh']:
-        from fresfolio.plotting import omiplot
+if tools.is_module_installed("omilayers") and tools.is_module_installed("bokeh"):
+    from fresfolio.plotting import omiplot
 
 apiroutes = Blueprint('apiroutes', __name__)
 AUTL = AppUtils()
@@ -595,10 +592,10 @@ def upload_file_to_omilayer():
         uploaded_file = request.files['omilayerData']
         file_extension = Path(uploaded_file.filename).suffix
 
-        if file_extension == '.xls' and not current_app.config['has_xlrd']:
+        if file_extension == '.xls' and not tools.is_module_installed("xlrd"):
             return "Python package 'xlrd' is not installed"
 
-        if file_extension == '.xlsx' and not current_app.config['has_openpyxl']:
+        if file_extension == '.xlsx' and not tools.is_module_installed("openpyxl"):
             return "Python package 'openpyxl' is not installed", 400
 
         if not PUTL.file_is_inserted_to_omilayer(projectID, dbPath, layerName, uploaded_file, file_extension):

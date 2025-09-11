@@ -1,5 +1,3 @@
-from fresfolio.main import app
-from flask import current_app
 from inspect import trace
 from pathlib import Path
 from fresfolio.renderers.inline_renderers import InlineRenderers
@@ -7,9 +5,8 @@ from fresfolio.utils import tools
 import traceback
 import json
 
-with app.app_context():
-    if current_app.config['has_omilayers']:
-        from omilayers import Omilayers
+if tools.is_module_installed("omilayers"):
+    from omilayers import Omilayers
 
 inline_renderers = InlineRenderers()
 inline_renderers_methods = [method for method in dir(inline_renderers) if callable(getattr(inline_renderers, method)) and not method.startswith("__")]
