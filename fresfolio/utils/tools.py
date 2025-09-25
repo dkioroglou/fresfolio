@@ -46,7 +46,7 @@ def set_app_setting(setting:str, value:str) -> None:
 def get_app_setting(setting:str) -> Union[str, None]:
     with contextlib.closing(sqlite3.connect(APPDB)) as conn:
         with contextlib.closing(conn.cursor()) as c:
-            query = f"""
+            query = """
             SELECT value FROM settings 
             WHERE key=(?)
             """
@@ -136,8 +136,6 @@ def filename_exists(projectName:str, filename:str) -> bool:
     return (None, None)
 
 def get_filepaths_from_wildcard_filename(projectInfo:dict, filename:str) -> list:
-    projectDir, projectDB =  get_paths_for_project_dir_and_db(projectID)
-    projectName = get_project_name_based_on_id(projectID)
     wildcardPath = Path(projectInfo['dirFullPath']).joinpath(filename)
     files = list(wildcardPath.parent.glob(wildcardPath.name))
     filesJSON = []

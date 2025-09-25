@@ -6,11 +6,8 @@ import hashlib
 from flask_bcrypt import Bcrypt
 import json
 import shutil
-from typing import Union
-from flask import current_app
 from flask_login import UserMixin
 from collections import defaultdict
-from collections import OrderedDict
 import re
 import traceback
 import secrets
@@ -712,7 +709,7 @@ class ProjectsUtils:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         with contextlib.closing(sqlite3.connect(projectDB)) as conn:
             with contextlib.closing(conn.cursor()) as c:
-                query = f"""
+                query = """
                 SELECT content FROM sections 
                 WHERE id=(?)
                 """
@@ -827,17 +824,20 @@ class ProjectsUtils:
 
     def get_sections_IDs_based_on_search_bar_query(self, projectID:int, queryTerms:str) -> list:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
+        projects = {}
         query = "SELECT id FROM sections WHERE"
         if queryTerms.startswith("id:"):
             try:
                 IDs = queryTerms.split(":")[-1]
                 if "," in IDs:
-                    IDs = [(int(x.strip(" ")), ) for x in IDs.split(",") if x]
+                    # IDs = [(int(x.strip(" ")), ) for x in IDs.split(",") if x]
+                    IDs = [int(x.strip(" ")) for x in IDs.split(",") if x]
                 else:
-                    IDs = [(int(IDs.strip(" ")), )]
+                    IDs = [int(IDs.strip(" "))]
             except Exception:
                 traceback.print_exc()
                 IDs = []
+            projects[projectID] = IDs
         else:
             if "," in queryTerms:
                 connector = "OR"
@@ -861,6 +861,23 @@ class ProjectsUtils:
             sectionTerms =  list()
             tagsTerms = list()
             contentTerms = list()
+            _projects = list()
+
+            if queryTags['p']:
+                if "all" in queryTags['p']:
+                    allProjects = tools.get_projects_names_and_paths()
+                    for item in allProjects:
+                        projectName, projectPath = item
+                        _projectID = tools.get_project_ID_based_on_name(projectName)
+                        _projectDirectory, _projectDB = tools.get_paths_for_project_dir_and_db(_projectID)
+                        _projects.append((_projectID, _projectDB))
+                else:
+                    for projectName in queryTags['p']:
+                        _projectID = tools.get_project_ID_based_on_name(projectName)
+                        _projectDirectory, _projectDB = tools.get_paths_for_project_dir_and_db(_projectID)
+                        _projects.append((_projectID, _projectDB))
+            else:
+                _projects.append((projectID, projectDB))
 
             if queryTags['a']:
                 for term in queryTags['a']:
@@ -903,13 +920,16 @@ class ProjectsUtils:
                     query += f" {connector} "
                 query += f" {connector} ".join(contentTerms)
 
-            with contextlib.closing(sqlite3.connect(projectDB)) as conn:
-                with contextlib.closing(conn.cursor()) as c:
-                    c.execute(query)
-                    IDs = c.fetchall()
-        if IDs:
-            IDs = [res[0] for res in IDs]
-        return IDs
+            for item in _projects:
+                _projectID, _projectDB = item
+                with contextlib.closing(sqlite3.connect(_projectDB)) as conn:
+                    with contextlib.closing(conn.cursor()) as c:
+                        c.execute(query)
+                        IDs = c.fetchall()
+                if IDs:
+                    IDs = [res[0] for res in IDs]
+                projects[_projectID] = IDs
+        return projects
 
     def notebook_is_deleted(self, projectID:int, notebookID:int, keep_sections:bool) -> bool:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
@@ -975,7 +995,7 @@ class ProjectsUtils:
         try:
             with contextlib.closing(sqlite3.connect(projectDB)) as conn:
                 with contextlib.closing(conn.cursor()) as c:
-                    query = f"DELETE FROM chapters_sections_links WHERE chapterID=(?)"
+                    query = "DELETE FROM chapters_sections_links WHERE chapterID=(?)"
                     c.execute(query, (chapterID,))
                     conn.commit()
         except Exception:
@@ -1079,7 +1099,7 @@ class ProjectsUtils:
                 query = "INSERT INTO tables_info (name) VALUES (?)"
                 con.execute(query, [layerName])
 
-                query = f"UPDATE tables_info SET info = (?) WHERE name = (?)"
+                query = "UPDATE tables_info SET info = (?) WHERE name = (?)"
                 if layerDescription:
                     con.execute(query, [layerDescription, layerName])
                 else:
@@ -1178,6 +1198,8 @@ class SectionUtils:
         renderer = HtmlRenderer(self.projectID, self.projectName, self.content)
         renderedContent = renderer.render_section_content()
         return {
+                "projectID"         : self.projectID,
+                "projectName"       : tools.get_project_name_based_on_id(self.projectID),
                 "ID"                : self.ID,
                 "title"             : self.title,
                 "tags"              : self.tags,

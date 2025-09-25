@@ -1,19 +1,11 @@
 from flask import Blueprint, jsonify, request, send_from_directory
 from pathlib import Path
-import json
-import contextlib
-import sqlite3
-from flask_login import login_required
 import re
 import traceback
 from platform import system
 import subprocess
 from fresfolio.utils import tools
 from fresfolio.utils.classes import AppUtils, UserUtils, ProjectsUtils
-
-if tools.is_module_installed("omilayers"):
-    from omilayers import Omilayers
-    import pandas as pd
 
 if tools.is_module_installed("omilayers") and tools.is_module_installed("bokeh"):
     from fresfolio.plotting import omiplot
@@ -247,10 +239,12 @@ def app_api_get_sections_for_search():
         data = request.get_json()
         projectID = data['projectID']
         query = data['query']
-        sectionsIDs = PUTL.get_sections_IDs_based_on_search_bar_query(projectID, query)
+        sectionsIDsPerProject = PUTL.get_sections_IDs_based_on_search_bar_query(projectID, query)
         sectionsRendered = []
-        for sectionID in sectionsIDs:
-            sectionsRendered.append(PUTL.get_section_content_rendered(projectID, sectionID))
+        for projectID in sectionsIDsPerProject:
+            sectionsIDs = sectionsIDsPerProject[projectID]
+            for sectionID in sectionsIDs:
+                sectionsRendered.append(PUTL.get_section_content_rendered(projectID, sectionID))
         if sectionsRendered:
             return jsonify(sectionsRendered), 200
         return "Search query matched no sections.", 400

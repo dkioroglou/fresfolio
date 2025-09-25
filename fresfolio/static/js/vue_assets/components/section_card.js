@@ -2,7 +2,7 @@ const SectionCard = defineComponent({
     components: {
         SectionContent
     },
-    props: ['sectionData', 'expandSection', 'selectedProjectID', 'userBroadcasts'],
+    props: ['sectionData', 'expandSection', 'userBroadcasts'],
     data() {
         return {
             isExpanded: true,
@@ -70,7 +70,7 @@ const SectionCard = defineComponent({
                     },
                     body: JSON.stringify(
                         {
-                            "projectID": this.selectedProjectID, 
+                            "projectID": this.sectionData['projectID'], 
                             "sectionID": this.sectionData['ID']
                         }
                     )
@@ -108,7 +108,7 @@ const SectionCard = defineComponent({
                     },
                     body: JSON.stringify(
                         {
-                            "projectID": this.selectedProjectID, 
+                            "projectID": this.sectionData['projectID'], 
                             "sectionID": this.sectionData['ID'],
                             "newSectionContent": this.$refs.sectionEditorRef.getContentEl().innerText
                         }
@@ -150,7 +150,7 @@ const SectionCard = defineComponent({
                     },
                     body: JSON.stringify(
                         {
-                            "projectID": this.selectedProjectID, 
+                            "projectID": this.sectionData['projectID'], 
                             "sectionID": this.sectionData['ID'],
                             "newSectionTitle": this.newSectionTitle
                         }
@@ -181,7 +181,7 @@ const SectionCard = defineComponent({
                     },
                     body: JSON.stringify(
                         {
-                            "projectID": this.selectedProjectID, 
+                            "projectID": this.sectionData['projectID'], 
                             "sectionID": this.sectionData['ID']
                         }
                     )
@@ -217,7 +217,7 @@ const SectionCard = defineComponent({
                     },
                     body: JSON.stringify(
                         {
-                            "projectID": this.selectedProjectID, 
+                            "projectID": this.sectionData['projectID'], 
                             "sectionID": this.sectionData['ID']
                         }
                     )
@@ -240,7 +240,7 @@ const SectionCard = defineComponent({
         },
         uploadFilesToSection() {
             this.uploadToSectionFields = [
-                                            {"name":"projectID", "value":this.selectedProjectID},
+                                            {"name":"projectID", "value":this.sectionData['projectID']},
                                             {"name":"sectionID", "value":this.sectionData['ID']}
                                         ]
             this.showFileUploaderDialog = true;
@@ -280,7 +280,7 @@ const SectionCard = defineComponent({
                     },
                     body: JSON.stringify(
                         {
-                            "projectID": this.selectedProjectID, 
+                            "projectID": this.sectionData['projectID'], 
                             "sectionID": this.sectionData['ID'],
                             "sectionTags": scope.value 
                                            .split(',')
@@ -323,7 +323,7 @@ const SectionCard = defineComponent({
                     },
                     body: JSON.stringify(
                         {
-                            "projectID": this.selectedProjectID, 
+                            "projectID": this.sectionData['projectID'], 
                             "sectionID": this.sectionData['ID']
                         }
                     )
@@ -533,6 +533,7 @@ const SectionCard = defineComponent({
 
                     <!-- SECTION MENU BUTTONS START -->
                     <div class='absolute-top-left q-gutter-xs' style="height: 2px; font-size: 11px; margin-top: 1px; margin-left: 17px;">
+                        <q-badge color="info" outline>{{sectionData.projectName}}</q-badge>
                         <q-badge color="info" outline>id:{{sectionData.ID}}</q-badge>
                         <q-badge color="info" outline>{{sectionData.date}}</q-badge>
 

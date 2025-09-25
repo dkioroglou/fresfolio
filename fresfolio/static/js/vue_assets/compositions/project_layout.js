@@ -7,6 +7,7 @@ const ProjectLayout = defineComponent({
         return {
             leftDrawerOpen: true,
             leftDrawerWidth: 400,
+            searchDrawerOpen: false,
             notebooksDrawerOpen: true,
             notebooksFetched: false,
             chaptersBTNCollapseIcon: "chevron_left",
@@ -25,6 +26,7 @@ const ProjectLayout = defineComponent({
             showFileUploaderDialog: false,
             fetchedSectionsToRender: true,
             renderedSections: [],
+            searchSections: [],
             selectedNotebookID: null,
             selectedNotebookIDX: null,
             selectedNotebookName: null,
@@ -52,6 +54,24 @@ const ProjectLayout = defineComponent({
                 this.chaptersBTNCollapseIcon = "chevron_left";
             }
         },
+        toggleSearchDrawer() {
+            if (this.searchDrawerOpen) {
+                this.searchDrawerOpen = false;
+            } else {
+                this.searchDrawerOpen = true;
+            }
+        },
+        clearSearchSections() {
+            this.searchDrawerOpen = false;
+            this.searchSections = [];
+        },
+        searchDrawerWidth() {
+            if (this.$q.screen.lt.md) {
+                return this.$q.screen.width
+            } else {
+                return Math.round(this.$q.screen.width - this.leftDrawerWidth)
+            }
+        },
         selectNotebook(id) {
             this.selectedNotebookID = id
             this.selectedNotebookIDX = this.notebooks.findIndex(notebook => notebook.notebookID === id)
@@ -71,7 +91,8 @@ const ProjectLayout = defineComponent({
         computed: {
             selectedItem() {
                   return this.notebooks.find(notebook => notebook.notebookID === this.selectedNotebookID);
-            },
+            }
+            
         },
         async getChapterSections() {
             this.fetchedSectionsToRender = false;
@@ -321,8 +342,6 @@ const ProjectLayout = defineComponent({
             }
         },
         async search() {
-            this.renderedChapterIDX = "";
-            this.fetchedSectionsToRender = false
             try {
                 const response = await fetch("/api/get-sections-for-search", {
                     method: "POST",
@@ -335,13 +354,14 @@ const ProjectLayout = defineComponent({
                     }),
                 });
                 if (response.ok) {
-                    this.renderedSections = await response.json();
-                    this.fetchedSectionsToRender = true;
+                    this.searchSections = await response.json();
                     this.searchText = '';
+                    if (this.searchSections.length !== 0){
+                        this.searchDrawerOpen = true;
+                    }
                 } else {
                     const responseText = await response.text(); 
-                    this.fetchedSectionsToRender = true;
-                    this.renderedSections = [];
+                    this.searchSections = [];
                     this.$q.notify({
                         message: responseText,
                         color: 'negative',
@@ -577,6 +597,16 @@ const ProjectLayout = defineComponent({
                 {{selectedProjectName}}
             </q-toolbar-title>
 
+            <q-btn
+                round
+                class="q-mr-md"
+                color="teal"
+                size="md"
+                v-if="searchSections.length"
+                icon="search"
+                @click="toggleSearchDrawer()"
+            />
+
             <!-- SEARCH BAR START -->
             <q-input 
                 filled
@@ -774,6 +804,53 @@ const ProjectLayout = defineComponent({
 
     </q-drawer>
 
+
+    <!-- SEARCH DRAWER START -->
+    <q-drawer 
+        overlay
+        v-model="searchDrawerOpen" 
+        side='right' 
+        class="app-page-container-color" 
+        :width="searchDrawerWidth()"
+    >
+        <div class="col q-px-xl">
+
+            <div class="q-mt-md q-mb-md row items-center justify-between">
+                <div class="row items-center">
+                    <q-btn 
+                        round
+                        color="primary" 
+                        size='sm' 
+                        @click="toggleSearchDrawer()" 
+                        icon="close"
+                    />
+                    <h3 class="q-ml-md q-ma-none">Search results</h3>
+                </div>
+                <q-btn 
+                    color="primary" 
+                    size='sm' 
+                    @click="clearSearchSections()" 
+                    label="Clear"
+                />
+            </div>
+
+            <template v-if="searchSections.length" class="q-px-md">
+                <section-card 
+                    v-for="(sectionJSON, index) in searchSections" :key="index" 
+                    :userBroadcasts="userBroadcasts"
+                    :section-data="searchSections[index]" 
+                    :expand-section="expandAll"
+                    @delete-section="deleteRenderedSection"
+                >
+            </template>
+            <!-- TODO change deleteRenderedSection -->
+
+        </div>
+    </q-drawer>
+    <!-- SEARCH DRAWER END -->
+
+
+
     <q-page-container class="app-page-container-color">
         <q-page class="q-px-xl">
 
@@ -912,7 +989,6 @@ const ProjectLayout = defineComponent({
                         <div v-else class="q-mt-md">
                             <section-card 
                                 v-for="(sectionJSON, index) in renderedSections" :key="index" 
-                                :selectedProjectID="selectedProjectID"
                                 :userBroadcasts="userBroadcasts"
                                 :section-data="renderedSections[index]" 
                                 :expand-section="expandAll"
