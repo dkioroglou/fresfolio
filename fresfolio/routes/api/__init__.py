@@ -240,6 +240,8 @@ def app_api_get_sections_for_search():
         projectID = data['projectID']
         query = data['query']
         sectionsIDsPerProject = PUTL.get_sections_IDs_based_on_search_bar_query(projectID, query)
+        if not sectionsIDsPerProject:
+            return "Search query matched no sections.", 400
         sectionsRendered = []
         for projectID in sectionsIDsPerProject:
             sectionsIDs = sectionsIDsPerProject[projectID]
@@ -275,7 +277,7 @@ def app_api_delete_section():
         
         if sectionDirDeleted and sectionInDBDeleted:
             return "", 200
-        return "Cannot delete section.", 200
+        return "Cannot delete section.", 400
     except Exception:
         traceback.print_exc()
         return "Something went wrong", 400
@@ -629,4 +631,35 @@ def api_delete_omilayer():
         traceback.print_exc()
         return 'Cannot delete layer', 400
     return "", 200
+
+@apiroutes.route('/api/get-view-sections', methods=['POST'])
+@tools.conditional_login_required()
+def app_api_get_view_sections():
+    # try:
+    data = request.get_json()['parsedArgs']
+    projectName, *sectionsIDs = data
+    try:
+        projectID = tools.get_project_ID_based_on_name(projectName.strip())
+    except Exception:
+        traceback.print_exc()
+        return 'Project does not exist', 400
+
+    try:
+        sectionsIDs = [int(x.strip()) for x in sectionsIDs]
+    except Exception:
+        traceback.print_exc()
+        return 'Section IDs are not integers', 400
+
+    try:
+        renderedSections = []
+        for sectionID in sectionsIDs:
+            renderedSection = PUTL.get_section_content_rendered(projectID, sectionID)
+            if not renderedSection:
+                return 'One or more section IDs not found.', 400
+            renderedSections.append(renderedSection)
+    except Exception:
+        traceback.print_exc()
+        return 'One or more section IDs not found.', 400
+    
+    return jsonify(renderedSections), 200
 

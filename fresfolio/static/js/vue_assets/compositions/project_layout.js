@@ -8,6 +8,8 @@ const ProjectLayout = defineComponent({
             leftDrawerOpen: true,
             leftDrawerWidth: 400,
             searchDrawerOpen: false,
+            viewDrawerOpen: false,
+            pinnedDrawerOpen: false,
             notebooksDrawerOpen: true,
             notebooksFetched: false,
             chaptersBTNCollapseIcon: "chevron_left",
@@ -27,6 +29,8 @@ const ProjectLayout = defineComponent({
             fetchedSectionsToRender: true,
             renderedSections: [],
             searchSections: [],
+            viewSections: [],
+            pinnedSections: [],
             selectedNotebookID: null,
             selectedNotebookIDX: null,
             selectedNotebookName: null,
@@ -55,15 +59,43 @@ const ProjectLayout = defineComponent({
             }
         },
         toggleSearchDrawer() {
+            this.viewDrawerOpen = false;
+            this.pinnedDrawerOpen = false;
             if (this.searchDrawerOpen) {
                 this.searchDrawerOpen = false;
             } else {
                 this.searchDrawerOpen = true;
             }
         },
+        toggleViewDrawer() {
+            this.searchDrawerOpen = false;
+            this.pinnedDrawerOpen = false;
+            if (this.viewDrawerOpen) {
+                this.viewDrawerOpen = false;
+            } else {
+                this.viewDrawerOpen = true;
+            }
+        },
+        togglePinnedDrawer() {
+            this.searchDrawerOpen = false;
+            this.viewDrawerOpen = false;
+            if (this.pinnedDrawerOpen) {
+                this.pinnedDrawerOpen = false;
+            } else {
+                this.pinnedDrawerOpen = true;
+            }
+        },
         clearSearchSections() {
             this.searchDrawerOpen = false;
             this.searchSections = [];
+        },
+        clearViewSections() {
+            this.viewDrawerOpen = false;
+            this.viewSections = [];
+        },
+        clearPinnedSections() {
+            this.pinnedDrawerOpen = false;
+            this.pinnedSections = [];
         },
         searchDrawerWidth() {
             if (this.$q.screen.lt.md) {
@@ -357,6 +389,8 @@ const ProjectLayout = defineComponent({
                     this.searchSections = await response.json();
                     this.searchText = '';
                     if (this.searchSections.length !== 0){
+                        this.viewDrawerOpen = false;
+                        this.pinnedDrawerOpen = false;
                         this.searchDrawerOpen = true;
                     }
                 } else {
@@ -374,6 +408,58 @@ const ProjectLayout = defineComponent({
         },
         deleteRenderedSection(sectionID) {
             this.renderedSections = this.renderedSections.filter(section => section.ID !== sectionID);
+            this.searchSections = this.searchSections.filter(section => section.ID !== sectionID);
+            this.pinnedSections = this.pinnedSections.filter(section => section.ID !== sectionID);
+        },
+        pinSection(projectID, sectionID) {
+            const sectionPinned = this.pinnedSections.find(section => section.ID === sectionID && section.projectID === projectID);
+            if (sectionPinned) {
+                this.pinnedSections = this.pinnedSections.filter(section => section.ID !== sectionID && section.projectID !== projectID);
+            } else {
+                sectionInRenderedSections = this.renderedSections.find(section => section.ID === sectionID && section.projectID === projectID);
+                sectionInSearchSections = this.searchSections.find(section => section.ID === sectionID && section.projectID === projectID);
+                if (sectionInRenderedSections) {
+                    const sectionJSON = this.renderedSections.find(section => section.ID === sectionID && section.projectID === projectID);
+                    this.pinnedSections.push({ ...sectionJSON })  
+                } else if (sectionInSearchSections) {
+                    const sectionJSON = this.searchSections.find(section => section.ID === sectionID && section.projectID === projectID);
+                    this.pinnedSections.push({ ...sectionJSON })  
+
+                }
+            }
+        },
+        async getView(parsedArgs) {
+            try {
+                const response = await fetch("/api/get-view-sections", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(
+                        {
+                            "parsedArgs": parsedArgs
+                        }
+                    )
+                });
+
+                if (response.ok) {
+                    this.viewSections = await response.json();
+                    if (this.viewSections.length) {
+                        this.searchDrawerOpen = false;
+                        this.pinnedDrawerOpen = false;
+                        this.viewDrawerOpen = true;
+                    }
+                } else {
+                    const responseText = await response.text()
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
         },
         uploadFilesToSection(sectionID) {
             this.sectionIDToUploadFiles = sectionID
@@ -596,6 +682,26 @@ const ProjectLayout = defineComponent({
             <q-toolbar-title>
                 {{selectedProjectName}}
             </q-toolbar-title>
+
+            <q-btn
+                round
+                class="q-mr-md"
+                color="teal"
+                size="md"
+                v-if="viewSections.length"
+                icon="visibility"
+                @click="toggleViewDrawer()"
+            />
+
+            <q-btn
+                round
+                class="q-mr-md"
+                color="teal"
+                size="md"
+                v-if="pinnedSections.length"
+                icon="push_pin"
+                @click="togglePinnedDrawer()"
+            />
 
             <q-btn
                 round
@@ -841,13 +947,106 @@ const ProjectLayout = defineComponent({
                     :section-data="searchSections[index]" 
                     :expand-section="expandAll"
                     @delete-section="deleteRenderedSection"
+                    @pin-section="pinSection"
+                    @get-view="getView"
                 >
             </template>
-            <!-- TODO change deleteRenderedSection -->
 
         </div>
     </q-drawer>
     <!-- SEARCH DRAWER END -->
+
+
+    <!-- VIEW DRAWER START -->
+    <q-drawer 
+        overlay
+        v-model="viewDrawerOpen" 
+        side='right' 
+        class="app-page-container-color" 
+        :width="searchDrawerWidth()"
+    >
+        <div class="col q-px-xl">
+
+            <div class="q-mt-md q-mb-md row items-center justify-between">
+                <div class="row items-center">
+                    <q-btn 
+                        round
+                        color="primary" 
+                        size='sm' 
+                        @click="toggleViewDrawer()" 
+                        icon="close"
+                    />
+                    <h3 class="q-ml-md q-ma-none">Sections view</h3>
+                </div>
+                <q-btn 
+                    color="primary" 
+                    size='sm' 
+                    @click="clearViewSections()" 
+                    label="Clear"
+                />
+            </div>
+
+            <template v-if="viewSections.length" class="q-px-md">
+                <section-card 
+                    v-for="(sectionJSON, index) in viewSections" :key="index" 
+                    :userBroadcasts="userBroadcasts"
+                    :section-data="viewSections[index]" 
+                    :expand-section="expandAll"
+                    @delete-section="deleteRenderedSection"
+                    @pin-section="pinSection"
+                    @get-view="getView"
+                >
+            </template>
+
+        </div>
+    </q-drawer>
+    <!-- VIEW DRAWER END -->
+
+
+    <!-- PINNED DRAWER START -->
+    <q-drawer 
+        overlay
+        v-model="pinnedDrawerOpen" 
+        side='right' 
+        class="app-page-container-color" 
+        :width="searchDrawerWidth()"
+    >
+        <div class="col q-px-xl">
+
+            <div class="q-mt-md q-mb-md row items-center justify-between">
+                <div class="row items-center">
+                    <q-btn 
+                        round
+                        color="primary" 
+                        size='sm' 
+                        @click="togglePinnedDrawer()" 
+                        icon="close"
+                    />
+                    <h3 class="q-ml-md q-ma-none">Pinned sections</h3>
+                </div>
+                <q-btn 
+                    color="primary" 
+                    size='sm' 
+                    @click="clearPinnedSections()" 
+                    label="Clear"
+                />
+            </div>
+
+            <template v-if="pinnedSections.length" class="q-px-md">
+                <section-card 
+                    v-for="(sectionJSON, index) in pinnedSections" :key="index" 
+                    :userBroadcasts="userBroadcasts"
+                    :section-data="pinnedSections[index]" 
+                    :expand-section="expandAll"
+                    @delete-section="deleteRenderedSection"
+                    @pin-section="pinSection"
+                    @get-view="getView"
+                >
+            </template>
+
+        </div>
+    </q-drawer>
+    <!-- PINNED DRAWER END -->
 
 
 
@@ -993,6 +1192,8 @@ const ProjectLayout = defineComponent({
                                 :section-data="renderedSections[index]" 
                                 :expand-section="expandAll"
                                 @delete-section="deleteRenderedSection"
+                                @pin-section="pinSection"
+                                @get-view="getView"
                             >
                         </div>
                     </div>

@@ -1,4 +1,3 @@
-from inspect import trace
 from pathlib import Path
 from fresfolio.renderers.inline_renderers import InlineRenderers
 from fresfolio.utils import tools
@@ -107,7 +106,7 @@ class HtmlTableTag:
             try:
                 if self.tagArgs.get("project", False):
                     self.projectName = self.tagArgs['project']
-                    self.projectInfo = tools.get_project_info(projectName)
+                    self.projectInfo = tools.get_project_info(self.projectName)
 
                 if self.tagArgs.get("file", False):
                     self.filename = self.tagArgs['file']
@@ -241,6 +240,7 @@ class HtmlFiguresTag:
         self.filename = None
 
     def render_lines(self) -> tuple: 
+
         def render_tmpJSON(tmpJSON):
             if not tmpJSON.get("project", False):
                 tmpJSON['project'] = self.projectInfo
@@ -268,7 +268,7 @@ class HtmlFiguresTag:
             try:
                 if self.tagArgs.get("project", False):
                     self.projectName = self.tagArgs['project']
-                    self.projectInfo = tools.get_project_info(projectName)
+                    self.projectInfo = tools.get_project_info(self.projectName)
 
                 if self.tagArgs.get("file", False):
                     self.filename = self.tagArgs['file']
@@ -277,7 +277,6 @@ class HtmlFiguresTag:
                     self.figsTitle = self.tagArgs['title']
             except Exception:
                 traceback.print_exc()
-                report_emtpy_table_due_to_error(self.tagArgs)
                 return (figsJSON, self.figureIDX, self.figsTitle)
         
         if self.filename:

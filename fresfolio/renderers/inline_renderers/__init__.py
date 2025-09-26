@@ -1,8 +1,6 @@
-from pathlib import Path
 import re
 import traceback
-from typing import List, Tuple, Dict
-import os
+
 
 class InlineRenderers:
 
@@ -16,7 +14,8 @@ class InlineRenderers:
                 "text-green": re.compile(r'\\text-green{(.*?)}'),
                 "icon": re.compile(r'\\(todo|done|info|error)'),
                 "math": re.compile(r'(?<!\w)\$(.+?)\$(?!\w)'),
-                "button": re.compile(r'\\button{\s*(.*?)\s*,\s*(.*?)\s*}')
+                "button": re.compile(r'\\button{\s*(.*?)\s*,\s*(.*?)\s*}'),
+                "view": re.compile(r'\\view\{([\w-]+)\s*:\s*([^}]*)\}')
                 }
 
     def render_markdown_bold_text_markups(self, text: str) -> str:
@@ -148,69 +147,12 @@ class InlineRenderers:
             return text
         return self.PATTERNS['button'].sub(render_markup, text)
 
-    def render_link_markups(self, text: str) -> str:
-        """Convert latex style link to html style <a> tag."""
-        if "\\link{" in text:
-            probe = r'\\\\link{(.*?)}'
-            links = re.findall(probe, text)
-            for link in links:
-                try:
-                    if ',' in link:
-                        referenceText, url = link.split(',', 1)
-                        referenceText = referenceText.strip()
-                        url = url.strip()
-                        if url.startswith('/'):
-                            filename = Path(url).name
-                            extension = Path(url).suffix
-                            if extension in svgIcons:
-                                renderedText = '<a href="{}"><img id="todoIcon" src="/static/fresfolio/icons/{}" alt="drawing" width="20"/> {}</a>'.format(url, svgIcons[extension], referenceText)
-                            else:
-                                renderedText = '<a href="{}">{}</a>'.format(url, referenceText)
-                        else:
-                            if isUrlImage(url):
-                                renderedText = """
-                                <div class="row q-mb-md"><frn-tag>figures</frn-tag></div><div class="row q-gutter-md q-ml-xl items-start">
-                                    <div class="col-2">
-                                        <a href="{}" target="_blank">
-                                            <img src="{}" class="frn-image cursor-pointer q-hoverable"></img>
-                                        </a>
-                                        <div class="frn-image-caption">{}</div>
-                                    </div>
-                                </div>
-                                    """.format(url, url, referenceText)
-                            elif isUrlVideo(url, referenceText):
-                                renderedText = """
-                                <div class="row q-mb-md"><frn-tag>videos</frn-tag></div><div class="row q-gutter-md q-ml-xl items-start">
-                                    <div class="col-2">
-                                        <iframe src="{}" width="640" height="360" frameborder="0" scrolling="no" allowfullscreen title="{}"></iframe>
-                                    </div>
-                                </div>
-                                    """.format(url, referenceText)
-                            else:
-                                renderedText = '<a href="{}">{}</a>'.format(url, referenceText)
-                    else:
-                        if link.startswith('/'):
-                            filename = Path(link).name
-                            extension = Path(link).suffix
-                            if extension in svgIcons:
-                                renderedText = '<a href="{}"><img id="todoIcon" src="/static/fresfolio/icons/{}" alt="drawing" width="20"/> {}</a>'.format(link, svgIcons[extension], filename)
-                            else:
-                                renderedText = '<a href="{}">{}</a>'.format(link, filename)
-                        else:
-                            if isUrlImage(link):
-                                renderedText = """
-                                <div class="row q-mb-md"><frn-tag>figures</frn-tag></div><div class="row q-gutter-md q-ml-xl items-start">
-                                    <div class="col-2">
-                                        <a href="{}" target="_blank">
-                                            <img src="{}" class="frn-image cursor-pointer q-hoverable"></img>
-                                        </a>
-                                        <div class="frn-image-caption">{}</div>
-                                    </div>
-                                </div>
-                                    """.format(link, link, 'External image')
-                            else:
-                                renderedText = '<a href="{}">{}</a>'.format(link, link)
-                except Exception:
-                    text = markupError("link", "Error parsing markup.", text)
-                text = text.replace(f'\\link{{{link}}}', renderedText)
-        return text
+    def render_view_markups(self, text: str) -> str:
+        """Convert view markups."""
+        def render_markup(match):
+            project = match.group(1)
+            IDs = match.group(2)
+            renderedText = f'<action-link data-args="{project},{IDs}" style="cursor: pointer;" class="app-view-link">{project}:{IDs}</action-link>'
+            return renderedText
+        return self.PATTERNS['view'].sub(render_markup, text)
+

@@ -457,8 +457,13 @@ const SectionCard = defineComponent({
                 '\\begin{omiplot}<br>file:<br>layer:<br>name:<br>save-dir:<br>\\end{omiplot}'
             )
             edit.focus()
+        },
+        getView(parsedArgs) {
+            this.$emit('get-view', parsedArgs)
+        },
+        pinSection(projectID, sectionID) {
+            this.$emit('pin-section', projectID, sectionID)
         }
-
     },
     watch: {
         expandSection(newVal) {
@@ -575,6 +580,35 @@ const SectionCard = defineComponent({
                         </q-btn>
                         <!-- SECTION CHANGE TITLE BUTTON END -->
 
+                        <!-- SECTION PIN BUTTON START -->
+                        <q-btn 
+                            round 
+                            size="xs" 
+                            color="secondary" 
+                            icon="push_pin" 
+                            @click="pinSection(sectionData['projectID'], sectionData['ID'])"
+                        >
+                            <q-tooltip class="bg-teal" :offset="[10, 10]">
+                                Pin section.
+                            </q-tooltip>
+                        </q-btn>
+                        <!-- SECTION PIN BUTTON END -->
+
+                        <!-- SECTION CREATE DIRECTORY BUTTON START -->
+                        <q-btn 
+                            round 
+                            size="xs" 
+                            color="secondary" 
+                            icon="folder" 
+                            @click="createSectionDirectory"
+                            :disable="sectionData['section_dir_exists'] === 1"
+                        >
+                            <q-tooltip class="bg-teal" :offset="[10, 10]">
+                                Create directory.
+                            </q-tooltip>
+                        </q-btn>
+                        <!-- SECTION CREATE DIRECTORY BUTTON END -->
+
                         <!-- SECTION ACTIONS BUTTON START -->
                         <q-btn-dropdown 
                             rounded 
@@ -585,11 +619,6 @@ const SectionCard = defineComponent({
                             :menu-offset="[0,10]"
                         >
                             <q-list separator style="background-color: var(--q-secondary); color: white;">
-                                <q-item clickable v-close-popup @click="createSectionDirectory">
-                                    <q-item-section>
-                                        <q-item-label>Create section directory</q-item-label>
-                                    </q-item-section>
-                                </q-item>
 
                                 <q-item v-if="sectionData['section_dir_exists'] === 1" clickable v-close-popup @click="getSectionDirectoryTree">
                                     <q-item-section>
@@ -836,7 +865,7 @@ const SectionCard = defineComponent({
                                                 <q-card class="app-card no-padding">
                                                     <q-card-section class="no-padding">
                                                         <template v-for="(cJSON, cIDX) in sJSON['content']" :key="cIDX">
-                                                            <section-content :cJSON=cJSON :cIDX=cIDX></section-content-folded>
+                                                            <section-content :cJSON=cJSON :cIDX=cIDX @get-view="getView"></section-content>
                                                         </template>
                                                     </q-card-section>
                                                 </q-card>
@@ -846,7 +875,7 @@ const SectionCard = defineComponent({
 
                                     <div v-else>
                                         <template v-for="(cJSON, cIDX) in sJSON['content']" :key="cIDX">
-                                            <section-content :cJSON=cJSON :cIDX=cIDX></section-content>
+                                            <section-content :cJSON=cJSON :cIDX=cIDX @get-view="getView"></section-content>
                                         </template>
                                     </div>
                                 </div>

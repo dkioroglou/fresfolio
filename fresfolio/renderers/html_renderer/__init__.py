@@ -1,5 +1,4 @@
 import re
-import inspect
 import traceback
 from fresfolio.utils import tools
 from fresfolio.renderers.multiline_renderers import (HtmlParagraphTag, 
@@ -131,7 +130,7 @@ class HtmlRenderer:
                 else:
                     self._addNewContentToLastContainer(self.begin_tag)
                     renderer = rendererCLS(self.buffer)
-                if not self.begin_tag in customRenderedTags:
+                if self.begin_tag not in customRenderedTags:
                     self._addHTMLToLastInsertedContent(renderer.render_lines())
                 self.bufferRaw = []
                 self.buffer = []

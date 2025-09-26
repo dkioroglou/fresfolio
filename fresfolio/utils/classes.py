@@ -872,10 +872,17 @@ class ProjectsUtils:
                         _projectDirectory, _projectDB = tools.get_paths_for_project_dir_and_db(_projectID)
                         _projects.append((_projectID, _projectDB))
                 else:
-                    for projectName in queryTags['p']:
-                        _projectID = tools.get_project_ID_based_on_name(projectName)
-                        _projectDirectory, _projectDB = tools.get_paths_for_project_dir_and_db(_projectID)
-                        _projects.append((_projectID, _projectDB))
+                    try:
+                        for projectName in queryTags['p']:
+                            _projectID = tools.get_project_ID_based_on_name(projectName)
+                            if _projectID is None:
+                                raise ValueError(f"Project '{projectName}' does not exist.")
+                                return []
+                            _projectDirectory, _projectDB = tools.get_paths_for_project_dir_and_db(_projectID)
+                            _projects.append((_projectID, _projectDB))
+                    except Exception:
+                        traceback.print_exc()
+                        return []
             else:
                 _projects.append((projectID, projectDB))
 

@@ -235,6 +235,7 @@ const ProjectsLayout = defineComponent({
         }
     },
     async mounted () {
+        localStorage.clear();
         if (this.projectIdLoad !== "" && this.projectNameLoad !== "") {
             this.loadProject(this.projectIdLoad, this.projectNameLoad)
         } else {

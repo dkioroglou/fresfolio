@@ -399,8 +399,16 @@ const SectionContent = defineComponent({
                 this.showSetSelectedOmilayerDescriptionDialog = false;
             }
 
-        }
+        },
 
+        delegateViewClick(event) {
+            const el = event.target.closest("action-link");
+            if (!el) return;
+
+            const args = el.getAttribute("data-args");
+            const parsedArgs = args ? args.split(",").map(a => a.trim()) : [];
+            this.$emit('get-view', parsedArgs)
+        }
     },
     watch: {
     },
@@ -441,6 +449,7 @@ const SectionContent = defineComponent({
         card-class="bg-info text-white"
         color="amber" 
         virtual-scroll
+        @click="delegateViewClick"
         >
 
         <template v-slot:body-cell="props">
@@ -871,7 +880,7 @@ const SectionContent = defineComponent({
 
 
 <div v-else>
-    <span v-html="cJSON['html']" v-render-katex></span>
+    <span v-html="cJSON['html']" v-render-katex @click="delegateViewClick"></span>
 </div>
 
     <!-- SHOW FIGURE DIALOG START -->

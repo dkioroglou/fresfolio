@@ -117,13 +117,13 @@ blockquote {
 
 a,
 a:focus {
-    color: #2c83bf;
+    color: #04baff;
     text-decoration: none;
     transition: all 0.3s;
 }
 
 a:hover {
-    color: #02cfe9;
+    color: #c38440;
 }
 
 thead tr:first-child th{
@@ -343,3 +343,17 @@ iframe {
   white-space: nowrap;
 }
 
+.app-view-link {
+    color: #04baff;         /* typical hyperlink blue */
+    cursor: pointer;        /* shows pointer on hover */
+    transition: color 0.2s; /* smooth hover transition */
+}
+
+.app-view-link:hover {
+    color: #c38440;         /* visited-link purple-ish on hover */
+    text-decoration: none;  /* optional: remove underline on hover */
+}
+
+.app-view-link:active {
+    color: #ab5f0d;         /* mimic active click color */
+}
