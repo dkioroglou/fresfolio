@@ -414,7 +414,7 @@ const ProjectLayout = defineComponent({
         pinSection(projectID, sectionID) {
             const sectionPinned = this.pinnedSections.find(section => section.ID === sectionID && section.projectID === projectID);
             if (sectionPinned) {
-                this.pinnedSections = this.pinnedSections.filter(section => section.ID !== sectionID && section.projectID !== projectID);
+                this.pinnedSections = this.pinnedSections.filter(section => !(section.ID === sectionID && section.projectID === projectID));
             } else {
                 sectionInRenderedSections = this.renderedSections.find(section => section.ID === sectionID && section.projectID === projectID);
                 sectionInSearchSections = this.searchSections.find(section => section.ID === sectionID && section.projectID === projectID);
