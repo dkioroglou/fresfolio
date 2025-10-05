@@ -233,7 +233,7 @@ class HtmlRenderer:
                 self.buffer.append(rawLine)
                 continue
 
-            if line.startswith("* ") or line.startswith("- "):
+            if line.startswith("* ") or line.startswith("- ") or line.startswith("= "):
                 if not self.begin_tag:
                     self.begin_tag = "list"
                     self.buffer.append(line)

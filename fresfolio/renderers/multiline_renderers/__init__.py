@@ -51,7 +51,9 @@ class HtmlListTag:
         renderedLines = []
         for line in self.lines:
             if line.startswith("*") or line.startswith("-"):
-                line = "<li>"+line.replace('*', '', 1).replace("-", "", 1).strip()+"</li>"
+                line = "<li>"+line[1:].lstrip()+"</li>"
+            elif line.startswith("="):
+                line = '<li style="list-style-type:none;">'+line[1:].lstrip()+"</li>"
             renderedLines.append(pass_line_through_inline_renderers(line))
         return self.open_tag+"<br>".join(renderedLines)+self.close_tag
 

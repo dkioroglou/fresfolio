@@ -84,15 +84,15 @@ class InlineRenderers:
                                      'Rscript': True
                                      }
                     if docExtensions.get(extension, False):
-                        renderedText = f'<span class="app-badge">{extension.upper()}</span><a href="{url}">{label}</a>'
+                        renderedText = f'<span class="app-badge">{extension.upper()}</span><a class="app-link" href="{url}">{label}</a>'
                     else:
-                        renderedText = f'<a href="{url}">{label}</a>'
+                        renderedText = f'<a class="app-link" href="{url}">{label}</a>'
                 except Exception:
                     traceback.print_exc()
-                    renderedText = f'<a href="{url}">{label}</a>'
+                    renderedText = f'<a class="app-link" href="{url}">{label}</a>'
                     return renderedText
             else:
-                renderedText = f'<a href="{url}">{label}</a>'
+                renderedText = f'<a class="app-link" href="{url}">{label}</a>'
             return renderedText
         return self.PATTERNS['link'].sub(render_markup, text)
 
@@ -152,7 +152,7 @@ class InlineRenderers:
         def render_markup(match):
             project = match.group(1)
             IDs = match.group(2)
-            renderedText = f'<action-link data-args="{project},{IDs}" style="cursor: pointer;" class="app-view-link">{project}:{IDs}</action-link>'
+            renderedText = f'<action-link data-args="{project},{IDs}" style="cursor: pointer;" class="app-link">{project}:{IDs}</action-link>'
             return renderedText
         return self.PATTERNS['view'].sub(render_markup, text)
 
