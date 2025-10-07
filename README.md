@@ -41,7 +41,14 @@ You can read the full documentation here: [https://fresfolio.readthedocs.io](htt
 
 Contributions are welcome! Whether you want to report a bug, suggest a feature, or improve the code/documentation, your help is appreciated.
 
-# Project Status: Under Heavy Development
+## Project Status: Under Heavy Development
 
 This project is currently under active and heavy development. Features, APIs, and documentation are subject to change at any time.
+
+## The N commandments
+
+List of design rules that should not be broken, unless there is a good reason for it.
+
+1. Commmit messages should have the prefix "FEATURE" for new features, "OPTIMIZED" when enhancing established and working functionality, "FIXED" for fixing bugs and "MINOR" for insignificant commits.
+2. Projects should be self-contained directories to facilitate sharing.
 
