@@ -698,6 +698,8 @@ const SectionCard = defineComponent({
                                 ]
                                 ]"
                                 class="app-section-editor"
+                                :content-style="{ overflowY: 'auto', flex: 1 }"
+                                style="display: flex; flex-direction: column; height: 600px;"
                             >
                                 <template v-slot:linktag>
                                     <q-btn
