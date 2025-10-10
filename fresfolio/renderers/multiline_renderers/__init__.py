@@ -90,6 +90,7 @@ class HtmlTableTag:
         self.projectInfo = tools.get_project_info(projectName)
         self.filename = None
         self.title = None
+        self.delimiter = None
         self.lines = lines
         self.tableIDX = tableIDX
         self.tagArgs = tools.convert_tag_args_to_json(tagArgs)
@@ -115,6 +116,9 @@ class HtmlTableTag:
 
                 if self.tagArgs.get("title", False):
                     self.title = self.tagArgs['title']
+
+                if self.tagArgs.get("sep", False):
+                    self.delimiter = self.tagArgs['sep']
             except Exception:
                 traceback.print_exc()
                 report_emtpy_table_due_to_error(self.tagArgs)
@@ -208,18 +212,21 @@ class HtmlTableTag:
                 else:
                     report_emtpy_table_due_to_error(filePath.name)
             return (tablesJSON, self.tableIDX)
+
+        if self.delimiter is None:
+            self.delimiter = ","
         for line in self.lines:
             if not jsonCols:
-                if "," in line:
-                    columns = [col.strip() for col in line.split(",")]
+                if self.delimiter in line:
+                    columns = [col.strip() for col in line.split(self.delimiter)]
                 else:
                     columns = [line.strip()]
                 for idx,col in enumerate(columns, start=1):
                     jsonCols.append({"name":f"col{idx}", "field":f"col{idx}", "align":"left", "label":col, "sortable": True})
                 continue
 
-            if "," in line:
-                line = [pass_line_through_inline_renderers(cell.strip()) for cell in line.split(",")]
+            if self.delimiter in line:
+                line = [pass_line_through_inline_renderers(cell.strip()) for cell in line.split(self.delimiter)]
             else:
                 line = [pass_line_through_inline_renderers(line)]
             jsonLines.append({f"col{idx}":val for idx,val in enumerate(line, start=1)})
