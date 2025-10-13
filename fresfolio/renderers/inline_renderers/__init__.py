@@ -9,7 +9,7 @@ class InlineRenderers:
                 "bold": re.compile(r'\*\*(.*?)\*\*'),
                 "italics": re.compile(r'__(.*?)__'),
                 "code": re.compile(r'`(.*?)`'),
-                "link": re.compile(r'\[(.*?)\]\((.*?)\)'),
+                "link": re.compile(r'\[(.*?)\]\((\S+?)\)(?=\s|,|\.|\)|$)'),
                 "text-red": re.compile(r'\\text-red{(.*?)}'),
                 "text-green": re.compile(r'\\text-green{(.*?)}'),
                 "icon": re.compile(r'\\(todo|done|info|error)'),

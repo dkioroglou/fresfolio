@@ -7,4 +7,4 @@ This is a bug fix release for various issues discovered after we released v0.2.8
 * FEATURE: search results are rendered in their own drawer and search queries can also be performed across all projects.
 * OPTIMIZED: changed color of links and inline code text.
 * FIXED: fixed bugs associated with rendering lists.
-
+* FIXED: fixed bug of markdown links not rendering properly when links include parenthesis.
