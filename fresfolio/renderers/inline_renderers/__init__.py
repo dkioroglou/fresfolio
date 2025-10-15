@@ -1,6 +1,7 @@
 import re
 import traceback
-
+import ast
+from fresfolio.utils import tools
 
 class InlineRenderers:
 
@@ -15,7 +16,8 @@ class InlineRenderers:
                 "icon": re.compile(r'\\(todo|done|info|error)'),
                 "math": re.compile(r'(?<!\w)\$(.+?)\$(?!\w)'),
                 "button": re.compile(r'\\button{\s*(.*?)\s*,\s*(.*?)\s*}'),
-                "view": re.compile(r'\\view\{([\w-]+)\s*:\s*([^}]*)\}')
+                # "view": re.compile(r'\\view\{([\w-]+)\s*:\s*([^}]*)\}')
+                "view": re.compile(r'\\view\{([^}]*)\}')
                 }
 
     def render_markdown_bold_text_markups(self, text: str) -> str:
@@ -150,9 +152,40 @@ class InlineRenderers:
     def render_view_markups(self, text: str) -> str:
         """Convert view markups."""
         def render_markup(match):
-            project = match.group(1)
-            IDs = match.group(2)
-            renderedText = f'<action-link data-args="{project},{IDs}" style="cursor: pointer;" class="app-link">{project}:{IDs}</action-link>'
+            JSONstr = match.group(1)
+            # Convert to Python dict syntax
+            JSONstr = re.sub(r'(\w+)\s*:', r'"\1": ', JSONstr)
+            # Wrap with braces
+            JSONstr = '{' + JSONstr + '}'
+            JSON = ast.literal_eval(JSONstr)
+
+            if "project" not in JSON:
+                renderedText = text
+            elif 'chapter' not in JSON and 'sections' not in JSON:
+                renderedText = text
+            elif 'chapter' in JSON and 'notebook' not in JSON:
+                renderedText = text
+            else:
+                projectName = JSON['project']
+                projectInfo = tools.get_project_info(projectName)
+                projectID = projectInfo['ID']
+                if 'chapter' in JSON:
+                    notebookName = JSON['notebook']
+                    notebookID = tools.get_notebook_ID_based_on_name(projectID, notebookName)
+                    chapterName = JSON['chapter']
+                    chapterID = tools.get_chapter_ID_based_on_name(projectID, notebookID, chapterName) 
+                    IDs = tools.get_sections_IDs_for_chapter(projectID, chapterID)
+                else:
+                    IDs = JSON['sections']
+
+                if not IDs:
+                    renderedText = text
+                else:
+                    IDs = ",".join(map(str, IDs))
+                    if 'chapter' in JSON:
+                        renderedText = f'<action-link data-args="{projectName},{IDs}" style="cursor: pointer;" class="app-link">view:{projectName}:{notebookName}:{chapterName}</action-link>'
+                    else:
+                        renderedText = f'<action-link data-args="{projectName},{IDs}" style="cursor: pointer;" class="app-link">view:{projectName}</action-link>'
             return renderedText
         return self.PATTERNS['view'].sub(render_markup, text)
 

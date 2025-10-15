@@ -6,5 +6,6 @@ This is a bug fix release for various issues discovered after we released v0.2.8
 * FEATURE: sections can be pinned for fast access. Pinned sections can be viewed on their own drawer.
 * FEATURE: search results are rendered in their own drawer and search queries can also be performed across all projects.
 * OPTIMIZED: changed color of links and inline code text.
+* OPTIMIZED: view markup can now accept either chapter name or section IDs.
 * FIXED: fixed bugs associated with rendering lists.
 * FIXED: fixed bug of markdown links not rendering properly when links include parenthesis.
