@@ -458,6 +458,12 @@ const SectionCard = defineComponent({
             )
             edit.focus()
         },
+        insertArrowToSectionEditor(arrow) {
+            const edit = this.$refs.sectionEditorRef
+            edit.caret.restore()
+            edit.runCmd('insertText', arrow)
+            edit.focus()
+        },
         getView(parsedArgs) {
             this.$emit('get-view', parsedArgs)
         },
@@ -694,7 +700,8 @@ const SectionCard = defineComponent({
                                 'codeblock',
                                 'math',
                                 'omitable',
-                                'omiplot'
+                                'omiplot',
+                                'arrows'
                                 ]
                                 ]"
                                 class="app-section-editor"
@@ -844,6 +851,42 @@ const SectionCard = defineComponent({
                                         @click="insertOmilayersPlotTagToSectionEditor"
                                     />
                                 </template>
+
+                                <template v-slot:arrows>
+                                    <q-btn-dropdown
+                                        dense
+                                        unelevated
+                                        color="secondary"
+                                        text-color="white"
+                                        size="sm"
+                                        label="Arrows"
+                                        dropdown-icon="arrow_drop_down"
+                                    >
+                                        <q-list dense>
+                                            <q-item clickable v-close-popup @click="insertArrowToSectionEditor('⟶')">
+                                                <q-item-section>
+                                                <q-item-label>⟶</q-item-label>
+                                                </q-item-section>
+                                            </q-item>
+                                            <q-item clickable v-close-popup @click="insertArrowToSectionEditor('⟹ ')">
+                                                <q-item-section>
+                                                <q-item-label>⟹ </q-item-label>
+                                                </q-item-section>
+                                            </q-item>
+                                            <q-item clickable v-close-popup @click="insertArrowToSectionEditor('↳')">
+                                                <q-item-section>
+                                                <q-item-label>↳</q-item-label>
+                                                </q-item-section>
+                                            </q-item>
+                                            <q-item clickable v-close-popup @click="insertArrowToSectionEditor('⮕')">
+                                                <q-item-section>
+                                                <q-item-label>⮕</q-item-label>
+                                                </q-item-section>
+                                            </q-item>
+                                        </q-list>
+                                    </q-btn-dropdown>
+                                </template>
+
                             </q-editor>
                         </div>
                         <!-- SECTION EDITOR END -->
