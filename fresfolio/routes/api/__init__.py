@@ -476,6 +476,7 @@ def get_filepath(project, filename):
                      '.ppt',
                      '.pptx',
                      '.py',
+                     '.sh',
                      '.R',
                      '.Rscript'
                      ]
