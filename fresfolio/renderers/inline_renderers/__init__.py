@@ -17,7 +17,9 @@ class InlineRenderers:
                 "math": re.compile(r'(?<!\w)\$(.+?)\$(?!\w)'),
                 "button": re.compile(r'\\button{\s*(.*?)\s*,\s*(.*?)\s*}'),
                 # "view": re.compile(r'\\view\{([\w-]+)\s*:\s*([^}]*)\}')
-                "view": re.compile(r'\\view\{([^}]*)\}')
+                "view": re.compile(r'\\view\{([^}]*)\}'),
+                "newline": re.compile(r'\\br\b'),
+                "underscore": re.compile(r'\+\+(.*?)\+\+'),
                 }
 
     def render_markdown_bold_text_markups(self, text: str) -> str:
@@ -189,3 +191,16 @@ class InlineRenderers:
             return renderedText
         return self.PATTERNS['view'].sub(render_markup, text)
 
+    def render_newline_markups(self, text: str) -> str:
+        """Converts br to html <br> tags."""
+        def render_markup(match):
+            return "<br>"
+        return self.PATTERNS['newline'].sub(render_markup, text)
+
+    def render_underscore_markups(self, text: str) -> str:
+        """Converts underscore markups to html <u> tags."""
+        def render_markup(match):
+            underscoredText = match.group(1)
+            renderedText = f"<u>{underscoredText}</u>"
+            return renderedText
+        return self.PATTERNS['underscore'].sub(render_markup, text)
