@@ -834,13 +834,13 @@ const SectionContent = defineComponent({
                                 <q-badge outline>{{fileJSON["extension"]}}</q-badge> 
                                 {{fileJSON["filename"]}}
                             </q-item-label>
-                            <q-item-label class="text-white" caption>{{fileJSON["caption"]}}</q-item-label>
+                            <q-item-label class="text-white" v-render-katex caption v-html="fileJSON['caption']"></q-item-label>
                         </q-item-section>
                     </q-item>
                     <q-item v-else style="background-color: #523434">
                         <q-item-section>
                             <q-item-label class="q-mb-xs text-white">{{fileJSON["filename"]}}</q-item-label>
-                            <q-item-label class="text-white" caption>{{fileJSON["caption"]}}</q-item-label>
+                            <q-item-label class="text-white" v-render-katex caption v-html="fileJSON['caption']"></q-item-label>
                         </q-item-section>
                     </q-item>
             </template>

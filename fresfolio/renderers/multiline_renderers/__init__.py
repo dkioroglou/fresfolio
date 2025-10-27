@@ -372,7 +372,7 @@ class HtmlFilesTag:
             projectDir = tmpJSON['project']['dirFullPath']
             filename = tmpJSON['filename']
             extension = Path(filename).suffix.replace(".", "").upper()
-            caption = tmpJSON['caption']
+            caption = pass_line_through_inline_renderers(tmpJSON['caption'])
             fileURL = f"/api/files/{projectID}/{filename}"
             filePath = Path(projectDir).joinpath(filename)
             if filePath.exists():
