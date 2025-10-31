@@ -20,6 +20,7 @@ class InlineRenderers:
                 "view": re.compile(r'\\view\{([^}]*)\}'),
                 "newline": re.compile(r'\\br\b'),
                 "underscore": re.compile(r'\+\+(.*?)\+\+'),
+                "indent": re.compile(r'^==\s')
                 }
 
     def render_markdown_bold_text_markups(self, text: str) -> str:
@@ -204,3 +205,9 @@ class InlineRenderers:
             renderedText = f"<u>{underscoredText}</u>"
             return renderedText
         return self.PATTERNS['underscore'].sub(render_markup, text)
+
+    def render_indent_markups(self, text: str) -> str:
+        """Converts '==' to html indentation tags."""
+        def render_markup(match):
+            return '<span class="app-indentation"></span> '
+        return self.PATTERNS['indent'].sub(render_markup, text)

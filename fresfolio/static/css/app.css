@@ -352,3 +352,7 @@ iframe {
     transform: scaleX(1);
 }
 
+.app-indentation {
+    display: inline-block;
+    width: 1.0rem;
+}
