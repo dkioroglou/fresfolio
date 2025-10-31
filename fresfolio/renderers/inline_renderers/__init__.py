@@ -16,11 +16,9 @@ class InlineRenderers:
                 "icon": re.compile(r'\\(todo|done|info|error)'),
                 "math": re.compile(r'(?<!\w)\$(.+?)\$(?!\w)'),
                 "button": re.compile(r'\\button{\s*(.*?)\s*,\s*(.*?)\s*}'),
-                # "view": re.compile(r'\\view\{([\w-]+)\s*:\s*([^}]*)\}')
                 "view": re.compile(r'\\view\{([^}]*)\}'),
                 "newline": re.compile(r'\\br\b'),
-                "underscore": re.compile(r'\+\+(.*?)\+\+'),
-                "indent": re.compile(r'^==\s')
+                "underscore": re.compile(r'\+\+(.*?)\+\+')
                 }
 
     def render_markdown_bold_text_markups(self, text: str) -> str:
@@ -206,8 +204,3 @@ class InlineRenderers:
             return renderedText
         return self.PATTERNS['underscore'].sub(render_markup, text)
 
-    def render_indent_markups(self, text: str) -> str:
-        """Converts '==' to html indentation tags."""
-        def render_markup(match):
-            return '<span class="app-indentation"></span> '
-        return self.PATTERNS['indent'].sub(render_markup, text)

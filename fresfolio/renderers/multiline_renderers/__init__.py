@@ -20,9 +20,20 @@ def pass_line_through_inline_renderers(line:str) -> str:
 class HtmlParagraphTag:
 
     def __init__(self, lines:list):
-        self.lines = lines
+        self.lines = self.add_indentation_to_lines(lines)
         self.open_tag = "<p>"
         self.close_tag = "</p>"
+
+    def add_indentation_to_lines(self, lines):
+        """Add indentation to lines if line starts with ==."""
+        processedLines = []
+        for line in lines:
+            if line.startswith("=="):
+                line = line.replace("==", "", 1)
+                processedLines.append(f'<span class="app-indentation">{line}</span>')
+            else:
+                processedLines.append(line)
+        return processedLines
 
     def render_lines(self) -> str: 
         renderedLines = [pass_line_through_inline_renderers(line) for line in self.lines]

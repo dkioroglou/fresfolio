@@ -353,6 +353,6 @@ iframe {
 }
 
 .app-indentation {
-    display: inline-block;
-    width: 1.0rem;
+    display: inline-block; /* or block */
+    padding-left: 20px;
 }
