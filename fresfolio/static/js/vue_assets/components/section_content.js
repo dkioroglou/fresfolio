@@ -453,7 +453,7 @@ const SectionContent = defineComponent({
         >
 
         <template v-slot:body-cell="props">
-            <q-td :props="props">
+            <q-td v-render-katex :props="props">
                 <span v-html="props.row[props.col.field]"></span>
             </q-td>
         </template>
