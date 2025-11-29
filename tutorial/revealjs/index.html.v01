@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>reveal.js</title>
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/black.css">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="plugin/highlight/monokai.css">
+
+		<link rel="stylesheet" href="assets/custom.css">
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+
+                <section>
+                    <h2>Welcome</h2>
+                    <button id="start-btn" style=" padding: 12px 24px; font-size: 1.2em; border-radius: 8px; cursor: pointer; ">
+                        Press to start
+                    </button>
+                </section>
+
+
+				<section id="slide-with-audio" data-autoslide="12000">
+                    <h2>Fresfolio</h2>
+
+                    <audio id="audio-a" preload="auto">
+                        <source src="assets/audio/title_slide.mp3" type="audio/mp3" />
+                    </audio>
+                </section>
+
+                <div id="subtitle" class="subtitles">
+                    Welcome. This is a tutorial of fresfolio, a browser-based app designed to help you organize and track your research projects.
+                </div>
+
+				<section id="slide-with-audio">
+                    <h2>Tutorial contents</h2>
+
+                    <audio id="audio-a" preload="auto">
+                        <source src="assets/audio/slide_1.mp3" type="audio/mp3" />
+                    </audio>
+                </section>
+                <div id="subtitle" class="subtitles">
+                    These are the subtitles for slide 1.
+                </div>
+
+			</div>
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="plugin/notes/notes.js"></script>
+		<script src="plugin/markdown/markdown.js"></script>
+		<script src="plugin/highlight/highlight.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+                width: "100%",
+                height:"100%",
+                autoSlide: 0,   // disables global timing but still allows per-fragment timing
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+
+        <script>
+            let slideTimer = null;
+
+            function startAudioForSlide(event) {
+                const audio = document.getElementById('audio-a');
+                const subtitle = document.getElementById("subtitle");
+
+                clearTimeout(slideTimer);
+                audio.pause();
+                audio.currentTime = 0;
+
+                if (subtitle) {
+                    subtitle.style.opacity = 0;
+                }
+
+                if (event.currentSlide.id === 'slide-with-audio') {
+                    slideTimer = setTimeout(() => {
+                        audio.play().catch(() => {});
+                        subtitle.style.opacity = 1;  // fade in
+                    }, 1000);
+                }
+            }
+
+
+            // Fires on first load
+            Reveal.on('ready', event => {
+                startAudioForSlide(event);
+            });
+
+            // Fires when navigating
+            Reveal.on('slidechanged', event => {
+                startAudioForSlide(event);
+            });
+        </script>
+
+        <script>
+            document.getElementById("start-btn").addEventListener("click", () => {
+                Reveal.next();   // moves to next slide
+            });
+        </script>
+
+
+	</body>
+</html>

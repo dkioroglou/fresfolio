@@ -14,39 +14,123 @@
 		<link rel="stylesheet" href="plugin/highlight/monokai.css">
 
 		<link rel="stylesheet" href="assets/custom.css">
+		<style>
+			.subtitles {
+				position: fixed;
+				bottom: 20px;
+				left: 50%;
+				transform: translateX(-50%);
+				background: rgba(0, 0, 0, 0.8);
+				color: white;
+				padding: 15px 30px;
+				border-radius: 8px;
+				max-width: 80%;
+				text-align: center;
+				font-size: 1.0em;
+				opacity: 0;
+				transition: opacity 0.5s ease-in-out;
+				z-index: 100;
+			}
+			.subtitles.visible {
+				opacity: 1;
+			}
+		</style>
 	</head>
 	<body>
 		<div class="reveal">
 			<div class="slides">
 
+
                 <section>
                     <h2>Welcome</h2>
-                    <button id="start-btn" style=" padding: 12px 24px; font-size: 1.2em; border-radius: 8px; cursor: pointer; ">
+                    <button id="start-btn" style="padding: 12px 24px; font-size: 1.2em; border-radius: 8px; cursor: pointer;">
                         Press to start
                     </button>
                 </section>
+				
 
-				<section id="slide-with-audio">
+				<section id="slide-fresfolio" data-autoslide="10000">
                     <h2>Fresfolio</h2>
-
-                    <audio id="audio-a" preload="auto">
+                    <audio class="slide-audio" preload="auto">
                         <source src="assets/audio/title_slide.mp3" type="audio/mp3" />
                     </audio>
-
-
-                </section>
-
-                    <div id="subtitle" class="subtitles">
+                    <div class="slide-subtitle" style="display: none;">
                         Welcome. This is a tutorial of fresfolio, a browser-based app designed to help you organize and track your research projects.
                     </div>
-
-				<section>
-                    Slide 2
                 </section>
+				
+
+				<section id="slide-contents">
+                    <h2>Tutorial contents</h2>
+                    <ul data-autoslide="2000">
+                        <li>How to install fresfolio.</li>
+                        <li>How to create your first project.</li>
+                        <li>How to organize your work related to the project.</li>
+                    </ul>
+                    <audio class="slide-audio" preload="auto">
+                        <source src="assets/audio/slide_1.mp3" type="audio/mp3" />
+                    </audio>
+                    <div class="slide-subtitle" style="display: none;">
+                        In this tutorial, we will cover the basic functionality of fresfolio, such as
+                    </div>
+                </section>
+
+
+				<section id="slide-contents">
+                    <h2>Installation</h2>
+
+                    <div style="text-align: left; margin-left:67px">
+                        Installation command
+                    </div>
+                    <pre><code data-trim class="language-bash">
+                    pip install fresfolio
+                    </code></pre>
+                    <audio class="slide-audio" preload="auto">
+                        <source src="assets/audio/slide_2_2.mp3" type="audio/mp3" />
+                    </audio>
+                    <div class="slide-subtitle" style="display: none;">
+                        To install fresfolio, run the installation command in your terminal. Please note, this command assumes Python is already installed in your system.
+                    </div>
+                </section>
+
+
+				<section id="slide-contents">
+                    <h2>Initialization</h2>
+
+                    <div style="text-align: left; margin-left:67px">
+                        Initialization command
+                    </div>
+                    <pre><code data-trim class="language-bash">
+                    fresfolio init
+                    </code></pre>
+
+                    <div class="timed-fragment" data-start="7000" data-duration="2000">
+                        <div style="text-align: left; margin-left:67px">
+                           Generated resources
+                        </div>
+                        <pre><code data-trim class="language-bash">
+                        fresfolio
+                        ├── fresfolio.db
+                        └── projects
+                        </code></pre>
+                    </div>
+
+                    <audio class="slide-audio" preload="auto">
+                        <source src="assets/audio/slide_3.mp3" type="audio/mp3" />
+                    </audio>
+                    <div class="slide-subtitle" style="display: none;">
+                        Before start using fresfolio, run the initialization command to create the necessary directories. This creates the fresfolio directory, its database and a directory for storing projects.  
+                    </div>
+                </section>
+
+
 
 			</div>
 		</div>
-
+		
+		<!-- Global subtitle display -->
+		<div id="subtitle-display" class="subtitles"></div>
+		
 		<script src="dist/reveal.js"></script>
 		<script src="plugin/notes/notes.js"></script>
 		<script src="plugin/markdown/markdown.js"></script>
@@ -59,52 +143,94 @@
 				hash: true,
                 width: "100%",
                 height:"100%",
+                autoSlide: 0,   // disables global timing but still allows per-fragment timing
+                loop: false,
+                progress: true,
 				// Learn about plugins: https://revealjs.com/plugins/
 				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
 			});
+            Reveal.configure({
+                autoSlideMethod: () => Reveal.right(),
+            });
 		</script>
-
-        <script>
+        
+		<script>
             let slideTimer = null;
-
+            let fragmentTimers = [];
+            const subtitleDisplay = document.getElementById('subtitle-display');
+            
             function startAudioForSlide(event) {
-                const audio = document.getElementById('audio-a');
-                const subtitle = document.getElementById("subtitle");
-
+                const currentSlide = event.currentSlide;
+                const audio = currentSlide.querySelector('.slide-audio');
+                const subtitleText = currentSlide.querySelector('.slide-subtitle');
+                const timedFragments = currentSlide.querySelectorAll('.timed-fragment')
+                
+                // Clear any existing timer
                 clearTimeout(slideTimer);
-                audio.pause();
-                audio.currentTime = 0;
+                fragmentTimers.forEach(timer => clearTimeout(timer));
+                fragmentTimers = [];
 
-                if (subtitle) {
-                    subtitle.style.opacity = 0;
-                }
-
-                if (event.currentSlide.id === 'slide-with-audio') {
+                // Hide all timed fragments on all slides
+                document.querySelectorAll('.timed-fragment').forEach(f => {
+                    f.classList.remove('visible');
+                });
+                
+                // Stop all audio
+                document.querySelectorAll('.slide-audio').forEach(a => {
+                    a.pause();
+                    a.currentTime = 0;
+                });
+                
+                // Hide subtitles
+                subtitleDisplay.classList.remove('visible');
+                subtitleDisplay.textContent = '';
+                
+                // If current slide has audio, play it after delay
+                if (audio && subtitleText) {
                     slideTimer = setTimeout(() => {
                         audio.play().catch(() => {});
-                        subtitle.style.opacity = 1;  // fade in
+                        subtitleDisplay.textContent = subtitleText.textContent;
+                        subtitleDisplay.classList.add('visible');
+
+                        // Move to next slide when audio ends
+                        audio.onended = () => {
+                            Reveal.next();
+                        };
+
                     }, 1000);
+                }
+
+                if (timedFragments.length > 0) {
+                    timedFragments.forEach(fragment => {
+                        const startTime = parseInt(fragment.getAttribute('data-start')) || 0;
+                        const duration = parseInt(fragment.getAttribute('data-duration')) || 3000;
+                        
+                        // Show subtitle at start time
+                        const showTimer = setTimeout(() => {
+                            fragment.classList.add("visible");
+                        }, startTime);
+
+                        fragmentTimers.push(showTimer);
+                    });
                 }
             }
 
-
+            
             // Fires on first load
             Reveal.on('ready', event => {
                 startAudioForSlide(event);
             });
-
+            
             // Fires when navigating
             Reveal.on('slidechanged', event => {
                 startAudioForSlide(event);
             });
-        </script>
-
-        <script>
+            
+            // Start button
             document.getElementById("start-btn").addEventListener("click", () => {
-                Reveal.next();   // moves to next slide
+                //Reveal.configure({ autoSlide: 5000 });
+                Reveal.next();
             });
         </script>
-
-
 	</body>
 </html>
