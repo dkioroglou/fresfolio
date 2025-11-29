@@ -7,6 +7,8 @@
 node_modules/
 dist/
 
+!tutorial/revealjs/dist/
+
 # Compiled Java class files
 *.class
 
