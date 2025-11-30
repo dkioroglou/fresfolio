@@ -13,28 +13,7 @@
 		<!-- Theme used for syntax highlighted code -->
 		<link rel="stylesheet" href="plugin/highlight/monokai.css">
 
-		<link rel="stylesheet" href="assets/custom.css">
-		<style>
-			.subtitles {
-				position: fixed;
-				bottom: 20px;
-				left: 50%;
-				transform: translateX(-50%);
-				background: rgba(0, 0, 0, 0.8);
-				color: white;
-				padding: 15px 30px;
-				border-radius: 8px;
-				max-width: 80%;
-				text-align: center;
-				font-size: 1.0em;
-				opacity: 0;
-				transition: opacity 0.5s ease-in-out;
-				z-index: 100;
-			}
-			.subtitles.visible {
-				opacity: 1;
-			}
-		</style>
+        <link rel="stylesheet" href="assets/css/custom.css">
 	</head>
 	<body>
 		<div class="reveal">
@@ -49,29 +28,36 @@
                 </section>
 				
 
-				<section id="slide-fresfolio" data-autoslide="10000">
+				<section id="slide-fresfolio">
                     <h2>Fresfolio</h2>
-                    <audio class="slide-audio" preload="auto">
+                    <audio class="slide-audio" audio-start="1000" preload="auto">
                         <source src="assets/audio/title_slide.mp3" type="audio/mp3" />
                     </audio>
                     <div class="slide-subtitle" style="display: none;">
                         Welcome. This is a tutorial of fresfolio, a browser-based app designed to help you organize and track your research projects.
+                    </div>
+
+                    <audio class="slide-audio" audio-start="5000" preload="auto">
+                        <source src="assets/audio/slide_1.mp3" type="audio/mp3" />
+                    </audio>
+                    <div class="slide-subtitle" style="display: none;">
+                        In this tutorial, we will cover the basic functionality of fresfolio, such as...
                     </div>
                 </section>
 				
 
 				<section id="slide-contents">
                     <h2>Tutorial contents</h2>
-                    <ul data-autoslide="2000">
+                    <ul>
                         <li>How to install fresfolio.</li>
                         <li>How to create your first project.</li>
                         <li>How to organize your work related to the project.</li>
                     </ul>
-                    <audio class="slide-audio" preload="auto">
+                    <audio class="slide-audio" audio-start="1000" preload="auto">
                         <source src="assets/audio/slide_1.mp3" type="audio/mp3" />
                     </audio>
                     <div class="slide-subtitle" style="display: none;">
-                        In this tutorial, we will cover the basic functionality of fresfolio, such as
+                        In this tutorial, we will cover the basic functionality of fresfolio, such as...
                     </div>
                 </section>
 
@@ -85,7 +71,7 @@
                     <pre><code data-trim class="language-bash">
                     pip install fresfolio
                     </code></pre>
-                    <audio class="slide-audio" preload="auto">
+                    <audio class="slide-audio" audio-start="1000" preload="auto">
                         <source src="assets/audio/slide_2_2.mp3" type="audio/mp3" />
                     </audio>
                     <div class="slide-subtitle" style="display: none;">
@@ -104,7 +90,7 @@
                     fresfolio init
                     </code></pre>
 
-                    <div class="timed-fragment" data-start="7000" data-duration="2000">
+                    <div class="timed-fragment" fragment-start="7000">
                         <div style="text-align: left; margin-left:67px">
                            Generated resources
                         </div>
@@ -115,9 +101,10 @@
                         </code></pre>
                     </div>
 
-                    <audio class="slide-audio" preload="auto">
+                    <audio class="slide-audio" audio-start="1000" preload="auto">
                         <source src="assets/audio/slide_3.mp3" type="audio/mp3" />
                     </audio>
+
                     <div class="slide-subtitle" style="display: none;">
                         Before start using fresfolio, run the initialization command to create the necessary directories. This creates the fresfolio directory, its database and a directory for storing projects.  
                     </div>
@@ -127,9 +114,12 @@
 
 			</div>
 		</div>
-		
-		<!-- Global subtitle display -->
-		<div id="subtitle-display" class="subtitles"></div>
+
+
+        <div class="subtitles-container"> 
+            <button id="pause-resume-btn" class="audio-button" aria-label="Pause">⏸</button>
+            <div id="subtitle-display" class="subtitles"></div>
+        </div>
 		
 		<script src="dist/reveal.js"></script>
 		<script src="plugin/notes/notes.js"></script>
@@ -153,84 +143,8 @@
                 autoSlideMethod: () => Reveal.right(),
             });
 		</script>
+
+		<script src="assets/js/utils.js"></script>
         
-		<script>
-            let slideTimer = null;
-            let fragmentTimers = [];
-            const subtitleDisplay = document.getElementById('subtitle-display');
-            
-            function startAudioForSlide(event) {
-                const currentSlide = event.currentSlide;
-                const audio = currentSlide.querySelector('.slide-audio');
-                const subtitleText = currentSlide.querySelector('.slide-subtitle');
-                const timedFragments = currentSlide.querySelectorAll('.timed-fragment')
-                
-                // Clear any existing timer
-                clearTimeout(slideTimer);
-                fragmentTimers.forEach(timer => clearTimeout(timer));
-                fragmentTimers = [];
-
-                // Hide all timed fragments on all slides
-                document.querySelectorAll('.timed-fragment').forEach(f => {
-                    f.classList.remove('visible');
-                });
-                
-                // Stop all audio
-                document.querySelectorAll('.slide-audio').forEach(a => {
-                    a.pause();
-                    a.currentTime = 0;
-                });
-                
-                // Hide subtitles
-                subtitleDisplay.classList.remove('visible');
-                subtitleDisplay.textContent = '';
-                
-                // If current slide has audio, play it after delay
-                if (audio && subtitleText) {
-                    slideTimer = setTimeout(() => {
-                        audio.play().catch(() => {});
-                        subtitleDisplay.textContent = subtitleText.textContent;
-                        subtitleDisplay.classList.add('visible');
-
-                        // Move to next slide when audio ends
-                        audio.onended = () => {
-                            Reveal.next();
-                        };
-
-                    }, 1000);
-                }
-
-                if (timedFragments.length > 0) {
-                    timedFragments.forEach(fragment => {
-                        const startTime = parseInt(fragment.getAttribute('data-start')) || 0;
-                        const duration = parseInt(fragment.getAttribute('data-duration')) || 3000;
-                        
-                        // Show subtitle at start time
-                        const showTimer = setTimeout(() => {
-                            fragment.classList.add("visible");
-                        }, startTime);
-
-                        fragmentTimers.push(showTimer);
-                    });
-                }
-            }
-
-            
-            // Fires on first load
-            Reveal.on('ready', event => {
-                startAudioForSlide(event);
-            });
-            
-            // Fires when navigating
-            Reveal.on('slidechanged', event => {
-                startAudioForSlide(event);
-            });
-            
-            // Start button
-            document.getElementById("start-btn").addEventListener("click", () => {
-                //Reveal.configure({ autoSlide: 5000 });
-                Reveal.next();
-            });
-        </script>
 	</body>
 </html>
