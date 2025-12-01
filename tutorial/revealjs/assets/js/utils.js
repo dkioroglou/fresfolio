@@ -3,6 +3,7 @@ const subtitleDisplay = document.getElementById('subtitle-display');
 let audioElements = [];
 let subtitleElements = [];
 let timedFragments = [];
+let videoElements = []; // Add video elements array
 const PAUSE_BEFORE_NEXT_SLIDE = 3000;
 const pauseResumeBtn = document.getElementById('pause-resume-btn');
 let currentAudioIndex = 0;
@@ -27,6 +28,13 @@ function togglePauseResume() {
         if (currentAudio && !currentAudio.paused) {
             currentAudio.pause();
         }
+        
+        // Pause all videos on current slide
+        videoElements.forEach((video, index) => {
+            if (!video.paused) {
+                video.pause();
+            }
+        });
         
         // Clear pending timer if audio hasn't started yet
         if (pendingTimer) {
@@ -59,6 +67,13 @@ function togglePauseResume() {
             // Audio hasn't started yet, reschedule with remaining time
             scheduleCurrentAudio(remainingDelay);
         }
+        
+        // Resume all videos on current slide
+        videoElements.forEach((video, index) => {
+            if (video.paused) {
+                video.play().catch(err => {});
+            }
+        });
         
         // Reschedule fragments that haven't appeared yet
         fragmentSchedule.forEach(scheduleInfo => {
@@ -144,6 +159,17 @@ function startAudioForSlide(event) {
     subtitleElements = Array.from(currentSlide.querySelectorAll('.slide-subtitle'));
     timedFragments = Array.from(currentSlide.querySelectorAll('.timed-fragment'));
     
+    // Get all video elements - try multiple selectors
+    videoElements = Array.from(currentSlide.querySelectorAll('video'));
+    
+    // Also try getting videos with specific classes if they exist
+    const classVideos = Array.from(currentSlide.querySelectorAll('.slide-video, video[class]'));
+    classVideos.forEach(v => {
+        if (!videoElements.includes(v)) {
+            videoElements.push(v);
+        }
+    });
+    
     // Clear any pending timers
     if (pendingTimer) {
         clearTimeout(pendingTimer);
@@ -167,12 +193,12 @@ function startAudioForSlide(event) {
     remainingDelay = 0;
     slideStartTime = Date.now();
     
-    // Show or hide pause button based on whether there's audio
-    if (audioElements.length > 0) {
+    // Show or hide pause button based on whether there's audio or video
+    if (audioElements.length > 0 || videoElements.length > 0) {
         // Reset button state
         pauseResumeBtn.textContent = '⏸';
         pauseResumeBtn.setAttribute('aria-label', 'Pause');
-        pauseResumeBtn.style.display = 'inline-block';
+        pauseResumeBtn.style.display = 'flex';
     } else {
         pauseResumeBtn.style.display = 'none';
     }
@@ -186,6 +212,12 @@ function startAudioForSlide(event) {
     document.querySelectorAll('.slide-audio').forEach(a => {
         a.pause();
         a.currentTime = 0;
+    });
+    
+    // Stop all video elements globally
+    document.querySelectorAll('video').forEach(v => {
+        v.pause();
+        v.currentTime = 0;
     });
     
     // Hide subtitles
