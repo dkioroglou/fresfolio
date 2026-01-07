@@ -1,9 +1,11 @@
 from flask import Blueprint, jsonify, request, send_from_directory
 from pathlib import Path
+import os
 import re
 import traceback
 from platform import system
 import subprocess
+from importlib import resources
 from fresfolio.utils import tools
 from fresfolio.utils.classes import AppUtils, UserUtils, ProjectsUtils
 
@@ -663,4 +665,54 @@ def app_api_get_view_sections():
         return 'One or more section IDs not found.', 400
     
     return jsonify(renderedSections), 200
+
+@apiroutes.route('/api/section-to-pdf', methods=['POST'])
+@tools.conditional_login_required()
+def app_api_section_to_pdf():
+    try:
+        data = request.get_json()
+        projectID = data['projectID']
+        sectionID = data['sectionID']
+        print("projectID", projectID)
+        print("section", sectionID)
+        sectionRenderedContainers = PUTL.get_section_content_rendered(projectID, sectionID, render_type='pdf')
+        # Get fresfolio relative path from HOME
+        api_file_path = Path(__file__).parent
+        pkg_root_dir = api_file_path.parent.parent
+        pkg_root_dir = pkg_root_dir.relative_to(Path.home())
+        pdf_content = [
+            '#set page(paper: "a4")',
+            '#set par(justify: true)',
+            '#show link: set text(fill: blue)',
+            f'#import "{pkg_root_dir}/bin/typst_packages/mitex/0.2.4/lib.typ": *'
+            '',
+            f'= {sectionRenderedContainers["title"]}',
+            ''
+        ]
+        for containerJSON in sectionRenderedContainers['content']:
+            for contentJSON in containerJSON['content']:
+                if not contentJSON['text']:
+                    continue
+                contentText = contentJSON['text'][0] + "\n"
+                pdf_content.append(contentText)
+        pdf_content = "\n".join(pdf_content)
+
+        with resources.path("fresfolio.bin", "typst") as exe_path:
+             result = subprocess.run(
+                                    [str(exe_path), "compile", "-", "/home/CICBIOGUNE/dkioroglou/Desktop/fresfolio.pdf"],
+                                    input=pdf_content,
+                                    text=True,
+                                    capture_output=True
+            )
+
+        if result.returncode == 0:
+            return "", 200
+        else:
+            print(result.stderr)
+            return 'Error creating PDF', 400
+
+    except Exception:
+        traceback.print_exc()
+        return 'Error creating PDF', 400
+    return "", 200
 

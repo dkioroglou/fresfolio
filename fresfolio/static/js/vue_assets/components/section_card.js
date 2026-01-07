@@ -469,7 +469,41 @@ const SectionCard = defineComponent({
         },
         pinSection(projectID, sectionID) {
             this.$emit('pin-section', projectID, sectionID)
-        }
+        },
+        async sectionToPdf(projectID, sectionID) {
+            try {
+                const response = await fetch("/api/section-to-pdf", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(
+                        {
+                            "projectID": projectID, 
+                            "sectionID": sectionID
+                        }
+                    )
+                });
+
+                if (response.ok) {
+                    this.$q.notify({
+                        message: "PDF created",
+                        color: 'green',
+                        position: "top-right"
+                    })
+                } else {
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
+
+        },
     },
     watch: {
         expandSection(newVal) {
@@ -635,6 +669,12 @@ const SectionCard = defineComponent({
                                 <q-item v-if="sectionData['section_dir_exists'] === 1" clickable v-close-popup @click="uploadFilesToSection">
                                     <q-item-section>
                                         <q-item-label>Upload files</q-item-label>
+                                    </q-item-section>
+                                </q-item>
+
+                                <q-item clickable @click="sectionToPdf(sectionData['projectID'], sectionData['ID'])">
+                                    <q-item-section>
+                                        <q-item-label>Section to PDF</q-item-label>
                                     </q-item-section>
                                 </q-item>
 

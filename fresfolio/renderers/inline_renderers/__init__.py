@@ -204,3 +204,131 @@ class InlineRenderers:
             return renderedText
         return self.PATTERNS['underscore'].sub(render_markup, text)
 
+
+class PDFInlineRenderers:
+
+    def __init__(self):
+        self.PATTERNS = {
+                "bold": re.compile(r'\*\*(.*?)\*\*'),
+                "italics": re.compile(r'__(.*?)__'),
+                "code": re.compile(r'`(.*?)`'),
+                "link": re.compile(r'\[(.*?)\]\((\S+?)\)(?=\s|,|\.|\)|$)'),
+                "text-red": re.compile(r'\\text-red{(.*?)}'),
+                "text-green": re.compile(r'\\text-green{(.*?)}'),
+                "icon": re.compile(r'\\(todo|done|info|error)'),
+                "math": re.compile(r'(?<!\w)\$(.+?)\$(?!\w)'),
+                "button": re.compile(r'\\button{\s*(.*?)\s*,\s*(.*?)\s*}'),
+                "view": re.compile(r'\\view\{([^}]*)\}'),
+                "newline": re.compile(r'\\br\b'),
+                "underscore": re.compile(r'\+\+(.*?)\+\+')
+                }
+
+    def render_markdown_bold_text_markups(self, text: str) -> str:
+        """Converts markdown bold markups to typst strong markup."""
+        def render_markup(match):
+            boldText = match.group(1)
+            renderedText = f"*{boldText}*"
+            return renderedText
+        return self.PATTERNS['bold'].sub(render_markup, text)
+
+    def render_markdown_italics_text_markups(self, text: str) -> str:
+        """Converts markdown italics markups to typst emphasis markup."""
+        def render_markup(match):
+            italicsText = match.group(1)
+            renderedText = f"_{italicsText}_"
+            return renderedText
+        return self.PATTERNS['italics'].sub(render_markup, text)
+
+    def render_markdown_code_text_markups(self, text: str) -> str:
+        """Converts markdown inline code markups to typst raw markup."""
+        def render_markup(match):
+            codeText = match.group(1)
+            renderedText = f'`{codeText}`'
+            return renderedText
+        return self.PATTERNS['code'].sub(render_markup, text)
+
+    def render_markdown_headers_markups(self, text: str) -> str:
+        """Converts markdown header markups to typst heading markups."""
+        if text.startswith("# "):
+            text = "= {}".format(text.split("# ", 1)[-1])
+        elif text.startswith("## "):
+            text = "== {}".format(text.split("## ", 1)[-1])
+        elif text.startswith("### "):
+            text = "=== {}".format(text.split("### ", 1)[-1])
+        return text
+
+    def render_markdown_ruler_markups(self, text: str) -> str:
+        """Converts markdown ruler markups to typst ruler."""
+        if text.startswith('---'):
+            text = "#line(length: 100%)"
+        return text
+
+    def render_markup_link_markups(self, text:str) -> str:
+        """Converts markdown link markups to typst link markups."""
+        def render_markup(match):
+            label, url = match.groups()
+            label = label.strip()
+            url = url.strip()
+            renderedText = f'#link("{url}")[{label}]'
+            return renderedText
+        return self.PATTERNS['link'].sub(render_markup, text)
+
+    def render_red_text_markups(self, text: str) -> str:
+        """Converts latex style red text to typst red colored text."""
+        def render_markup(match):
+            redText = match.group(1)
+            renderedText = f'#text(fill: rgb("#ff4646"))[{redText}]'
+            return renderedText
+        return self.PATTERNS['text-red'].sub(render_markup, text)
+
+    def render_green_text_markups(self, text: str) -> str:
+        """Converts latex style green text to typst green colored text."""
+        def render_markup(match):
+            greenText = match.group(1)
+            renderedText = f'#text(fill: rgb("#178236"))[{greenText}]'
+            return renderedText
+        return self.PATTERNS['text-green'].sub(render_markup, text)
+
+    def render_icon_markups(self, text: str) -> str:
+        """Convert icons to typst emojis and unicodes."""
+        icons = {
+                'todo' : '#sym.ballot',
+                'done' : '#sym.ballot.check',
+                'info' : '#emoji.info',
+                'error': '#sym.crossmark'
+                }
+        def render_markup(match):
+            icon = match.group(1)
+            renderedText = icons[icon]
+            return renderedText
+        return self.PATTERNS['icon'].sub(render_markup, text)
+
+    def render_blockquote_markups(self, text: str) -> str:
+        """Convert blockquotes to typst quotes."""
+        if text.startswith(">"):
+            text = "#quote(block: true)[{}]".format(text[2:])
+        return text
+
+    def render_math_inline_markups(self, text: str) -> str:
+        """Convert inline math to typst inline math"""
+        # TODO: convert latex inline math to typst equivalent.
+        def render_markup(match):
+            mathText = match.group(1)
+            renderedText = mathText
+            return renderedText
+        return self.PATTERNS['math'].sub(render_markup, text)
+
+    def render_newline_markups(self, text: str) -> str:
+        """Converts br to html <br> tags."""
+        def render_markup(match):
+            return "#linebreak()"
+        return self.PATTERNS['newline'].sub(render_markup, text)
+
+    def render_underscore_markups(self, text: str) -> str:
+        """Converts underscore markups to typst underlined text markup."""
+        def render_markup(match):
+            underscoredText = match.group(1)
+            renderedText = f"#underline[{underscoredText}]"
+            return renderedText
+        return self.PATTERNS['underscore'].sub(render_markup, text)
+

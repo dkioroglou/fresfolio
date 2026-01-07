@@ -1,5 +1,5 @@
 from pathlib import Path
-from fresfolio.renderers.inline_renderers import InlineRenderers
+from fresfolio.renderers.inline_renderers import InlineRenderers, PDFInlineRenderers
 from fresfolio.utils import tools
 import traceback
 import json
@@ -13,6 +13,15 @@ def pass_line_through_inline_renderers(line:str) -> str:
     line = line.strip("\n")
     for method in inline_renderers_methods:
         render = getattr(inline_renderers, method)
+        line = render(line)
+    return line
+
+PDF_inline_renderers = PDFInlineRenderers()
+PDF_inline_renderers_methods = [method for method in dir(PDF_inline_renderers) if callable(getattr(PDF_inline_renderers, method)) and not method.startswith("__")]
+def pass_line_through_PDF_inline_renderers(line:str) -> str:
+    line = line.strip("\n")
+    for method in PDF_inline_renderers_methods:
+        render = getattr(PDF_inline_renderers, method)
         line = render(line)
     return line
 
@@ -39,6 +48,27 @@ class HtmlParagraphTag:
         renderedLines = [pass_line_through_inline_renderers(line) for line in self.lines]
         return self.open_tag+"<br>".join(renderedLines)+self.close_tag
 
+class PDFParagraphTag:
+
+    def __init__(self, lines:list):
+        self.lines = self.add_indentation_to_lines(lines)
+        self.open_tag = ""
+        self.close_tag = ""
+
+    def add_indentation_to_lines(self, lines):
+        """Add indentation to lines if line starts with ==."""
+        processedLines = []
+        for line in lines:
+            if line.startswith("=="):
+                line = line.replace("==", "", 1)
+                processedLines.append(f'#h(2em) {line}')
+            else:
+                processedLines.append(line)
+        return processedLines
+
+    def render_lines(self) -> str: 
+        renderedLines = [pass_line_through_PDF_inline_renderers(line) for line in self.lines]
+        return self.open_tag.join(renderedLines)+self.close_tag
 
 class HtmlCodeTag:
 
@@ -49,6 +79,16 @@ class HtmlCodeTag:
 
     def render_lines(self) -> str: 
         return self.open_tag+"<br>".join(self.lines)+self.close_tag
+
+class PDFCodeTag:
+
+    def __init__(self, lines:list):
+        self.lines = lines
+        self.open_tag = '```'
+        self.close_tag = "```"
+
+    def render_lines(self) -> str: 
+        return self.open_tag+"\n".join(self.lines)+"\n"+self.close_tag
 
 
 class HtmlListTag:
@@ -68,6 +108,23 @@ class HtmlListTag:
             renderedLines.append(pass_line_through_inline_renderers(line))
         return self.open_tag+"<br>".join(renderedLines)+self.close_tag
 
+class PDFlListTag:
+
+    def __init__(self, lines:list):
+        self.lines = lines
+        self.open_tag = ''
+        self.close_tag = ""
+
+    def render_lines(self) -> str: 
+        renderedLines = []
+        for line in self.lines:
+            if line.startswith("*") or line.startswith("-"):
+                line = "- "+line[1:].lstrip()
+            elif line.startswith("="):
+                line = "  - "+line[1:].lstrip()
+            renderedLines.append(pass_line_through_PDF_inline_renderers(line))
+        return "\n".join(renderedLines)
+
 
 class HtmlMathTag:
 
@@ -78,6 +135,16 @@ class HtmlMathTag:
 
     def render_lines(self) -> str: 
         return self.open_tag+"<br>".join(self.lines)+self.close_tag
+
+class PDFMathTag:
+
+    def __init__(self, lines:list):
+        self.lines = lines
+        self.open_tag = '#mitex(`'
+        self.close_tag = "`)"
+
+    def render_lines(self) -> str: 
+        return self.open_tag+"\n"+"\n".join(self.lines)+"\n"+self.close_tag
 
 
 class HtmlNoteTag:
@@ -93,6 +160,49 @@ class HtmlNoteTag:
     def render_lines(self) -> str: 
         renderedLines = [pass_line_through_inline_renderers(line) for line in self.lines]
         return self.open_tag+"<br>".join(renderedLines)+self.close_tag
+
+class PDFNoteTag:
+
+    backgroundHEX = {
+        "blue": "#b3dee9b3",
+        "red": "#e1c0c0",
+        "green": "#c2d9b9"
+    }
+
+    borderHEX = {
+        "blue": "#a7b8b9",
+        "red": "#d59b9b",
+        "green": "#9db99f"
+    }
+
+
+    def __init__(self, lines:list, color:str="blue"):
+        self.lines = lines
+        if color not in ['blue', 'red', 'green']:
+            self.open_tag = [
+                            '#block(',
+                            f'fill: rgb("{self.backgroundHEX["blue"]}"),',
+                            f'stroke: 1pt + rgb("{self.borderHEX["blue"]}"),', 
+                            'inset: 12pt,',
+                            'radius: 4pt,',
+                            'width: 100%,',
+                            ')['
+            ]
+        else:
+            self.open_tag = [
+                            '#block(',
+                            f'fill: rgb("{self.backgroundHEX[color]}"),',
+                            f'stroke: 1pt + rgb("{self.borderHEX[color]}"),', 
+                            'inset: 12pt,',
+                            'radius: 4pt,',
+                            'width: 100%',
+                            ')['
+            ]
+        self.close_tag = "]"
+
+    def render_lines(self) -> str: 
+        renderedLines = [pass_line_through_PDF_inline_renderers(line) for line in self.lines]
+        return "\n".join(self.open_tag)+"\n"+"\n".join(renderedLines)+"\n"+self.close_tag
 
 
 class HtmlTableTag:

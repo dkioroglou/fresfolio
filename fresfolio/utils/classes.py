@@ -13,12 +13,11 @@ import traceback
 import secrets
 from fresfolio.utils import tools
 
-
 APPDIR = Path("~/fresfolio").expanduser()
 APPDB = APPDIR.joinpath("fresfolio.db")
 
 if APPDIR.exists():
-    from fresfolio.renderers.html_renderer import HtmlRenderer
+    from fresfolio.renderers.html_renderer import HtmlRenderer, PDFRenderer
 
 if tools.is_module_installed("omilayers"):
     from omilayers import Omilayers
@@ -676,7 +675,8 @@ class ProjectsUtils:
             traceback.print_exc()
             return []
 
-    def get_section_content_rendered(self, projectID:int, sectionID:int) -> list:
+    def get_section_content_rendered(self, projectID:int, sectionID:int, render_type:str='html') -> list:
+        """Render section content to HTML"""
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         cols = ['id', 'section', 'tags', 'content', 'date']
         with contextlib.closing(sqlite3.connect(projectDB)) as conn:
@@ -702,7 +702,10 @@ class ProjectsUtils:
             kwargs['projectName'] = tools.get_project_name_based_on_id(projectID)
             kwargs['section_dir_exists'] = int(Path(projectDirectory).joinpath(f"sections/{kwargs['ID']}").exists())
             section = SectionUtils(**kwargs)
-            return section.render_content_to_html()
+            if render_type == "html":
+                return section.render_content_to_html()
+            elif render_type == "pdf":
+                return section.render_content_to_pdf()
         return {}
 
     def get_section_raw_content(self, projectID:str, sectionID:int) -> list:
@@ -1203,6 +1206,20 @@ class SectionUtils:
 
     def render_content_to_html(self):
         renderer = HtmlRenderer(self.projectID, self.projectName, self.content)
+        renderedContent = renderer.render_section_content()
+        return {
+                "projectID"         : self.projectID,
+                "projectName"       : tools.get_project_name_based_on_id(self.projectID),
+                "ID"                : self.ID,
+                "title"             : self.title,
+                "tags"              : self.tags,
+                "content"           : renderedContent,
+                "date"              : self.sectionDate,
+                "section_dir_exists": self.section_dir_exists
+                }
+
+    def render_content_to_pdf(self):
+        renderer = PDFRenderer(self.projectID, self.projectName, self.content)
         renderedContent = renderer.render_section_content()
         return {
                 "projectID"         : self.projectID,
