@@ -15,7 +15,12 @@ from fresfolio.renderers.multiline_renderers import (HtmlParagraphTag,
                                                     PDFCodeTag,
                                                     PDFlListTag,
                                                     PDFNoteTag,
-                                                    PDFMathTag
+                                                    PDFMathTag,
+                                                    PDFTableTag,
+                                                    PDFFiguresTag,
+                                                    PDFFilesTag,
+                                                    PDFOmilayersTableTag,
+                                                    PDFOmilayersPlotTag
                                                     )
 
 class HtmlRenderer:
@@ -238,7 +243,7 @@ class HtmlRenderer:
                 self.buffer.append(rawLine)
                 continue
 
-            if line.startswith("* ") or line.startswith("- ") or line.startswith("= "):
+            if line.startswith("* ") or line.startswith("- ") or line.startswith("+ ") or line.startswith("-- "):
                 if not self.begin_tag:
                     self.begin_tag = "list"
                     self.buffer.append(line)
@@ -300,7 +305,12 @@ class PDFRenderer:
                 "code": PDFCodeTag,
                 "list": PDFlListTag,
                 "note": PDFNoteTag,
-                "math": PDFMathTag
+                "math": PDFMathTag,
+                "table": PDFTableTag,
+                "figures": PDFFiguresTag,
+                "files": PDFFilesTag,
+                "omitable": PDFOmilayersTableTag,
+                "omiplot": PDFOmilayersPlotTag
                 }
 
         self.syntax_error_message = '#text(fill: rgb("#ff4646"))[Syntax error]'
@@ -423,9 +433,10 @@ class PDFRenderer:
         for line in self.lines:
             rawLine = line
             self.bufferRaw.append(rawLine)
-            if line.endswith(" "):
-                print("FOOO")
-            line = line.strip()
+            if line.endswith("\xa0\xa0"):
+                line = line.strip() + " #linebreak()"
+            else:
+                line = line.strip()
 
             # Manage tags with similar open and close tags
             if line in self.toggle_tags:
@@ -488,7 +499,7 @@ class PDFRenderer:
                 self.buffer.append(rawLine)
                 continue
 
-            if line.startswith("* ") or line.startswith("- ") or line.startswith("= "):
+            if line.startswith("* ") or line.startswith("- ") or line.startswith("+ ") or line.startswith("-- "):
                 if not self.begin_tag:
                     self.begin_tag = "list"
                     self.buffer.append(line)

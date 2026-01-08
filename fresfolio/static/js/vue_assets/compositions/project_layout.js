@@ -660,7 +660,42 @@ const ProjectLayout = defineComponent({
                 console.error(error);
             }
 
-        }
+        },
+        async sectionsToPDF() {
+            console.log(this.renderedSections.map(item => item.ID))
+            try {
+                const response = await fetch("/api/sections-to-pdf", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(
+                        {
+                            "projectID": this.selectedProjectID, 
+                            "sectionsIDs": this.renderedSections.map(item => item.ID)
+                        }
+                    )
+                });
+
+                if (response.ok) {
+                    this.$q.notify({
+                        message: "PDF created",
+                        color: 'green',
+                        position: "top-right"
+                    })
+                } else {
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
+
+        },
     },
     async mounted () {
         this.get_notebooks();
@@ -1077,6 +1112,12 @@ const ProjectLayout = defineComponent({
                                         <q-item clickable v-close-popup @click="rearrangeChapterSections">
                                             <q-item-section>
                                                 <q-item-label>Rearrange sections</q-item-label>
+                                            </q-item-section>
+                                        </q-item>
+
+                                        <q-item clickable @click="sectionsToPDF">
+                                            <q-item-section>
+                                                <q-item-label>Sections to PDF</q-item-label>
                                             </q-item-section>
                                         </q-item>
 

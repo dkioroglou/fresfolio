@@ -61,7 +61,7 @@ class PDFParagraphTag:
         for line in lines:
             if line.startswith("=="):
                 line = line.replace("==", "", 1)
-                processedLines.append(f'#h(2em) {line}')
+                processedLines.append(f'#h(1em) {line}')
             else:
                 processedLines.append(line)
         return processedLines
@@ -100,12 +100,20 @@ class HtmlListTag:
 
     def render_lines(self) -> str: 
         renderedLines = []
+        isListNumbered = False
         for line in self.lines:
-            if line.startswith("*") or line.startswith("-"):
+            if line.startswith("* ") or line.startswith("- "):
                 line = "<li>"+line[1:].lstrip()+"</li>"
-            elif line.startswith("="):
-                line = '<li style="list-style-type:none;">'+line[1:].lstrip()+"</li>"
+            elif line.startswith("+ "):
+                line = "<li>"+line[1:].lstrip()+"</li>"
+                if not isListNumbered:
+                    isListNumbered = True
+            elif line.startswith("-- "):
+                line = '<span>↳ '+line[2:].lstrip()+"</span>"
             renderedLines.append(pass_line_through_inline_renderers(line))
+        if isListNumbered:
+            self.open_tag = "<ol>"
+            self.close_tag = "</ol>"
         return self.open_tag+"<br>".join(renderedLines)+self.close_tag
 
 class PDFlListTag:
@@ -118,10 +126,13 @@ class PDFlListTag:
     def render_lines(self) -> str: 
         renderedLines = []
         for line in self.lines:
-            if line.startswith("*") or line.startswith("-"):
+            if line.startswith("* ") or line.startswith("- "):
                 line = "- "+line[1:].lstrip()
-            elif line.startswith("="):
-                line = "  - "+line[1:].lstrip()
+            elif line.startswith("+ "):
+                line = "+ "+line[1:].lstrip()
+            elif line.startswith("-- "):
+                # line = f"#pad(left: 1.1em)[↳ {line[2:].lstrip()}]"
+                line = f" #linebreak() ↳ {line[2:].lstrip()}"
             renderedLines.append(pass_line_through_PDF_inline_renderers(line))
         return "\n".join(renderedLines)
 
@@ -359,6 +370,147 @@ class HtmlTableTag:
         self.tableIDX += 1
         return (tablesJSON, self.tableIDX) 
 
+
+class PDFTableTag:
+
+    def __init__(self, projectName:str, tableIDX:int, lines:list, tagArgs:str):
+        self.projectInfo = tools.get_project_info(projectName)
+        self.filename = None
+        self.title = "No available caption."
+        self.delimiter = None
+        self.lines = lines
+        self.tableIDX = tableIDX
+        self.tagArgs = tools.convert_tag_args_to_json(tagArgs)
+
+    def render_lines(self) -> dict:
+
+        def report_emtpy_table_due_to_error(name):
+            jsonCols = []
+            jsonLines = []
+            tablesJSON.append({"title":f'Table error: cannot load "{name}"', "columns":jsonCols, "rows":jsonLines})
+
+        tablesJSON = []
+        jsonCols = []
+        jsonLines = []
+        if self.tagArgs:
+            try:
+                if self.tagArgs.get("project", False):
+                    self.projectName = self.tagArgs['project']
+                    self.projectInfo = tools.get_project_info(self.projectName)
+
+                if self.tagArgs.get("file", False):
+                    self.filename = self.tagArgs['file']
+
+                if self.tagArgs.get("title", False):
+                    self.title = self.tagArgs['title']
+
+                if self.tagArgs.get("sep", False):
+                    self.delimiter = self.tagArgs['sep']
+            except Exception:
+                traceback.print_exc()
+                report_emtpy_table_due_to_error(self.tagArgs)
+                return (tablesJSON, self.tableIDX)
+
+        if self.filename:
+            if "*" in self.filename:
+                filesJSON = tools.get_filepaths_from_wildcard_filename(self.projectInfo, self.filename)
+                for fJSON in filesJSON:
+                    filePath = fJSON['filePath']
+                    if filePath.exists:
+                        try:
+                            tableLines = open(filePath, 'r').readlines()
+
+                            delimiter = None
+                            if "\t" in tableLines[0]:
+                                delimiter = "\t"
+                            else:
+                                delimiter = ","
+
+                            if delimiter is not None:
+                                columns = [col.strip() for col in tableLines[0].split(delimiter)]
+                            else:
+                                columns = [tableLines[0].strip()]
+                            jsonCols = columns
+
+                            for line in tableLines[1:]:
+                                line = line.strip()
+                                if not line:
+                                    continue
+                                if delimiter is not None:
+                                    line = [pass_line_through_PDF_inline_renderers(cell.strip()) for cell in line.split(delimiter)]
+                                else:
+                                    line = [pass_line_through_PDF_inline_renderers(line)]
+                                jsonLines.append(line)
+                            tablesJSON.append({"title":self.title, "columns":jsonCols, "rows":jsonLines})
+                            jsonCols = []
+                            jsonLines = []
+                            self.tableIDX += 1
+                        except Exception:
+                            traceback.print_exc()
+                            report_emtpy_table_due_to_error(self.tagArgs)
+                            continue
+                    else:
+                        report_emtpy_table_due_to_error(filePath.name)
+                return (tablesJSON, self.tableIDX)
+            else:
+                filePath = Path(self.projectInfo['dirFullPath']).joinpath(self.filename)
+                if filePath.exists:
+                    try:
+                        tableLines = open(filePath, 'r').readlines()
+
+                        delimiter = None
+                        if "\t" in tableLines[0]:
+                            delimiter = "\t"
+                        else:
+                            delimiter = ","
+
+                        if delimiter is not None:
+                            columns = [col.strip() for col in tableLines[0].split(delimiter)]
+                        else:
+                            columns = [tableLines[0].strip()]
+                        jsonCols = columns
+
+                        for line in tableLines[1:]:
+                            line = line.strip()
+                            if not line:
+                                continue
+                            if delimiter is not None:
+                                line = [pass_line_through_PDF_inline_renderers(cell.strip()) for cell in line.split(delimiter)]
+                            else:
+                                line = [pass_line_through_PDF_inline_renderers(line)]
+                            jsonLines.append(line)
+                        tablesJSON.append({"title":self.title, "columns":jsonCols, "rows":jsonLines})
+                        jsonCols = []
+                        jsonLines = []
+                        self.tableIDX += 1
+                    except Exception:
+                        traceback.print_exc()
+                        report_emtpy_table_due_to_error(self.tagArgs)
+                else:
+                    report_emtpy_table_due_to_error(filePath.name)
+            return (tablesJSON, self.tableIDX)
+
+        if self.delimiter is None:
+            self.delimiter = ","
+        for line in self.lines:
+            if not jsonCols:
+                if self.delimiter in line:
+                    columns = [col.strip() for col in line.split(self.delimiter)]
+                else:
+                    columns = [line.strip()]
+                jsonCols = columns
+                continue
+
+            if self.delimiter in line:
+                line = [pass_line_through_PDF_inline_renderers(cell.strip()) for cell in line.split(self.delimiter)]
+            else:
+                line = [pass_line_through_PDF_inline_renderers(line)]
+            jsonLines.append(line)
+        tablesJSON.append({"title":self.title, "columns":jsonCols, "rows":jsonLines})
+        self.tableIDX += 1
+        return (tablesJSON, self.tableIDX) 
+
+
 class HtmlFiguresTag:
 
     def __init__(self, projectName:str, figureIDX:int, lines:list, tagArgs:str):
@@ -474,6 +626,122 @@ class HtmlFiguresTag:
         return (figsJSON, self.figureIDX, self.figsTitle)
 
 
+class PDFFiguresTag:
+
+    def __init__(self, projectName:str, figureIDX:int, lines:list, tagArgs:str):
+        self.projectInfo = tools.get_project_info(projectName)
+        self.lines = lines
+        self.figureIDX = figureIDX
+        self.figsTitle = ""
+        self.tagArgs = tools.convert_tag_args_to_json(tagArgs)
+        self.filename = None
+
+    def render_lines(self) -> tuple: 
+
+        def render_tmpJSON(tmpJSON):
+            if not tmpJSON.get("project", False):
+                tmpJSON['project'] = self.projectInfo
+            if not tmpJSON.get("caption", False):
+                tmpJSON['caption'] = "No available caption."
+
+            projectID = tmpJSON['project']['ID']
+            projectDir = tmpJSON['project']['dirFullPath']
+            filename = tmpJSON['filename']
+            caption = pass_line_through_PDF_inline_renderers(tmpJSON['caption'])
+            title = f"Figure {self.figureIDX}"
+            if filename.startswith("http"):
+                figURL = filename
+                return {"url":figURL, "title":title, "caption":caption, "file_exists":1}
+            figURL = f"/api/files/{projectID}/{filename}"
+            filePath = Path(projectDir).joinpath(filename)
+            if filePath.exists():
+                file_exists = 1
+            else:
+                file_exists = 0
+            # --root Path.home() has been set for typst.
+            # This means that typst adds the Path.home() to absolute paths.
+            # Thus Path.home() should be removed from the figure_path of figures, otherwise it will be repeated.
+            return {"figure_path":str(filePath.relative_to(Path.home())), "title":title, "caption":caption, "file_exists":file_exists}
+
+        figsJSON = []
+        if self.tagArgs:
+            try:
+                if self.tagArgs.get("project", False):
+                    self.projectName = self.tagArgs['project']
+                    self.projectInfo = tools.get_project_info(self.projectName)
+
+                if self.tagArgs.get("file", False):
+                    self.filename = self.tagArgs['file']
+
+                if self.tagArgs.get("title", False):
+                    self.figsTitle = self.tagArgs['title']
+            except Exception:
+                traceback.print_exc()
+                return (figsJSON, self.figureIDX, self.figsTitle)
+        
+        if self.filename:
+            if "*" in self.filename:
+                filesJSON = tools.get_filepaths_from_wildcard_filename(self.projectInfo, self.filename)
+                for fJSON in filesJSON:
+                    filePath = fJSON['filePath']
+                    caption = "No available caption."
+                    title = f"Figure {self.figureIDX}"
+                    if filePath.exists:
+                        file_exists = 1
+                    else:
+                        file_exists = 0
+                    figsJSON.append({"figure_path":str(filePath.relative_to(Path.home())), "title":title, "caption":caption, "file_exists":file_exists})
+                    self.figureIDX += 1
+            else:
+                caption = "No available caption."
+                title = f"Figure {self.figureIDX}"
+                filePath = Path(self.projectInfo['dirFullPath']).joinpath(self.filename)
+                if filePath.exists():
+                    file_exists = 1
+                else:
+                    file_exists = 0
+                figsJSON.append({"figure_path":str(filePath.relative_to(Path.home())), "title":title, "caption":caption, "file_exists":file_exists})
+                self.figureIDX += 1
+            return (figsJSON, self.figureIDX, self.figsTitle)
+
+        tmpJSON = {}
+        for line in self.lines:
+            line = line.strip()
+
+            if line.startswith("project"):
+                if len(tmpJSON) != 0 and tmpJSON.get('filename', False):
+                    figsJSON.append(render_tmpJSON(tmpJSON))
+                    tmpJSON = {}
+                    self.figureIDX += 1
+                try:
+                    tmpJSON['project'] = tools.get_project_info(line.split(":")[-1].strip())
+                except Exception:
+                    traceback.print_exc()
+                    continue
+            elif line.startswith("figure"):
+                if len(tmpJSON) != 0 and tmpJSON.get('filename', False):
+                    figsJSON.append(render_tmpJSON(tmpJSON))
+                    tmpJSON = {}
+                    self.figureIDX += 1
+                try:
+                    tmpJSON['filename'] = line.split(":", 1)[-1].strip()
+                except Exception as error:
+                    print(error)
+                    continue
+            elif line.startswith("caption"):
+                try:
+                    tmpJSON['caption'] = line.split(":", 1)[-1].strip()
+                except Exception as error:
+                    print(error)
+                    continue
+
+        if len(tmpJSON) != 0 and tmpJSON.get('filename', False):
+            figsJSON.append(render_tmpJSON(tmpJSON))
+            tmpJSON = {}
+            self.figureIDX += 1
+        return (figsJSON, self.figureIDX, self.figsTitle)
+
+
 class HtmlFilesTag:
 
     def __init__(self, projectName:str, lines:list, tagArgs:str):
@@ -547,6 +815,19 @@ class HtmlFilesTag:
         return (filesJSON, self.filesTitle)
 
 
+class PDFFilesTag:
+    """Tag is ignored for PDF rendering"""
+
+    def __init__(self, projectName:str, lines:list, tagArgs:str):
+        self.projectInfo = None
+        self.filesTitle = ""
+        self.lines = None
+        self.tagArgs = None
+
+    def render_lines(self) -> tuple: 
+        return ([], self.filesTitle)
+
+
 class HtmlOmilayersTableTag:
 
     def __init__(self, projectName:str, lines:list):
@@ -600,7 +881,6 @@ class HtmlOmilayersTableTag:
                 layerInfo = ""
 
             nrows = tmpJSON['nrows']
-            filePath = Path(projectDir).joinpath(DBpath)
             return {"DBpath":DBpath, 
                     "DBname":DBname, 
                     "layer":layer, 
@@ -651,6 +931,17 @@ class HtmlOmilayersTableTag:
         return filesJSON
 
 
+class PDFOmilayersTableTag:
+    """Tag is ignored for PDF rendering."""
+
+    def __init__(self, projectName:str, lines:list):
+        self.projectInfo = None
+        self.lines = None
+
+    def render_lines(self) -> tuple: 
+        return []
+
+
 class HtmlOmilayersPlotTag:
 
     def __init__(self, project_name:str, lines:list):
@@ -684,7 +975,6 @@ class HtmlOmilayersPlotTag:
             tmpJSON['missingFields'] = missing_fields
             tmpJSON['name'] = tmpJSON['name'].replace(" ", "_")
 
-            project_id = tmpJSON['project']['ID']
             project_dir = tmpJSON['project']['dirFullPath']
             db_full_path = Path(project_dir).joinpath(tmpJSON['file'])
 
@@ -772,5 +1062,16 @@ class HtmlOmilayersPlotTag:
             filesJSON.append(render_tmpJSON(tmpJSON))
             tmpJSON = {}
         return filesJSON
+
+
+class PDFOmilayersPlotTag:
+    """Tag is ignored for PDF rendering."""
+
+    def __init__(self, project_name:str, lines:list):
+        self.project_info = None
+        self.lines = None
+
+    def render_lines(self) -> tuple: 
+        return []
 
 

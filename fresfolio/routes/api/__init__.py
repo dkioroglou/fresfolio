@@ -1,11 +1,9 @@
 from flask import Blueprint, jsonify, request, send_from_directory
 from pathlib import Path
-import os
 import re
 import traceback
 from platform import system
 import subprocess
-from importlib import resources
 from fresfolio.utils import tools
 from fresfolio.utils.classes import AppUtils, UserUtils, ProjectsUtils
 
@@ -490,7 +488,7 @@ def get_filepath(project, filename):
                 "osx"    : "open",
                 "darwin" : "open"
                 }
-        proc = subprocess.run([fileViewer[OSname], filePath], capture_output=True, check=False, text=True)
+        subprocess.run([fileViewer[OSname], filePath], capture_output=True, check=False, text=True)
         return '', 204 
 
     dirPath = filePath.parent
@@ -666,44 +664,91 @@ def app_api_get_view_sections():
     
     return jsonify(renderedSections), 200
 
-@apiroutes.route('/api/section-to-pdf', methods=['POST'])
+@apiroutes.route('/api/sections-to-pdf', methods=['POST'])
 @tools.conditional_login_required()
-def app_api_section_to_pdf():
+def app_api_sections_to_pdf():
+    if not tools.is_typst_installed():
+        return "Typst not installed", 400
+    typstExecutable = tools.get_typst_path()
     try:
         data = request.get_json()
         projectID = data['projectID']
-        sectionID = data['sectionID']
-        print("projectID", projectID)
-        print("section", sectionID)
-        sectionRenderedContainers = PUTL.get_section_content_rendered(projectID, sectionID, render_type='pdf')
-        # Get fresfolio relative path from HOME
-        api_file_path = Path(__file__).parent
-        pkg_root_dir = api_file_path.parent.parent
-        pkg_root_dir = pkg_root_dir.relative_to(Path.home())
-        pdf_content = [
-            '#set page(paper: "a4")',
-            '#set par(justify: true)',
-            '#show link: set text(fill: blue)',
-            f'#import "{pkg_root_dir}/bin/typst_packages/mitex/0.2.4/lib.typ": *'
-            '',
-            f'= {sectionRenderedContainers["title"]}',
-            ''
-        ]
-        for containerJSON in sectionRenderedContainers['content']:
-            for contentJSON in containerJSON['content']:
-                if not contentJSON['text']:
-                    continue
-                contentText = contentJSON['text'][0] + "\n"
-                pdf_content.append(contentText)
+        sectionsIDs = data['sectionsIDs']
+        pdfOptions = """
+#set page(paper: "a4")
+#set par(justify: true)
+#show link: set text(fill: blue)
+#show table.cell.where(y: 0): set text(weight: "bold")
+#set table( 
+    fill: (_, y) => if calc.odd(y) { rgb("#EAF2F5") }, 
+    stroke: 1pt + rgb("#21222C")
+)
+#let tickedIcon = text(fill:rgb("#178236"), font: "DejaVu Sans", "\\u{2611}")
+#let untickedIcon = text(font: "DejaVu Sans", "\\u{2610}")
+#let errorIcon = text(fill:red, font: "DejaVu Sans", "\\u{2612}")
+#let infoIcon = text(
+  fill: blue,
+  font: "DejaVu Sans", 
+  size: 1.2em,
+  baseline: 0.1em,
+  "\\u{24d8}"
+)
+#set list(marker: ([•], [], []))
+#import "@preview/mitex:0.2.4": *
+
+"""
+        pdf_content = [pdfOptions]
+        for sectionID in sectionsIDs:
+            sectionRenderedContainers = PUTL.get_section_content_rendered(projectID, sectionID, render_type='pdf')
+            pdf_content.append(f'= {sectionRenderedContainers["title"]}')
+            for containerJSON in sectionRenderedContainers['content']:
+                for contentJSON in containerJSON['content']:
+                    if not contentJSON['text']:
+                        continue
+                    if contentJSON['type'] == "table":
+                        tableJSON = contentJSON['text'][0]
+                        contentText = f"""
+                                        #figure(
+                                            table(
+                                                columns: {len(tableJSON['columns'])},
+                                                stroke: none,
+                                                table.hline(),
+                                                table.header{''.join([f'[{col}]' for col in tableJSON['columns']])},
+                                                table.hline(stroke: .5pt),
+                                                {"\n  ".join([f"[{item}]," for row in tableJSON['rows'] for item in row])}
+                                                table.hline(),
+                                            ),
+                                            caption: [{tableJSON['title']}]
+                                        )
+                                        """
+                    elif contentJSON['type'] == 'figures':
+                        for figJSON in contentJSON['text']:
+                            if figJSON['file_exists'] == 1:
+                                contentText = f"""
+                                                #figure(
+                                                    image("{figJSON['figure_path']}", width: 100%),
+                                                    caption: [{figJSON['caption']}],
+                                                )
+                                                """
+                                pdf_content.append(contentText)
+                        continue
+                    elif contentJSON['type'] == "files":
+                        continue
+                    elif contentJSON['type'] == "omitable":
+                        continue
+                    elif contentJSON['type'] == "omiplot":
+                        continue
+                    else:
+                        contentText = contentJSON['text'][0] + "\n"
+                    pdf_content.append(contentText)
         pdf_content = "\n".join(pdf_content)
 
-        with resources.path("fresfolio.bin", "typst") as exe_path:
-             result = subprocess.run(
-                                    [str(exe_path), "compile", "-", "/home/CICBIOGUNE/dkioroglou/Desktop/fresfolio.pdf"],
-                                    input=pdf_content,
-                                    text=True,
-                                    capture_output=True
-            )
+        result = subprocess.run(
+                                [typstExecutable, "compile", "-", Path.home().joinpath("Desktop/fresfolio.pdf"), "--root", str(Path.home())],
+                                input=pdf_content,
+                                text=True,
+                                capture_output=True
+        )
 
         if result.returncode == 0:
             return "", 200

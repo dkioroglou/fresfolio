@@ -292,10 +292,10 @@ class PDFInlineRenderers:
     def render_icon_markups(self, text: str) -> str:
         """Convert icons to typst emojis and unicodes."""
         icons = {
-                'todo' : '#sym.ballot',
-                'done' : '#sym.ballot.check',
-                'info' : '#emoji.info',
-                'error': '#sym.crossmark'
+                'todo' : '#untickedIcon',
+                'done' : '#tickedIcon',
+                'info' : '#infoIcon',
+                'error': '#errorIcon'
                 }
         def render_markup(match):
             icon = match.group(1)
@@ -311,10 +311,9 @@ class PDFInlineRenderers:
 
     def render_math_inline_markups(self, text: str) -> str:
         """Convert inline math to typst inline math"""
-        # TODO: convert latex inline math to typst equivalent.
         def render_markup(match):
             mathText = match.group(1)
-            renderedText = mathText
+            renderedText = f'#mi(`{mathText}`)'
             return renderedText
         return self.PATTERNS['math'].sub(render_markup, text)
 

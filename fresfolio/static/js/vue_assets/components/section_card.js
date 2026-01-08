@@ -472,7 +472,7 @@ const SectionCard = defineComponent({
         },
         async sectionToPdf(projectID, sectionID) {
             try {
-                const response = await fetch("/api/section-to-pdf", {
+                const response = await fetch("/api/sections-to-pdf", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -480,7 +480,7 @@ const SectionCard = defineComponent({
                     body: JSON.stringify(
                         {
                             "projectID": projectID, 
-                            "sectionID": sectionID
+                            "sectionsIDs": [sectionID]
                         }
                     )
                 });

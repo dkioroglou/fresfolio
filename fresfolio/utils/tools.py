@@ -7,6 +7,7 @@ from functools import wraps
 from flask_login import current_user
 from flask import redirect, url_for, request, current_app
 import importlib
+import shutil
 if importlib.util.find_spec("omilayers") is not None:
     from omilayers import Omilayers
 
@@ -15,6 +16,16 @@ APPDB = APPDIR.joinpath("fresfolio.db")
 
 def is_module_installed(module_name):
     return importlib.util.find_spec(module_name) is not None
+
+def is_typst_installed() -> bool:
+    """Check if typst is installed in the system."""
+    if shutil.which("typst") is None:
+        return False
+    return True
+
+def get_typst_path():
+    """Returns typst path."""
+    return shutil.which("typst")
 
 def conditional_login_required():
     def decorator(view_func):
