@@ -114,7 +114,7 @@ class HtmlListTag:
         if isListNumbered:
             self.open_tag = "<ol>"
             self.close_tag = "</ol>"
-        return self.open_tag+"<br>".join(renderedLines)+self.close_tag
+        return self.open_tag+"<br>".join(renderedLines)+self.close_tag+"<br>"
 
 class PDFlListTag:
 

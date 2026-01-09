@@ -661,8 +661,9 @@ const ProjectLayout = defineComponent({
             }
 
         },
-        async sectionsToPDF() {
-            console.log(this.renderedSections.map(item => item.ID))
+        async sectionsToPDF(renderPDFFlag) {
+            console.log(this.renderedNotebookName)
+            console.log(this.renderedChapterName)
             try {
                 const response = await fetch("/api/sections-to-pdf", {
                     method: "POST",
@@ -672,7 +673,11 @@ const ProjectLayout = defineComponent({
                     body: JSON.stringify(
                         {
                             "projectID": this.selectedProjectID, 
-                            "sectionsIDs": this.renderedSections.map(item => item.ID)
+                            "sectionsIDs": this.renderedSections.map(item => item.ID),
+                            "notebookName": this.renderedNotebookName,
+                            "chapterName": this.renderedChapterName,
+                            "renderPDFFlag": renderPDFFlag
+
                         }
                     )
                 });
@@ -1115,9 +1120,15 @@ const ProjectLayout = defineComponent({
                                             </q-item-section>
                                         </q-item>
 
-                                        <q-item clickable @click="sectionsToPDF">
+                                        <q-item clickable @click="sectionsToPDF(1)">
                                             <q-item-section>
-                                                <q-item-label>Sections to PDF</q-item-label>
+                                                <q-item-label>Export chapter to PDF</q-item-label>
+                                            </q-item-section>
+                                        </q-item>
+
+                                        <q-item clickable @click="sectionsToPDF(0)">
+                                            <q-item-section>
+                                                <q-item-label>Export chapter to .typ</q-item-label>
                                             </q-item-section>
                                         </q-item>
 

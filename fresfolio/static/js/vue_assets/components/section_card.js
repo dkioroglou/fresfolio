@@ -470,7 +470,7 @@ const SectionCard = defineComponent({
         pinSection(projectID, sectionID) {
             this.$emit('pin-section', projectID, sectionID)
         },
-        async sectionToPdf(projectID, sectionID) {
+        async sectionToPdf(projectID, sectionID, renderPDFFlag) {
             try {
                 const response = await fetch("/api/sections-to-pdf", {
                     method: "POST",
@@ -480,7 +480,10 @@ const SectionCard = defineComponent({
                     body: JSON.stringify(
                         {
                             "projectID": projectID, 
-                            "sectionsIDs": [sectionID]
+                            "sectionsIDs": [sectionID],
+                            "notebookName": "NA",
+                            "chapterName": "NA",
+                            "renderPDFFlag": renderPDFFlag
                         }
                     )
                 });
@@ -672,9 +675,15 @@ const SectionCard = defineComponent({
                                     </q-item-section>
                                 </q-item>
 
-                                <q-item clickable @click="sectionToPdf(sectionData['projectID'], sectionData['ID'])">
+                                <q-item clickable @click="sectionToPdf(sectionData['projectID'], sectionData['ID'], 1)">
                                     <q-item-section>
-                                        <q-item-label>Section to PDF</q-item-label>
+                                        <q-item-label>Export section to PDF</q-item-label>
+                                    </q-item-section>
+                                </q-item>
+
+                                <q-item clickable @click="sectionToPdf(sectionData['projectID'], sectionData['ID'], 0)">
+                                    <q-item-section>
+                                        <q-item-label>Export section to .typ</q-item-label>
                                     </q-item-section>
                                 </q-item>
 

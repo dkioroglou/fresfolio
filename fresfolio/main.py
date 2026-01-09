@@ -1,6 +1,5 @@
 from flask import Flask
 from fresfolio.utils import tools
-import importlib
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = tools.get_app_setting("secret_key")

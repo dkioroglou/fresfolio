@@ -672,12 +672,16 @@ def app_api_sections_to_pdf():
     typstExecutable = tools.get_typst_path()
     try:
         data = request.get_json()
-        projectID = data['projectID']
+        projectID = int(data['projectID'])
         sectionsIDs = data['sectionsIDs']
+        notebookName = data['notebookName']
+        chapterName = data['chapterName']
+        renderPDFFlag = data['renderPDFFlag'] # 1 = render PDF or 0 = write .typ file
         pdfOptions = """
 #set page(paper: "a4")
 #set par(justify: true)
 #show link: set text(fill: blue)
+#set heading(numbering: "1.")
 #show table.cell.where(y: 0): set text(weight: "bold")
 #set table( 
     fill: (_, y) => if calc.odd(y) { rgb("#EAF2F5") }, 
@@ -743,18 +747,37 @@ def app_api_sections_to_pdf():
                     pdf_content.append(contentText)
         pdf_content = "\n".join(pdf_content)
 
-        result = subprocess.run(
-                                [typstExecutable, "compile", "-", Path.home().joinpath("Desktop/fresfolio.pdf"), "--root", str(Path.home())],
-                                input=pdf_content,
-                                text=True,
-                                capture_output=True
-        )
-
-        if result.returncode == 0:
-            return "", 200
+        # Specify PDF output
+        projectInfo = tools.get_project_info(projectID)
+        if len(sectionsIDs) == 1:
+            sectionID = sectionsIDs[0]
+            sectionFullPath = Path(projectInfo['dirFullPath']).joinpath(f"sections/{str(sectionID)}")
+            sectionFullPath.mkdir(exist_ok=True)
+            typst_out_filename = sectionFullPath.joinpath(f"typst_output_s{sectionID}")
         else:
-            print(result.stderr)
-            return 'Error creating PDF', 400
+            outDirFullPath = Path(projectInfo['dirFullPath']).joinpath("typst_pdf_renderings")
+            outDirFullPath.mkdir(exist_ok=True)
+            outfilename = f"{projectInfo['name']}_{notebookName.replace(' ', '_').lower()}_{chapterName.replace(' ', '_').lower()}"
+            typst_out_filename = outDirFullPath.joinpath(outfilename)
+
+        if renderPDFFlag == 1:
+            typst_out_filename = typst_out_filename.with_suffix(".pdf")
+            result = subprocess.run(
+                                    [typstExecutable, "compile", "-", typst_out_filename, "--root", str(Path.home())],
+                                    input=pdf_content,
+                                    text=True,
+                                    capture_output=True
+            )
+
+            if result.returncode == 0:
+                return "", 200
+            else:
+                print(result.stderr)
+                return 'Error creating PDF', 400
+        else:
+            typst_out_filename = typst_out_filename.with_suffix(".typ")
+            with open(typst_out_filename, 'w') as outf:
+                print(pdf_content, file=outf)
 
     except Exception:
         traceback.print_exc()

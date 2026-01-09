@@ -1,7 +1,5 @@
-from pathlib import Path
-import json
-from flask import Blueprint, jsonify, render_template, request, redirect, url_for, current_app, session, make_response
-from flask_login import LoginManager, login_user, logout_user, login_required
+from flask import Blueprint, render_template, request, redirect, url_for, current_app, session, make_response
+from flask_login import LoginManager, login_user, logout_user
 from flask_bcrypt import Bcrypt
 from fresfolio.utils.classes import AppUtils, User, ProjectsUtils
 from fresfolio.utils import tools
