@@ -2,7 +2,7 @@ const SectionCard = defineComponent({
     components: {
         SectionContent
     },
-    props: ['sectionData', 'expandSection', 'userBroadcasts'],
+    props: ['sectionData', 'expandSection'],
     data() {
         return {
             isExpanded: true,

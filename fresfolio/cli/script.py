@@ -25,35 +25,22 @@ def init():
     initializer = AppINIT()
 
 @frescli.command()
-def enable_broadcasting():
-    "Enables broadcasting."
-    if not is_app_initialized():
-        exit()
-    tools.set_app_setting("broadcasting", "1")
-    print("Broadcasting is enabled.")
-    print("Run: fresfolio start")
-
-@frescli.command()
-def disable_broadcasting():
-    "Disables broadcasting."
-    if not is_app_initialized():
-        exit()
-    tools.set_app_setting("broadcasting", "0")
-    print("Broadcasting is disabled.")
-    print("Run: fresfolio start")
-
-@frescli.command()
 @click.option("--port", "-p", type=int, default=5000, help="Port to be used by fresfolio.")
 def start(port):
     """Start fresfolio."""
     if not is_app_initialized():
         exit()
     from fresfolio.main import app
-    if tools.is_broadcasting_enabled():
-        print("FRENOTE IS BROADCASTING")
-        app.run(host="0.0.0.0", port=port)
-    else:
-        app.run(port=port, debug=True)
+    app.run(port=port, debug=True)
+
+@frescli.command()
+@click.option("--port", "-p", type=int, default=5000, help="Port to be used by fresfolio.")
+def broadcast(port):
+    """Start fresfolio in broadcasting mode."""
+    if not is_app_initialized():
+        exit()
+    from fresfolio.main import app
+    app.run(host="0.0.0.0", port=port)
 
 @frescli.command()
 def info():
@@ -66,11 +53,6 @@ def info():
     print(f"      app database: {APPDB}")
     projectsDir = Path(tools.get_app_setting("projectsDir")).expanduser()
     print(f"projects directory: {projectsDir}")
-    broadcasting = tools.get_app_setting("broadcasting")
-    if broadcasting == "0":
-        print("      broadcasting: disabled")
-    else:
-        print("      broadcasting: enabled")
 
 @frescli.command()
 @click.argument("directory")
@@ -131,14 +113,6 @@ def ls_projects():
         print(f"directory: {projectPath}")
         print(f"   exists: {Path(projectPath).exists()}")
         print()
-
-@frescli.command()
-def reset_user():
-    "Resets user credentials for broadcasting."
-    if not is_app_initialized():
-        exit()
-    tools.empty_users_table()
-    print("User credentials have been reset.")
 
 @frescli.command()
 @click.argument("directory")

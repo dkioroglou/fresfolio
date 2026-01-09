@@ -2,11 +2,8 @@ from pathlib import Path
 import contextlib
 import sqlite3
 from datetime import datetime
-import hashlib
-from flask_bcrypt import Bcrypt
 import json
 import shutil
-from flask_login import UserMixin
 from collections import defaultdict
 import re
 import traceback
@@ -23,16 +20,6 @@ if tools.is_module_installed("omilayers"):
     from omilayers import Omilayers
     import duckdb
     import pandas as pd
-
-
-class User(UserMixin):
-
-    def __init__(self, id, username):
-        self.id = id
-        self.username = username
-
-    def get_id(self):
-        return str(self.id)
 
 
 class AppINIT:
@@ -151,116 +138,12 @@ class AppINIT:
                     VALUES (?,?)
                     """
                     c.execute(query, ("projectsDir", str(APPDIR.joinpath("projects"))))
-                    c.execute(query, ("broadcasting", "0"))
                     c.execute(query, ("secret_key", secrets.token_urlsafe(32)))
                     conn.commit()
         except Exception:
             traceback.print_exc()
             return False
         return True
-
-
-class AppUtils:
-    
-    @property
-    def users_table_is_empty(self) -> bool:
-        with contextlib.closing(sqlite3.connect(APPDB)) as conn:
-            with contextlib.closing(conn.cursor()) as c:
-                query = "SELECT 1 FROM users LIMIT 1"
-                c.execute(query)
-                row = c.fetchone()
-        if row is None:
-            return True
-        return False
-
-    def new_user_is_created(self, username, password) -> bool:
-        "Stores username lowercased and hashed password."
-        try:
-            with contextlib.closing(sqlite3.connect(APPDB)) as conn:
-                with contextlib.closing(conn.cursor()) as c:
-                    query = """
-                    INSERT INTO users (username,password)
-                    VALUES (?,?)
-                    """
-                    c.execute(query, (username.lower(), password))
-                    conn.commit()
-        except Exception:
-            traceback.print_exc()
-            return False
-        return True
-
-    @staticmethod
-    def hash_email(email) -> str:
-        return hashlib.sha256(email.lower().strip().encode()).hexdigest()
-
-    @staticmethod
-    def hash_password(password) -> str:
-        bcrypt = Bcrypt()
-        return bcrypt.generate_password_hash(password).decode('utf-8')
-
-    def get_user_by_username(self, username):
-        with contextlib.closing(sqlite3.connect(APPDB)) as conn:
-            with contextlib.closing(conn.cursor()) as c:
-                query = """
-                SELECT id, username, password FROM users
-                WHERE username=(?)
-                """
-                c.execute(query, (username,))
-                row = c.fetchone()
-        return row
-
-    def get_user_by_id(self, user_id) -> tuple:
-        with contextlib.closing(sqlite3.connect(APPDB)) as conn:
-            with contextlib.closing(conn.cursor()) as c:
-                query = """
-                SELECT id, username FROM users 
-                WHERE id=(?)
-                """
-                c.execute(query, (user_id, ))
-                row = c.fetchone()
-        return row
-
-
-class UserUtils:
-
-    def can_access_all_projects(self, username) -> bool:
-        with contextlib.closing(sqlite3.connect(APPDB)) as conn:
-            with contextlib.closing(conn.cursor()) as c:
-                query = """
-                SELECT can_access_all_projects FROM users 
-                WHERE username=(?)
-                """
-                c.execute(query, (username, ))
-                row = c.fetchone()
-        if not row:
-            return False
-        return bool(row[0])
-
-    def can_access_settings(self, username) -> bool:
-        with contextlib.closing(sqlite3.connect(APPDB)) as conn:
-            with contextlib.closing(conn.cursor()) as c:
-                query = """
-                SELECT can_access_settings FROM users 
-                WHERE username=(?)
-                """
-                c.execute(query, (username, ))
-                row = c.fetchone()
-        if not row:
-            return False
-        return bool(row[0])
-
-    def can_edit(self, username) -> bool:
-        with contextlib.closing(sqlite3.connect(APPDB)) as conn:
-            with contextlib.closing(conn.cursor()) as c:
-                query = """
-                SELECT can_edit FROM users 
-                WHERE username=(?)
-                """
-                c.execute(query, (username, ))
-                row = c.fetchone()
-        if not row:
-            return False
-        return bool(row[0])
 
 
 class ProjectsUtils:
@@ -833,7 +716,6 @@ class ProjectsUtils:
             try:
                 IDs = queryTerms.split(":")[-1]
                 if "," in IDs:
-                    # IDs = [(int(x.strip(" ")), ) for x in IDs.split(",") if x]
                     IDs = [int(x.strip(" ")) for x in IDs.split(",") if x]
                 else:
                     IDs = [int(IDs.strip(" "))]

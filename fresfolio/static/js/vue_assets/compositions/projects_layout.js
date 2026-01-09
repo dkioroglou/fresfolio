@@ -2,7 +2,7 @@ const ProjectsLayout = defineComponent({
     components: {
         ProjectLayout
     },
-    props: ['projectIdLoad', 'projectNameLoad', 'userBroadcasts'],
+    props: ['projectIdLoad', 'projectNameLoad'],
     data () {
         return {
             projectsList: [],
@@ -255,24 +255,6 @@ const ProjectsLayout = defineComponent({
                 </q-avatar>
             </q-toolbar-title>
 
-            <q-chip v-if="userBroadcasts == 1" class="q-mr-md" color="deep-orange" text-color="white" icon="warning">
-                Broadcasting
-            </q-chip>
-            <q-btn v-if="userBroadcasts == 1" color="secondary" label="Menu">
-                <q-menu
-                    :offset="[0, 10]"
-                    transition-show="jump-down"
-                    transition-hide="jump-up"
-                    :style="{ backgroundColor: 'var(--q-secondary)', color: 'white'}"
-                >
-                    <q-list dense style="min-width: 100px">
-                        <q-item clickable v-close-popup @click="logout">
-                            <q-item-section>Logout</q-item-section>
-                        </q-item>
-                    </q-list>
-                </q-menu>
-            </q-btn>
-
         </q-toolbar>
     </q-header>
 
@@ -496,7 +478,7 @@ const ProjectsLayout = defineComponent({
 
 </q-layout>
 
-<project-layout v-else :selectedProjectID="selectedProjectID" :selectedProjectName="selectedProjectName" :userBroadcasts="userBroadcasts"></project-layout>
+<project-layout v-else :selectedProjectID="selectedProjectID" :selectedProjectName="selectedProjectName"></project-layout>
   `
 });
 

@@ -5,41 +5,19 @@ import traceback
 from platform import system
 import subprocess
 from fresfolio.utils import tools
-from fresfolio.utils.classes import AppUtils, UserUtils, ProjectsUtils
+from fresfolio.utils.classes import ProjectsUtils
 
 if tools.is_module_installed("omilayers") and tools.is_module_installed("bokeh"):
     from fresfolio.plotting import omiplot
 
 apiroutes = Blueprint('apiroutes', __name__)
-AUTL = AppUtils()
-USER = UserUtils()
 PUTL = ProjectsUtils()
 OSname = system().lower()
-
-# USERS RELATED ROUTES
-#========================
-@apiroutes.route('/api/create-user', methods=['POST'])
-def app_api_register_user():
-    data = request.get_json()
-    kwargs = {
-            "username":data['username'],
-            "password": AUTL.hash_password(data['password'])
-            }
-    if not AUTL.new_user_is_created(**kwargs):
-        return '', 400
-    return '', 200
-
-@apiroutes.route('/api/get-users-exist', methods=['POST'])
-def app_api_users_exist():
-    if not AUTL.users_table_is_empty:
-        return jsonify({"users_exist": 1}), 200
-    return jsonify({"users_exist": 0}), 200
 
 
 # PROJECTS RELATED ROUTES
 #========================
 @apiroutes.route('/api/create-project', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_create_project():
     try:
         data = request.get_json()
@@ -55,13 +33,11 @@ def app_api_create_project():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/get-projects', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_fetch_projects():
     projects = PUTL.get_projects()
     return jsonify(projects)
 
 @apiroutes.route('/api/get-notebooks', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_get_notebooks():
     data = request.get_json()
     projectID = data['projectID']
@@ -73,7 +49,6 @@ def app_api_get_notebooks():
     return jsonify(projectNotebooks)
 
 @apiroutes.route('/api/create-notebook', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_create_notebook():
     try:
         data = request.get_json()
@@ -89,7 +64,6 @@ def app_api_create_notebook():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/create-chapter', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_create_chapter():
     try:
         data = request.get_json()
@@ -106,7 +80,6 @@ def app_api_create_chapter():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/set-notebook-name', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_set_notebook_name():
     try:
         data = request.get_json()
@@ -123,7 +96,6 @@ def app_api_set_notebook_name():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/set-chapter-name', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_set_chapter_name():
     try:
         data = request.get_json()
@@ -141,7 +113,6 @@ def app_api_set_chapter_name():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/get-chapter-sections', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_get_chapter_sections():
     try:
         data = request.get_json()
@@ -154,7 +125,6 @@ def app_api_get_chapter_sections():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/create-section', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_create_section():
     try:
         data = request.get_json()
@@ -172,7 +142,6 @@ def app_api_create_section():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/set-section-title', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_set_section_title():
     try:
         data = request.get_json()
@@ -187,7 +156,6 @@ def app_api_set_section_title():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/get-section-raw-content', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_get_section_raw_content():
     try:
         data = request.get_json()
@@ -200,7 +168,6 @@ def app_api_get_section_raw_content():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/set-section-content', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_set_section_content():
     try:
         data = request.get_json()
@@ -218,7 +185,6 @@ def app_api_set_section_content():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/create-section-directory', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_create_section_directory():
     try:
         data = request.get_json()
@@ -233,7 +199,6 @@ def app_api_create_section_directory():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/get-sections-for-search', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_get_sections_for_search():
     try:
         data = request.get_json()
@@ -255,7 +220,6 @@ def app_api_get_sections_for_search():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/delete-section', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_delete_section():
     try:
         data = request.get_json()
@@ -283,7 +247,6 @@ def app_api_delete_section():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/delete-notebook', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_delete_notebook():
     try:
         data = request.get_json()
@@ -298,7 +261,6 @@ def app_api_delete_notebook():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/delete-chapter', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_delete_chapter():
     try:
         data = request.get_json()
@@ -313,7 +275,6 @@ def app_api_delete_chapter():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/set-project-description', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_set_project_description():
     try:
         data = request.get_json()
@@ -327,7 +288,6 @@ def app_api_set_project_description():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/set-project-name', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_set_project_name():
     try:
         data = request.get_json()
@@ -343,7 +303,6 @@ def app_api_set_project_name():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/delete-project', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_delete_project():
     try:
         data = request.get_json()
@@ -356,7 +315,6 @@ def app_api_delete_project():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/set-sections-tags', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_set_section_tags():
     try:
         data = request.get_json()
@@ -371,7 +329,6 @@ def app_api_set_section_tags():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/set-chapter-sections-order', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_set_chapter_sections_order():
     try:
         data = request.get_json()
@@ -407,7 +364,6 @@ def app_api_set_chapter_sections_order():
         return "Something went wrong", 400
 
 @apiroutes.route('/api/get-omilayers', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_get_omilayers():
     try:
         data = request.get_json()
@@ -420,7 +376,6 @@ def app_api_get_omilayers():
     return jsonify(layers)
 
 @apiroutes.route('/api/get-data-for-omilayer', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_get_data_for_omilayer():
     try:
         data = request.get_json()
@@ -435,7 +390,6 @@ def app_api_get_data_for_omilayer():
     return jsonify({"columns":columns, "rows":rows, "layerInfo":layerInfo})
 
 @apiroutes.route('/api/get-section-directory-tree', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_get_section_directory_tree():
     try:
         data = request.get_json()
@@ -452,7 +406,6 @@ def app_api_get_section_directory_tree():
 # FILES RELATED ROUTES
 # ====================
 @apiroutes.route('/api/files/<project>/<path:filename>', methods=['GET'])
-@tools.conditional_login_required()
 def get_filepath(project, filename):
     if project.isnumeric():
         projectID = int(project)
@@ -496,7 +449,6 @@ def get_filepath(project, filename):
     return send_from_directory(dirPath, filename)
 
 @apiroutes.route('/api/upload-files-to-section', methods=['POST'])
-@tools.conditional_login_required()
 def upload_files_to_section():
     projectID = request.form.get('projectID')
     sectionID = request.form.get('sectionID')
@@ -514,7 +466,6 @@ def upload_files_to_section():
     return "", 200
 
 @apiroutes.route('/api/render-plot', methods=['POST'])
-@tools.conditional_login_required()
 def api_render_plot():
     try:
         data = request.get_json()
@@ -526,7 +477,6 @@ def api_render_plot():
     return "", 200
 
 @apiroutes.route('/api/create-new-omilayer', methods=['POST'])
-@tools.conditional_login_required()
 def api_create_new_omilayer():
     try:
         data = request.get_json()
@@ -547,7 +497,6 @@ def api_create_new_omilayer():
     return "", 200
 
 @apiroutes.route('/api/get-column-names-and-dtypes-for-omilayer', methods=['POST'])
-@tools.conditional_login_required()
 def api_get_omilayer_column_names_and_dtypes():
     try:
         data = request.get_json()
@@ -563,7 +512,6 @@ def api_get_omilayer_column_names_and_dtypes():
     return jsonify(layerColumns)
 
 @apiroutes.route('/api/insert-data-to-omilayer', methods=['POST'])
-@tools.conditional_login_required()
 def api_insert_data_to_omilayer():
     try:
         data = request.get_json()
@@ -579,7 +527,6 @@ def api_insert_data_to_omilayer():
     return "", 200
 
 @apiroutes.route('/api/upload-file-to-omilayer', methods=['POST'])
-@tools.conditional_login_required()
 def upload_file_to_omilayer():
     try:
         projectID = request.form.get('projectID')
@@ -603,7 +550,6 @@ def upload_file_to_omilayer():
     return "", 200
 
 @apiroutes.route('/api/set-omilayer-description', methods=['POST'])
-@tools.conditional_login_required()
 def api_set_omilayer_description():
     try:
         data = request.get_json()
@@ -619,7 +565,6 @@ def api_set_omilayer_description():
     return "", 200
 
 @apiroutes.route('/api/delete-omilayer', methods=['POST'])
-@tools.conditional_login_required()
 def api_delete_omilayer():
     try:
         data = request.get_json()
@@ -634,7 +579,6 @@ def api_delete_omilayer():
     return "", 200
 
 @apiroutes.route('/api/get-view-sections', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_get_view_sections():
     # try:
     data = request.get_json()['parsedArgs']
@@ -665,7 +609,6 @@ def app_api_get_view_sections():
     return jsonify(renderedSections), 200
 
 @apiroutes.route('/api/sections-to-pdf', methods=['POST'])
-@tools.conditional_login_required()
 def app_api_sections_to_pdf():
     if not tools.is_typst_installed():
         return "Typst not installed", 400

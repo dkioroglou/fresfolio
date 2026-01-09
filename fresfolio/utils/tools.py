@@ -3,9 +3,6 @@ import contextlib
 import sqlite3
 from typing import Union
 import traceback
-from functools import wraps
-from flask_login import current_user
-from flask import redirect, url_for, request, current_app
 import importlib
 import shutil
 if importlib.util.find_spec("omilayers") is not None:
@@ -26,17 +23,6 @@ def is_typst_installed() -> bool:
 def get_typst_path():
     """Returns typst path."""
     return shutil.which("typst")
-
-def conditional_login_required():
-    def decorator(view_func):
-        @wraps(view_func)
-        def wrapped_view(*args, **kwargs):
-            if current_app.config['user_broadcasts'] == 1:
-                if not current_user.is_authenticated:
-                    return redirect(url_for('login', next=request.url))
-            return view_func(*args, **kwargs)
-        return wrapped_view
-    return decorator
 
 def set_app_setting(setting:str, value:str) -> None:
     with contextlib.closing(sqlite3.connect(APPDB)) as conn:
@@ -66,19 +52,6 @@ def get_app_setting(setting:str) -> Union[str, None]:
     if len(row) == 0:
         return None
     return row[0]
-
-def empty_users_table() -> None:
-    with contextlib.closing(sqlite3.connect(APPDB)) as conn:
-        with contextlib.closing(conn.cursor()) as c:
-            query = "DELETE FROM users"
-            c.execute(query)
-            conn.commit()
-
-def is_broadcasting_enabled():
-    broadcastingValue = get_app_setting("broadcasting")
-    if broadcastingValue == "1":
-        return True 
-    return False
 
 def get_paths_for_project_dir_and_db(projectID:int) -> tuple:
     with contextlib.closing(sqlite3.connect(APPDB)) as conn:

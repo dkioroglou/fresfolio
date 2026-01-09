@@ -2,7 +2,6 @@
 //
 const app = createApp({
   components: {
-      LoginLayout,
       ProjectsLayout
   }
 });

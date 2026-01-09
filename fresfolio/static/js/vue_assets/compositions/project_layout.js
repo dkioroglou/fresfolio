@@ -2,7 +2,7 @@ const ProjectLayout = defineComponent({
     components: {
         SectionCard
     },
-    props:['selectedProjectID', 'selectedProjectName', 'userBroadcasts'],
+    props:['selectedProjectID', 'selectedProjectName'],
     data () {
         return {
             leftDrawerOpen: true,
@@ -771,10 +771,6 @@ const ProjectLayout = defineComponent({
             </q-input>
             <!-- SEARCH BAR END -->
 
-            <q-chip v-if="userBroadcasts == 1" class="q-mr-md" color="deep-orange" text-color="white" icon="warning">
-                Broadcasting
-            </q-chip>
-
             <q-btn color="secondary" label="Menu">
                 <q-menu
                     :offset="[0, 10]"
@@ -788,11 +784,6 @@ const ProjectLayout = defineComponent({
                             <q-item-section>Select project</q-item-section>
                         </q-item>
 
-                        <q-separator />
-
-                        <q-item v-if="userBroadcasts == 1" clickable v-close-popup @click="logout">
-                            <q-item-section>Logout</q-item-section>
-                        </q-item>
                     </q-list>
                 </q-menu>
             </q-btn>
@@ -983,7 +974,6 @@ const ProjectLayout = defineComponent({
             <template v-if="searchSections.length" class="q-px-md">
                 <section-card 
                     v-for="(sectionJSON, index) in searchSections" :key="index" 
-                    :userBroadcasts="userBroadcasts"
                     :section-data="searchSections[index]" 
                     :expand-section="expandAll"
                     @delete-section="deleteRenderedSection"
@@ -1029,7 +1019,6 @@ const ProjectLayout = defineComponent({
             <template v-if="viewSections.length" class="q-px-md">
                 <section-card 
                     v-for="(sectionJSON, index) in viewSections" :key="index" 
-                    :userBroadcasts="userBroadcasts"
                     :section-data="viewSections[index]" 
                     :expand-section="expandAll"
                     @delete-section="deleteRenderedSection"
@@ -1075,7 +1064,6 @@ const ProjectLayout = defineComponent({
             <template v-if="pinnedSections.length" class="q-px-md">
                 <section-card 
                     v-for="(sectionJSON, index) in pinnedSections" :key="index" 
-                    :userBroadcasts="userBroadcasts"
                     :section-data="pinnedSections[index]" 
                     :expand-section="expandAll"
                     @delete-section="deleteRenderedSection"
@@ -1240,7 +1228,6 @@ const ProjectLayout = defineComponent({
                         <div v-else class="q-mt-md">
                             <section-card 
                                 v-for="(sectionJSON, index) in renderedSections" :key="index" 
-                                :userBroadcasts="userBroadcasts"
                                 :section-data="renderedSections[index]" 
                                 :expand-section="expandAll"
                                 @delete-section="deleteRenderedSection"

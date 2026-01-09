@@ -3,7 +3,6 @@ from fresfolio.utils import tools
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = tools.get_app_setting("secret_key")
-app.config['user_broadcasts'] = int(tools.get_app_setting("broadcasting"))
 app.config['has_omilayers'] = tools.is_module_installed("omilayers")
 app.config['has_bokeh'] = tools.is_module_installed("bokeh")
 app.config['has_openpyxl'] = tools.is_module_installed("openpyxl")
