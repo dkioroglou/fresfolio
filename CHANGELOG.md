@@ -1,5 +1,5 @@
-# v0.2.9 New features and bugfix Release
-This is a bug fix release for various issues discovered after we released v0.2.8. Also new features have been added.
+# v0.3.0 New features and bugfix Release
+This is a bug fix release for various issues discovered after the release v0.2.8. Also new features have been added.
 
 ## What's Changed
 * FEATURE: sections can be grouped as a "view" with the markup `\view{project: id1,id2,idN}`. The grouped sections can be viewed on their own drawer.
@@ -8,5 +8,6 @@ This is a bug fix release for various issues discovered after we released v0.2.8
 * FEATURE: sections can be exported to PDF with `typst`.
 * OPTIMIZED: changed color of links and inline code text.
 * OPTIMIZED: view markup can now accept either chapter name or section IDs.
+* OPTIMIZED: broadcast functionality is maintained but signup and login functionalities have been removed for code simplification.
 * FIXED: fixed bugs associated with rendering lists.
 * FIXED: fixed bug of markdown links not rendering properly when links include parenthesis.
