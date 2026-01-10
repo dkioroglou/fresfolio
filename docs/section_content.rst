@@ -106,6 +106,7 @@ using asterisks:
 
    * item1
    * item2
+     -- Second level for item2
    * item3
 
 or using dashes:
@@ -114,7 +115,19 @@ or using dashes:
 
    - item1
    - item2
+     -- Second level of item2
    - item3
+
+of using ``+`` for numbered lists:
+
+.. code-block::
+
+   + item1
+   + item2
+     -- Second level of item2
+   + item3
+
+**Note**: in numbered lists, only the first level is numbered.
 
 **HTML rendering**
 

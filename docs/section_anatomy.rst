@@ -45,6 +45,8 @@ To the right the following are visible:
         └── sections
             └── [id]
 
+  * **Export section to PDF**: exports the content of the current section to a PDF file using ``typst``. Note that ``typst`` should already be installed on the system and in the ``PATH``. The PDF files is stored in ``sections/[id]``.
+  * **Export section to .typ**: converts the content of the current section to ``typst`` text and stores it in a ``.typ`` file in  ``sections/[id]``. This allows the user to edit the file and later compile it with ``typst`` to PDF.
   * **Delete section**: deletes the section in ``project.db`` and its directory if it exists.
 
     Additional options that become available if the section directory is created:
