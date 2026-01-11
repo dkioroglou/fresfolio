@@ -1,6 +1,8 @@
 import click
 from pathlib import Path
 from fresfolio.utils import tools
+import contextlib
+import sqlite3
 import traceback
 
 APPDIR = Path("~/fresfolio").expanduser()
@@ -8,7 +10,7 @@ APPDB = APPDIR.joinpath("fresfolio.db")
 
 def is_app_initialized() -> bool:
     if not APPDIR.exists():
-        print("Fresnote has not been initialized yet.")
+        print("Fresfolio has not been initialized yet.")
         print("Run: fresfolio init")
         return False
     return True
@@ -30,6 +32,37 @@ def start(port):
     """Start fresfolio."""
     if not is_app_initialized():
         exit()
+    # Solving lack of UUIDs in previous versions.
+    if tools.get_app_setting("has_set_uuids") is None:
+        print("NOTE: this version of fresfolio needs to gerenate UUIDs for projects, notebooks, chapters and sections.")
+        print("Make necessary backups of your projects before proceeding.")
+        while True:
+            answer = input("Proceed (y/n): ").lower().strip()
+            
+            if answer == 'y':
+                break
+            if answer == 'n':
+                exit()
+            
+            print("Invalid input. Please enter 'y' or 'n'.")
+        if not tools.table_has_column(APPDB, "projects", "uuid"):
+            if not tools.uuid_column_added_to_table(APPDB, "projects"):
+                exit(f"Could not add uuid to table 'projects' of {APPDIR}.")
+        projects = tools.get_projects_names_and_paths()
+        errors = 0
+        for item in projects:
+            project = Path(item[1])
+            if project.exists():
+                projectDB = project.joinpath("project.db")
+                for table in ["notebooks", "chapters", "sections"]:
+                    if not tools.uuid_column_added_to_table(projectDB, table):
+                        print(f"Could not add uuid to table '{table}' of {projectDB}.")
+                        errors += 1
+        if errors != 0:
+            exit("Fresfolio cannot start due to errors when adding column uuid.")
+        else:
+            tools.set_app_setting("has_set_uuids", 1)
+
     from fresfolio.main import app
     app.run(port=port, debug=True)
 
@@ -47,7 +80,7 @@ def info():
     """Get information related to fresfolio."""
     if not is_app_initialized():
         exit()
-    print("Fresnote information:")
+    print("Fresfolio information:")
     print("=====================")
     print(f"     app directory: {APPDIR}")
     print(f"      app database: {APPDB}")
@@ -105,7 +138,7 @@ def ls_projects():
     projectsDir = tools.get_app_setting("projectsDir")
     projects = tools.get_projects_names_and_paths()
     print()
-    print(f"Fresnote stores projects in: {projectsDir}")
+    print(f"Fresfolio stores projects in: {projectsDir}")
     print()
     for result in projects:
         name, projectPath = result

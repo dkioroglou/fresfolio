@@ -5,14 +5,46 @@ from typing import Union
 import traceback
 import importlib
 import shutil
+import uuid
 if importlib.util.find_spec("omilayers") is not None:
     from omilayers import Omilayers
 
 APPDIR = Path("~/fresfolio").expanduser()
 APPDB = APPDIR.joinpath("fresfolio.db")
 
+def generate_uuid() -> str:
+    return uuid.uuid4().hex
+
 def is_module_installed(module_name):
     return importlib.util.find_spec(module_name) is not None
+
+def table_has_column(db:str, table:str, colname:str) -> bool:
+    with contextlib.closing(sqlite3.connect(db)) as conn:
+        with contextlib.closing(conn.cursor()) as c:
+            c.execute(f'PRAGMA table_info({table})')
+            columns = [row[1] for row in c.fetchall()]
+    if colname not in columns:
+        return False
+    return True
+
+def uuid_column_added_to_table(db:str, table:str) -> bool:
+    try:
+        with contextlib.closing(sqlite3.connect(db)) as conn:
+            with contextlib.closing(conn.cursor()) as c:
+                c.execute(f"ALTER TABLE {table} ADD COLUMN uuid TEXT")
+                c.execute(f"SELECT id FROM {table} WHERE uuid IS NULL")
+                rows = c.fetchall()
+                for row in rows:
+                    row_id = row[0]
+                    c.execute(
+                        f"UPDATE {table} SET uuid = ? WHERE id = ?", 
+                        (uuid.uuid4().hex, row_id)
+                    )
+                conn.commit()
+    except Exception:
+        traceback.print_exc()
+        return False
+    return True
 
 def is_typst_installed() -> bool:
     """Check if typst is installed in the system."""
@@ -49,7 +81,7 @@ def get_app_setting(setting:str) -> Union[str, None]:
             """
             c.execute(query, (setting,))
             row = c.fetchone()
-    if len(row) == 0:
+    if not row:
         return None
     return row[0]
 

@@ -26,28 +26,28 @@ class AppINIT:
 
     def __init__(self) -> None:
         if not APPDIR.exists():
-            print(">>> Initializing Fresnote app...")
+            print(">>> Initializing Fresfolio app...")
             if not self.__app_directory_initialized:
-                print("[ERROR] Cannot initialize Fresnote app directory.")
-                print(">>> Fresnote was not initialized successfully.")
+                print("[ERROR] Cannot initialize Fresfolio app directory.")
+                print(">>> Fresfolio was not initialized successfully.")
                 exit()
 
-            print("[OK] Fresnote app directory created.")
+            print("[OK] Fresfolio app directory created.")
 
             if not self.__app_db_initialized:
                 if APPDIR.exists():
                     shutil.rmtree(APPDIR)
-                print("[ERROR] Cannot initialize Fresnote app database.")
-                print(">>> Fresnote was not initialized successfully.")
+                print("[ERROR] Cannot initialize Fresfolio app database.")
+                print(">>> Fresfolio was not initialized successfully.")
                 exit()
-            print("[OK] Fresnote app database created.")
+            print("[OK] Fresfolio app database created.")
 
             self.projectsDir = tools.get_app_setting("projectsDir")
             if self.projectsDir is None:
                 if APPDIR.exists():
                     shutil.rmtree(APPDIR)
-                print("[ERROR] Fresnote projects directory was not registered in app database.")
-                print(">>> Fresnote was not initialized successfully.")
+                print("[ERROR] Fresfolio projects directory was not registered in app database.")
+                print(">>> Fresfolio was not initialized successfully.")
                 exit()
 
             try:
@@ -57,35 +57,36 @@ class AppINIT:
                 if APPDIR.exists():
                     shutil.rmtree(APPDIR)
                 traceback.print_exc()
-                print("[ERROR] Cannot create Fresnote projects directory.")
-                print(">>> Fresnote was not initialized successfully.")
+                print("[ERROR] Cannot create Fresfolio projects directory.")
+                print(">>> Fresfolio was not initialized successfully.")
                 exit()
-            print("[OK] Fresnote app projects directory created.")
-            print(">>> Fresnote initialized successfully.")
+            print("[OK] Fresfolio app projects directory created.")
+            print(">>> Fresfolio initialized successfully.")
         else:
-            print(">>> Evaluating Fresnote initialization...")
-            print("[OK] Fresnote app directory exists.")
+            print(">>> Evaluating Fresfolio initialization...")
+            print("[OK] Fresfolio app directory exists.")
             if not APPDB.exists():
-                print("[ERROR] Fresnote app database does not exist.")
-                print(">>> Fresnote was not initialized successfully.")
+                print("[ERROR] Fresfolio app database does not exist.")
+                print(">>> Fresfolio was not initialized successfully.")
                 exit()
             else:
-                print("[OK] Fresnote app database exists.")
+                print("[OK] Fresfolio app database exists.")
 
             self.projectsDir = tools.get_app_setting("projectsDir")
             if self.projectsDir is None:
-                print("[ERROR] Fresnote projects directory was not registered in app database.")
-                print(">>> Fresnote was not initialized successfully.")
+                print("[ERROR] Fresfolio projects directory was not registered in app database.")
+                print(">>> Fresfolio was not initialized successfully.")
                 exit()
-            print("[OK] Fresnote projects directory was registered in app database.")
+            print("[OK] Fresfolio projects directory was registered in app database.")
 
             self.projectsDir = Path(self.projectsDir).expanduser()
             if not self.projectsDir.exists():
-                print("[ERROR] Fresnote projects directory does not exist.")
-                print(">>> Fresnote was not initialized successfully.")
+                print("[ERROR] Fresfolio projects directory does not exist.")
+                print(">>> Fresfolio was not initialized successfully.")
                 exit()
-            print("[OK] Fresnote projects directory exists.")
-            print(">>> Fresnote was initialized successfully.")
+            print("[OK] Fresfolio projects directory exists.")
+
+            print(">>> Fresfolio was initialized successfully.")
 
 
     @property
@@ -103,15 +104,6 @@ class AppINIT:
             with contextlib.closing(sqlite3.connect(APPDB)) as conn:
                 with contextlib.closing(conn.cursor()) as c:
                     query = """
-                    CREATE TABLE users(
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        username TEXT UNIQUE NOT NULL,
-                        password TEXT NOT NULL
-                    )
-                    """
-                    c.execute(query)
-
-                    query = """
                     CREATE TABLE settings(
                     key TEXT,
                     value TEXT
@@ -122,6 +114,7 @@ class AppINIT:
                     query = """
                     CREATE TABLE projects(
                     id INTEGER PRIMARY KEY,
+                    uuid TEXT,
                     name TEXT,
                     path TEXT,
                     description TEXT,
@@ -139,11 +132,14 @@ class AppINIT:
                     """
                     c.execute(query, ("projectsDir", str(APPDIR.joinpath("projects"))))
                     c.execute(query, ("secret_key", secrets.token_urlsafe(32)))
+                    c.execute(query, ("has_set_uuids", 1))
+
                     conn.commit()
         except Exception:
             traceback.print_exc()
             return False
         return True
+
 
 
 class ProjectsUtils:
@@ -189,6 +185,7 @@ class ProjectsUtils:
                     query = """
                     CREATE TABLE notebooks(
                     id INTEGER PRIMARY KEY,
+                    uuid TEXT,
                     notebook TEXT,
                     date TEXT
                     )
@@ -198,6 +195,7 @@ class ProjectsUtils:
                     query = """
                     CREATE TABLE chapters(
                     id INTEGER PRIMARY KEY,
+                    uuid TEXT,
                     chapter TEXT,
                     notebookID INTEGER,
                     date TEXT
@@ -208,6 +206,7 @@ class ProjectsUtils:
                     query = """
                     CREATE TABLE sections(
                     id INTEGER PRIMARY KEY,
+                    uuid TEXT,
                     section TEXT,
                     tags TEXT,
                     content TEXT,
