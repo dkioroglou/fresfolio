@@ -234,10 +234,10 @@ class ProjectsUtils:
             with contextlib.closing(sqlite3.connect(APPDB)) as conn:
                 with contextlib.closing(conn.cursor()) as c:
                     query = """
-                    INSERT INTO projects (name,path,description,started) 
-                    VALUES (?,?,?,?)
+                    INSERT INTO projects (uuid,name,path,description,started) 
+                    VALUES (?,?,?,?,?)
                     """
-                    c.execute(query, (projectName, str(projectDirectory), projectDescription, today))
+                    c.execute(query, (tools.generate_uuid(), projectName, str(projectDirectory), projectDescription, today))
                     conn.commit()
         except Exception:
             traceback.print_exc()
@@ -253,10 +253,10 @@ class ProjectsUtils:
             with contextlib.closing(sqlite3.connect(APPDB)) as conn:
                 with contextlib.closing(conn.cursor()) as c:
                     query = """
-                    INSERT INTO projects (name,path,description,started) 
-                    VALUES (?,?,?,?)
+                    INSERT INTO projects (uuid,name,path,description,started) 
+                    VALUES (?,?,?,?,?)
                     """
-                    c.execute(query, (projectName, projectPath, projectDescription, today))
+                    c.execute(query, (tools.generate_uuid(), projectName, projectPath, projectDescription, today))
                     conn.commit()
         except Exception:
             traceback.print_exc()
@@ -335,10 +335,10 @@ class ProjectsUtils:
             with contextlib.closing(sqlite3.connect(projectDB)) as conn:
                 with contextlib.closing(conn.cursor()) as c:
                     query = """
-                    INSERT INTO notebooks (notebook,date) 
-                    VALUES (?,?)
+                    INSERT INTO notebooks (notebook,date,uuid) 
+                    VALUES (?,?,?)
                     """
-                    c.execute(query, (notebookName,today))
+                    c.execute(query, (notebookName, today, tools.generate_uuid()))
                     conn.commit()
         except Exception:
             traceback.print_exc()
@@ -475,10 +475,10 @@ class ProjectsUtils:
             with contextlib.closing(sqlite3.connect(projectDB)) as conn:
                 with contextlib.closing(conn.cursor()) as c:
                     query = """
-                    INSERT INTO chapters (chapter,notebookID,date) 
-                    VALUES (?,?,?)
+                    INSERT INTO chapters (uuid,chapter,notebookID,date) 
+                    VALUES (?,?,?,?)
                     """
-                    c.execute(query, (chapterName, notebookID,today))
+                    c.execute(query, (tools.generate_uuid(), chapterName, notebookID, today))
                     conn.commit()
         except Exception:
             traceback.print_exc()
@@ -612,10 +612,10 @@ class ProjectsUtils:
             with contextlib.closing(conn.cursor()) as c:
                 query = """
                 INSERT INTO sections 
-                (section, tags, content, date)
-                VALUES (?,?,?,?)
+                (uuid, section, tags, content, date)
+                VALUES (?,?,?,?,?)
                 """
-                c.execute(query, ('New section', json.dumps([]), '', today))
+                c.execute(query, (tools.generate_uuid(), 'New section', json.dumps([]), '', today))
                 sectionID = c.lastrowid
                 conn.commit()
 
@@ -1112,6 +1112,5 @@ class SectionUtils:
                 "date"              : self.sectionDate,
                 "section_dir_exists": self.section_dir_exists
                 }
-
 
 
