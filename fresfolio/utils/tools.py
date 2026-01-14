@@ -3,7 +3,7 @@ import contextlib
 import sqlite3
 from typing import Union
 import traceback
-import importlib
+import importlib.util
 import shutil
 import uuid
 if importlib.util.find_spec("omilayers") is not None:
@@ -119,6 +119,16 @@ def get_project_ID_based_on_name(projectName:str) -> int:
         return row[0]
     return None
 
+def get_project_ID_based_on_uuid(projectUUID:str) -> int:
+    with contextlib.closing(sqlite3.connect(APPDB)) as conn:
+        with contextlib.closing(conn.cursor()) as c:
+            query = "SELECT id FROM projects WHERE uuid=(?)"
+            c.execute(query, (projectUUID,))
+            row = c.fetchone()
+    if row:
+        return row[0]
+    return None
+
 def get_projects_names_and_paths() -> list:
     with contextlib.closing(sqlite3.connect(APPDB)) as conn:
         with contextlib.closing(conn.cursor()) as c:
@@ -156,6 +166,17 @@ def get_chapter_ID_based_on_name(projectAttribute:Union[str, int], notebookID:in
         with contextlib.closing(conn.cursor()) as c:
             query = "SELECT id FROM chapters WHERE notebookID=(?) AND chapter=(?)"
             c.execute(query, (notebookID, chapterName))
+            result = c.fetchone()
+    if result:
+        return result[0]
+    return None
+
+def get_chapter_ID_based_on_uuid(projectID:int, chapterUUID:str) -> int:
+    projectDir, projectDB = get_paths_for_project_dir_and_db(projectID)
+    with contextlib.closing(sqlite3.connect(projectDB)) as conn:
+        with contextlib.closing(conn.cursor()) as c:
+            query = "SELECT id FROM chapters WHERE uuid=(?)"
+            c.execute(query, (chapterUUID,))
             result = c.fetchone()
     if result:
         return result[0]
