@@ -150,7 +150,7 @@ class ProjectsUtils:
     def get_projects(self) -> list:
         with contextlib.closing(sqlite3.connect(APPDB)) as conn:
             with contextlib.closing(conn.cursor()) as c:
-                query = "SELECT id,name,description,started FROM projects"
+                query = "SELECT uuid,name,description,started FROM projects"
                 c.execute(query)
                 rows = c.fetchall()
         if rows:
@@ -185,7 +185,6 @@ class ProjectsUtils:
                     query = """
                     CREATE TABLE notebooks(
                     id INTEGER PRIMARY KEY,
-                    uuid TEXT,
                     notebook TEXT,
                     date TEXT
                     )
@@ -195,7 +194,6 @@ class ProjectsUtils:
                     query = """
                     CREATE TABLE chapters(
                     id INTEGER PRIMARY KEY,
-                    uuid TEXT,
                     chapter TEXT,
                     notebookID INTEGER,
                     date TEXT
@@ -206,7 +204,6 @@ class ProjectsUtils:
                     query = """
                     CREATE TABLE sections(
                     id INTEGER PRIMARY KEY,
-                    uuid TEXT,
                     section TEXT,
                     tags TEXT,
                     content TEXT,
@@ -294,7 +291,7 @@ class ProjectsUtils:
                 chapters = c.fetchall()
         return chapters
 
-    def get_notebooks_and_chapters_for_project(self, projectID:int) -> dict: 
+    def get_notebooks_and_chapters_for_project(self, projectID:str) -> dict: 
         notebooks = self.get_notebooks_for_project(projectID)
         sidebarDataList = []
         if notebooks:
@@ -335,10 +332,10 @@ class ProjectsUtils:
             with contextlib.closing(sqlite3.connect(projectDB)) as conn:
                 with contextlib.closing(conn.cursor()) as c:
                     query = """
-                    INSERT INTO notebooks (notebook,date,uuid) 
-                    VALUES (?,?,?)
+                    INSERT INTO notebooks (notebook,date) 
+                    VALUES (?,?)
                     """
-                    c.execute(query, (notebookName, today, tools.generate_uuid()))
+                    c.execute(query, (notebookName, today))
                     conn.commit()
         except Exception:
             traceback.print_exc()
@@ -475,10 +472,10 @@ class ProjectsUtils:
             with contextlib.closing(sqlite3.connect(projectDB)) as conn:
                 with contextlib.closing(conn.cursor()) as c:
                     query = """
-                    INSERT INTO chapters (uuid,chapter,notebookID,date) 
-                    VALUES (?,?,?,?)
+                    INSERT INTO chapters (chapter,notebookID,date) 
+                    VALUES (?,?,?)
                     """
-                    c.execute(query, (tools.generate_uuid(), chapterName, notebookID, today))
+                    c.execute(query, (chapterName, notebookID, today))
                     conn.commit()
         except Exception:
             traceback.print_exc()
@@ -612,10 +609,10 @@ class ProjectsUtils:
             with contextlib.closing(conn.cursor()) as c:
                 query = """
                 INSERT INTO sections 
-                (uuid, section, tags, content, date)
-                VALUES (?,?,?,?,?)
+                (section, tags, content, date)
+                VALUES (?,?,?,?)
                 """
-                c.execute(query, (tools.generate_uuid(), 'New section', json.dumps([]), '', today))
+                c.execute(query, ('New section', json.dumps([]), '', today))
                 sectionID = c.lastrowid
                 conn.commit()
 

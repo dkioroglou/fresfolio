@@ -1,8 +1,6 @@
 import click
 from pathlib import Path
 from fresfolio.utils import tools
-import contextlib
-import sqlite3
 import traceback
 
 APPDIR = Path("~/fresfolio").expanduser()
@@ -24,7 +22,7 @@ def frescli():
 def init():
     """Initialize fresfolio app."""
     from fresfolio.utils.classes import AppINIT
-    initializer = AppINIT()
+    AppINIT()
 
 @frescli.command()
 @click.option("--port", "-p", type=int, default=5000, help="Port to be used by fresfolio.")
@@ -34,7 +32,7 @@ def start(port):
         exit()
     # Solving lack of UUIDs in previous versions.
     if tools.get_app_setting("has_set_uuids") is None:
-        print("NOTE: this version of fresfolio needs to gerenate UUIDs for projects, notebooks, chapters and sections.")
+        print("NOTE: this version of fresfolio needs to gerenate UUIDs for projects.")
         print("Make necessary backups of your projects before proceeding.")
         while True:
             answer = input("Proceed (y/n): ").lower().strip()
@@ -48,20 +46,7 @@ def start(port):
         if not tools.table_has_column(APPDB, "projects", "uuid"):
             if not tools.uuid_column_added_to_table(APPDB, "projects"):
                 exit(f"Could not add uuid to table 'projects' of {APPDIR}.")
-        projects = tools.get_projects_names_and_paths()
-        errors = 0
-        for item in projects:
-            project = Path(item[1])
-            if project.exists():
-                projectDB = project.joinpath("project.db")
-                for table in ["notebooks", "chapters", "sections"]:
-                    if not tools.uuid_column_added_to_table(projectDB, table):
-                        print(f"Could not add uuid to table '{table}' of {projectDB}.")
-                        errors += 1
-        if errors != 0:
-            exit("Fresfolio cannot start due to errors when adding column uuid.")
-        else:
-            tools.set_app_setting("has_set_uuids", 1)
+        tools.set_app_setting("has_set_uuids", 1)
 
     from fresfolio.main import app
     app.run(port=port, debug=True)

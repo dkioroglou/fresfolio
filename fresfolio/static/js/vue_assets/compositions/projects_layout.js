@@ -82,9 +82,9 @@ const ProjectsLayout = defineComponent({
                 });
 
                 if (response.ok) {
-                        const data = await response.json();
-                        this.projectsList = data;
-                        this.projectsFetched = true;
+                    const data = await response.json();
+                    this.projectsList = data;
+                    this.projectsFetched = true;
                 } else {
                     this.projectsFetched = true;
                     console.error("Error fetching projects");

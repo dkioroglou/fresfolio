@@ -85,10 +85,10 @@ def get_app_setting(setting:str) -> Union[str, None]:
         return None
     return row[0]
 
-def get_paths_for_project_dir_and_db(projectID:int) -> tuple:
+def get_paths_for_project_dir_and_db(projectID:str) -> tuple:
     with contextlib.closing(sqlite3.connect(APPDB)) as conn:
         with contextlib.closing(conn.cursor()) as c:
-            query = "SELECT path FROM projects WHERE id=(?)"
+            query = "SELECT path FROM projects WHERE uuid=(?)"
             c.execute(query, (projectID,))
             row = c.fetchone()
     if row:
@@ -99,10 +99,10 @@ def get_paths_for_project_dir_and_db(projectID:int) -> tuple:
         projectDB = None
     return (projectDirectory, projectDB)
 
-def get_project_name_based_on_id(projectID:int) -> str:
+def get_project_name_based_on_id(projectID:str) -> str:
     with contextlib.closing(sqlite3.connect(APPDB)) as conn:
         with contextlib.closing(conn.cursor()) as c:
-            query = "SELECT name FROM projects WHERE id=(?)"
+            query = "SELECT name FROM projects WHERE uuid=(?)"
             c.execute(query, (projectID,))
             row = c.fetchone()
     if row:
@@ -112,7 +112,7 @@ def get_project_name_based_on_id(projectID:int) -> str:
 def get_project_ID_based_on_name(projectName:str) -> int:
     with contextlib.closing(sqlite3.connect(APPDB)) as conn:
         with contextlib.closing(conn.cursor()) as c:
-            query = "SELECT id FROM projects WHERE name=(?)"
+            query = "SELECT uuid FROM projects WHERE name=(?)"
             c.execute(query, (projectName,))
             row = c.fetchone()
     if row:
@@ -137,17 +137,17 @@ def get_projects_names_and_paths() -> list:
             results = c.fetchall()
     return results
 
-def get_project_info(projectAttribute:Union[str, int]) -> dict:
+def get_project_info(projectAttribute:str, input_is_uuid:bool=False) -> dict:
     """
     If projectAttribute is string, it expects project name to be passed. 
     If projectAttribute is integer, it expectes project ID to be passed.
     """
-    if isinstance(projectAttribute, str):
-        projectName = projectAttribute
-        projectID = get_project_ID_based_on_name(projectName) 
-    else:
+    if input_is_uuid:
         projectID = projectAttribute
         projectName = get_project_name_based_on_id(projectID)
+    else:
+        projectName = projectAttribute
+        projectID = get_project_ID_based_on_name(projectName) 
     projectDir, projectDB = get_paths_for_project_dir_and_db(projectID)
     return {"name":projectName, "ID":projectID, "dirFullPath":projectDir, "DB":projectDB}
 
@@ -171,27 +171,7 @@ def get_chapter_ID_based_on_name(projectAttribute:Union[str, int], notebookID:in
         return result[0]
     return None
 
-def get_chapter_ID_based_on_uuid(projectID:int, chapterUUID:str) -> int:
-    projectDir, projectDB = get_paths_for_project_dir_and_db(projectID)
-    with contextlib.closing(sqlite3.connect(projectDB)) as conn:
-        with contextlib.closing(conn.cursor()) as c:
-            query = "SELECT id FROM chapters WHERE uuid=(?)"
-            c.execute(query, (chapterUUID,))
-            result = c.fetchone()
-    if result:
-        return result[0]
-    return None
-
-def get_notebook_ID_based_on_name(projectAttribute:Union[str, int], notebookName:str) -> int:
-    """
-    If projectAttribute is string, it expects project name to be passed. 
-    If projectAttribute is integer, it expectes project ID to be passed.
-    """
-    if isinstance(projectAttribute, str):
-        projectName = projectAttribute
-        projectID = get_project_ID_based_on_name(projectName) 
-    else:
-        projectID = projectAttribute
+def get_notebook_ID_based_on_name(projectID:str, notebookName:str) -> int:
     projectDir, projectDB = get_paths_for_project_dir_and_db(projectID)
     with contextlib.closing(sqlite3.connect(projectDB)) as conn:
         with contextlib.closing(conn.cursor()) as c:
@@ -255,7 +235,7 @@ def get_omilayers(projectID:str, DBpath:str) -> list:
             return df[['name', 'info', 'shape']].to_dict(orient='records')
         return []
 
-def get_sections_IDs_for_chapter(projectID:int, chapterID:int) -> list:
+def get_sections_IDs_for_chapter(projectID:str, chapterID:int) -> list:
     projectDirectory, projectDB = get_paths_for_project_dir_and_db(projectID)
     try:
         with contextlib.closing(sqlite3.connect(projectDB)) as conn:

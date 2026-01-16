@@ -239,7 +239,7 @@ const ProjectLayout = defineComponent({
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify(
-            {"projectID": this.selectedProjectID}
+                        {"projectID": this.selectedProjectID}
                     )
                 });
 

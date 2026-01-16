@@ -405,13 +405,9 @@ def app_api_get_section_directory_tree():
 
 # FILES RELATED ROUTES
 # ====================
-@apiroutes.route('/api/files/<project>/<path:filename>', methods=['GET'])
-def get_filepath(project, filename):
-    if project.isnumeric():
-        projectID = int(project)
-    else:
-        projectID = tools.get_project_ID_based_on_name(project)
-    projectDir, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
+@apiroutes.route('/api/files/<projectid>/<path:filename>', methods=['GET'])
+def get_filepath(projectid, filename):
+    projectDir, projectDB = tools.get_paths_for_project_dir_and_db(projectid)
     filePath = Path(projectDir).joinpath(filename)
 
     if not filePath.exists():
@@ -691,7 +687,7 @@ def app_api_sections_to_pdf():
         pdf_content = "\n".join(pdf_content)
 
         # Specify PDF output
-        projectInfo = tools.get_project_info(projectID)
+        projectInfo = tools.get_project_info(projectID, input_is_uuid=True)
         if len(sectionsIDs) == 1:
             sectionID = sectionsIDs[0]
             sectionFullPath = Path(projectInfo['dirFullPath']).joinpath(f"sections/{str(sectionID)}")
