@@ -151,16 +151,7 @@ def get_project_info(projectAttribute:str, input_is_uuid:bool=False) -> dict:
     projectDir, projectDB = get_paths_for_project_dir_and_db(projectID)
     return {"name":projectName, "ID":projectID, "dirFullPath":projectDir, "DB":projectDB}
 
-def get_chapter_ID_based_on_name(projectAttribute:Union[str, int], notebookID:int, chapterName:str) -> int:
-    """
-    If projectAttribute is string, it expects project name to be passed. 
-    If projectAttribute is integer, it expectes project ID to be passed.
-    """
-    if isinstance(projectAttribute, str):
-        projectName = projectAttribute
-        projectID = get_project_ID_based_on_name(projectName) 
-    else:
-        projectID = projectAttribute
+def get_chapter_ID_based_on_name(projectID:str, notebookID:int, chapterName:str) -> int:
     projectDir, projectDB = get_paths_for_project_dir_and_db(projectID)
     with contextlib.closing(sqlite3.connect(projectDB)) as conn:
         with contextlib.closing(conn.cursor()) as c:
