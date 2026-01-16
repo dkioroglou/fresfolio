@@ -611,7 +611,7 @@ def app_api_sections_to_pdf():
     typstExecutable = tools.get_typst_path()
     try:
         data = request.get_json()
-        projectID = int(data['projectID'])
+        projectID = data['projectID']
         sectionsIDs = data['sectionsIDs']
         notebookName = data['notebookName']
         chapterName = data['chapterName']

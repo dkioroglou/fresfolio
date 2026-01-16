@@ -489,11 +489,19 @@ const SectionCard = defineComponent({
                 });
 
                 if (response.ok) {
-                    this.$q.notify({
-                        message: "PDF created",
-                        color: 'green',
-                        position: "top-right"
-                    })
+                    if (renderPDFFlag === 1){
+                        this.$q.notify({
+                            message: "PDF created",
+                            color: 'green',
+                            position: "top-right"
+                        })
+                    } else {
+                        this.$q.notify({
+                            message: ".typ file created",
+                            color: 'green',
+                            position: "top-right"
+                        })
+                    }
                 } else {
                     const responseText = await response.text();
                     this.$q.notify({
