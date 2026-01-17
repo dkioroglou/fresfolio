@@ -2,4 +2,5 @@
 This is a bug fix release for various issues discovered after the release v0.3.0. Also new features have been added.
 
 ## What's Changed
-* FEATURE: projects, notebooks, chapters and sections have a dedicated uuid when created.
+* FEATURE: projects have a dedicated uuid when created.
+* FEATURE: added download button on the image viewer.
