@@ -400,7 +400,6 @@ const SectionContent = defineComponent({
             }
 
         },
-
         delegateViewClick(event) {
             const el = event.target.closest("action-link");
             if (!el) return;
@@ -408,6 +407,45 @@ const SectionContent = defineComponent({
             const args = el.getAttribute("data-args");
             const parsedArgs = args ? args.split(",").map(a => a.trim()) : [];
             this.$emit('get-view', parsedArgs)
+        },
+        getFilenameFromUrl(fileUrl) {
+            const url = new URL(fileUrl, window.location.origin);
+            return url.pathname.split("/").pop();
+        },
+        async downloadImage(fileUrl) {
+            try {
+                const response = await fetch(fileUrl);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+
+                    const link = document.createElement("a");
+                    link.href = url;
+
+                    const fileName = this.getFilenameFromUrl(fileUrl);
+                    // const fileName = "foobar.jpg"
+                    link.download = fileName || "download";
+
+                    document.body.appendChild(link);
+                    link.click();
+
+                    link.remove();
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    this.$q.notify({
+                        message: "Error downloading figure",
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.log(error)
+                this.$q?.notify?.({
+                    message: "Download failed",
+                    color: "negative",
+                    position: "top-right",
+                });
+            }
         }
     },
     watch: {
@@ -917,6 +955,22 @@ const SectionContent = defineComponent({
                     </template>
 
                     <template v-slot:control>
+                        <q-carousel-control
+                            position="top-right"
+                            :offset="[18, 18]"
+                        >
+                            <q-btn 
+                                push round dense
+                                color="primary" 
+                                icon="download" 
+                                @click="downloadImage(selectedFigures[slide].url)" 
+                            >
+                                <q-tooltip>
+                                    Download figure
+                                </q-tooltip>
+                            </q-btn>
+                        </q-carousel-control>
+
                         <q-carousel-control
                             position="bottom-right"
                             :offset="[18, 18]"
