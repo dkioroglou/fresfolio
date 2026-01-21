@@ -4,3 +4,4 @@ This is a bug fix release for various issues discovered after the release v0.3.0
 ## What's Changed
 * FEATURE: projects have a dedicated uuid when created.
 * FEATURE: added download button on the image viewer.
+* OPTIMIZED: user can create a `typst.preamble` file at the root directory of the project. Typst will use this file when rendering chapter level PDF. 

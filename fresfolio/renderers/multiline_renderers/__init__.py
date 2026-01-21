@@ -109,7 +109,7 @@ class HtmlListTag:
                 if not isListNumbered:
                     isListNumbered = True
             elif line.startswith("-- "):
-                line = '<span>↳ '+line[2:].lstrip()+"</span>"
+                line = '<span style="display: inline-block; margin-bottom: 5px;">'+line[2:].lstrip()+"</span>"
             renderedLines.append(pass_line_through_inline_renderers(line))
         if isListNumbered:
             self.open_tag = "<ol>"
@@ -132,7 +132,7 @@ class PDFlListTag:
                 line = "+ "+line[1:].lstrip()
             elif line.startswith("-- "):
                 # line = f"#pad(left: 1.1em)[↳ {line[2:].lstrip()}]"
-                line = f" #linebreak() ↳ {line[2:].lstrip()}"
+                line = f" #linebreak() {line[2:].lstrip()}"
             renderedLines.append(pass_line_through_PDF_inline_renderers(line))
         return "\n".join(renderedLines)
 

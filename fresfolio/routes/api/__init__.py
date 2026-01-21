@@ -616,7 +616,14 @@ def app_api_sections_to_pdf():
         notebookName = data['notebookName']
         chapterName = data['chapterName']
         renderPDFFlag = data['renderPDFFlag'] # 1 = render PDF or 0 = write .typ file
-        pdfOptions = """
+
+        projectInfo = tools.get_project_info(projectID, input_is_uuid=True)
+        typst_preamble = Path(projectInfo['dirFullPath']).joinpath("typst.preamble")
+        if typst_preamble.exists():
+            with open(typst_preamble, 'r') as inf:
+                pdfOptions = inf.read()
+        else:
+            pdfOptions = """
 #set page(paper: "a4")
 #set par(justify: true)
 #show link: set text(fill: blue)
@@ -687,7 +694,6 @@ def app_api_sections_to_pdf():
         pdf_content = "\n".join(pdf_content)
 
         # Specify PDF output
-        projectInfo = tools.get_project_info(projectID, input_is_uuid=True)
         if len(sectionsIDs) == 1:
             sectionID = sectionsIDs[0]
             sectionFullPath = Path(projectInfo['dirFullPath']).joinpath(f"sections/{str(sectionID)}")
