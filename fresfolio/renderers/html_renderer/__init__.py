@@ -25,7 +25,7 @@ from fresfolio.renderers.multiline_renderers import (HtmlParagraphTag,
 
 class HtmlRenderer:
 
-    def __init__(self, projectID:int, projectName:str, section_content:str):
+    def __init__(self, projectID:str, projectName:str, section_content:str):
         self.projectID = projectID
         self.projectName = projectName
         self.lines = section_content.strip().split('\n')
@@ -283,7 +283,7 @@ class HtmlRenderer:
 
 class PDFRenderer:
 
-    def __init__(self, projectID:int, projectName:str, section_content:str):
+    def __init__(self, projectID:str, projectName:str, section_content:str):
         self.projectID = projectID
         self.projectName = projectName
         self.lines = section_content.strip().split('\n')

@@ -272,7 +272,7 @@ class ProjectsUtils:
             return False
         return True
 
-    def get_notebooks_for_project(self, projectID:int) -> list:
+    def get_notebooks_for_project(self, projectID:str) -> list:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         with contextlib.closing(sqlite3.connect(projectDB)) as conn:
             with contextlib.closing(conn.cursor()) as c:
@@ -314,7 +314,7 @@ class ProjectsUtils:
                 sidebarDataList.append(JSON)
         return sidebarDataList
 
-    def notebook_exists(self, projectID:int, notebookName:str) -> bool:
+    def notebook_exists(self, projectID:str, notebookName:str) -> bool:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         with contextlib.closing(sqlite3.connect(projectDB)) as conn:
             with contextlib.closing(conn.cursor()) as c:
@@ -342,7 +342,7 @@ class ProjectsUtils:
             return False
         return True
 
-    def notebook_name_is_set(self, projectID:int, notebookID:int, newNotebookName:str) -> bool:
+    def notebook_name_is_set(self, projectID:str, notebookID:int, newNotebookName:str) -> bool:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         try:
             with contextlib.closing(sqlite3.connect(projectDB)) as conn:
@@ -359,14 +359,14 @@ class ProjectsUtils:
             return False
         return True
 
-    def project_description_is_set(self, projectID:int, newProjectDescription:str) -> bool:
+    def project_description_is_set(self, projectID:str, newProjectDescription:str) -> bool:
         try:
             with contextlib.closing(sqlite3.connect(APPDB)) as conn:
                 with contextlib.closing(conn.cursor()) as c:
                     query = """
                     UPDATE projects 
                     SET description=(?) 
-                    WHERE id=(?)
+                    WHERE uuid=(?)
                     """
                     c.execute(query, (newProjectDescription, projectID))
                     conn.commit()
@@ -375,7 +375,7 @@ class ProjectsUtils:
             return False
         return True
 
-    def project_name_is_set(self, projectID:int, newProjectName:str) -> bool:
+    def project_name_is_set(self, projectID:str, newProjectName:str) -> bool:
         try:
             oldProjectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
             if not Path(oldProjectDirectory).exists():
@@ -392,7 +392,7 @@ class ProjectsUtils:
                     query = """
                     UPDATE projects 
                     SET name=(?), path=(?)
-                    WHERE id=(?)
+                    WHERE uuid=(?)
                     """
                     c.execute(query, (newProjectName, str(newProjectDirectory), projectID))
                     conn.commit()
@@ -401,7 +401,7 @@ class ProjectsUtils:
             return False
         return True
 
-    def new_section_directory_created(self, projectID:int, sectionID:str) -> bool:
+    def new_section_directory_created(self, projectID:str, sectionID:str) -> bool:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         try:
             Path(projectDirectory).joinpath(f"sections/{sectionID}").mkdir(exist_ok=False)
@@ -410,7 +410,7 @@ class ProjectsUtils:
             return False
         return True
 
-    def section_in_db_exists(self, projectID:int, sectionID:int) -> bool:
+    def section_in_db_exists(self, projectID:str, sectionID:int) -> bool:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         with contextlib.closing(sqlite3.connect(projectDB)) as conn:
             with contextlib.closing(conn.cursor()) as c:
@@ -421,14 +421,14 @@ class ProjectsUtils:
             return True
         return False
 
-    def section_directory_exists(self, projectID:int, sectionID:int) -> bool:
+    def section_directory_exists(self, projectID:str, sectionID:int) -> bool:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         sectionDirPath = Path(projectDirectory).joinpath(f"sections/{sectionID}")
         if sectionDirPath.exists():
             return True
         return False
 
-    def section_directory_is_deleted(self, projectID:int, sectionID:int) -> bool:
+    def section_directory_is_deleted(self, projectID:str, sectionID:int) -> bool:
         try:
             projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
             sectionDirPath = Path(projectDirectory).joinpath(f"sections/{sectionID}")
@@ -438,7 +438,7 @@ class ProjectsUtils:
             return False
         return True
 
-    def section_in_db_is_deleted(self, projectID:int, sectionID:int) -> bool:
+    def section_in_db_is_deleted(self, projectID:str, sectionID:int) -> bool:
         try:
             projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
             with contextlib.closing(sqlite3.connect(projectDB)) as conn:
@@ -454,7 +454,7 @@ class ProjectsUtils:
             return False
         return True
 
-    def chapter_exists(self, projectID:int, notebookID:int, chapterName:str) -> bool:
+    def chapter_exists(self, projectID:str, notebookID:int, chapterName:str) -> bool:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         with contextlib.closing(sqlite3.connect(projectDB)) as conn:
             with contextlib.closing(conn.cursor()) as c:
@@ -465,7 +465,7 @@ class ProjectsUtils:
             return True
         return False
 
-    def chapter_is_created(self, projectID:int, notebookID:int, chapterName:str) -> bool: 
+    def chapter_is_created(self, projectID:str, notebookID:int, chapterName:str) -> bool: 
         today = datetime.today().strftime('%Y-%m-%d')
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         try:
@@ -482,7 +482,7 @@ class ProjectsUtils:
             return False
         return True
 
-    def chapter_name_is_set(self, projectID:int, chapterID:int, newChapterName:str) -> bool:
+    def chapter_name_is_set(self, projectID:str, chapterID:int, newChapterName:str) -> bool:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         try:
             with contextlib.closing(sqlite3.connect(projectDB)) as conn:
@@ -499,7 +499,7 @@ class ProjectsUtils:
             return False
         return True
 
-    def get_sections_IDs_for_chapter(self, projectID:int, chapterID:int) -> list:
+    def get_sections_IDs_for_chapter(self, projectID:str, chapterID:int) -> list:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         try:
             with contextlib.closing(sqlite3.connect(projectDB)) as conn:
@@ -514,7 +514,7 @@ class ProjectsUtils:
             traceback.print_exc()
             return []
 
-    def get_chapter_sections(self, projectID:int, chapterID:int) -> list:
+    def get_chapter_sections(self, projectID:str, chapterID:int) -> list:
         try:
             projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
             sectionsIDs = self.get_sections_IDs_for_chapter(projectID, chapterID)
@@ -554,7 +554,7 @@ class ProjectsUtils:
             traceback.print_exc()
             return []
 
-    def get_section_content_rendered(self, projectID:int, sectionID:int, render_type:str='html') -> list:
+    def get_section_content_rendered(self, projectID:str, sectionID:int, render_type:str='html') -> list:
         """Render section content to HTML"""
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         cols = ['id', 'section', 'tags', 'content', 'date']
@@ -601,7 +601,7 @@ class ProjectsUtils:
             return result[0]
         return ""
 
-    def create_section_in_db(self, projectID:int, chapterID:int) -> int:
+    def create_section_in_db(self, projectID:str, chapterID:int) -> int:
         today = datetime.today().strftime('%Y-%m-%d')
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         sectionID = None
@@ -625,7 +625,7 @@ class ProjectsUtils:
                 conn.commit()
         return sectionID
 
-    def section_title_is_set(self, projectID:int, sectionID:int, newSectionTitle:str) -> bool:
+    def section_title_is_set(self, projectID:str, sectionID:int, newSectionTitle:str) -> bool:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         try:
             with contextlib.closing(sqlite3.connect(projectDB)) as conn:
@@ -638,7 +638,7 @@ class ProjectsUtils:
             return False
         return True
 
-    def section_content_is_set(self, projectID:int, sectionID:int, newSectionContent:str) -> bool:
+    def section_content_is_set(self, projectID:str, sectionID:int, newSectionContent:str) -> bool:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         try:
             with contextlib.closing(sqlite3.connect(projectDB)) as conn:
@@ -651,7 +651,7 @@ class ProjectsUtils:
             return False
         return True
 
-    def section_tags_is_set(self, projectID:int, sectionID:int, sectionTags:list) -> bool:
+    def section_tags_is_set(self, projectID:str, sectionID:int, sectionTags:list) -> bool:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         try:
             with contextlib.closing(sqlite3.connect(projectDB)) as conn:
@@ -664,7 +664,7 @@ class ProjectsUtils:
             return False
         return True
 
-    def get_section_tags(self, projectID:int, sectionID:int) -> list:
+    def get_section_tags(self, projectID:str, sectionID:int) -> list:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         try:
             with contextlib.closing(sqlite3.connect(projectDB)) as conn:
@@ -680,7 +680,7 @@ class ProjectsUtils:
             traceback.print_exc()
             return []
 
-    def check_which_section_IDs_exist_in_db(self, projectID:int, sectionsIDs:list) -> list:
+    def check_which_section_IDs_exist_in_db(self, projectID:str, sectionsIDs:list) -> list:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         placeholders = ','.join('?' for _ in sectionsIDs)
         with contextlib.closing(sqlite3.connect(projectDB)) as conn:
@@ -692,7 +692,7 @@ class ProjectsUtils:
             return [res[0] for res in results]
         return []
 
-    def section_directory_is_created(self, projectID:int, sectionID:int) -> tuple:
+    def section_directory_is_created(self, projectID:str, sectionID:int) -> tuple:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         sectionDirectoryPath = Path(projectDirectory).joinpath(f"sections/{sectionID}")
         if sectionDirectoryPath.exists():
@@ -704,7 +704,7 @@ class ProjectsUtils:
             return ("Cannot create section directory", False)
         return ("", True)
 
-    def get_sections_IDs_based_on_search_bar_query(self, projectID:int, queryTerms:str) -> list:
+    def get_sections_IDs_based_on_search_bar_query(self, projectID:str, queryTerms:str) -> list:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         projects = {}
         query = "SELECT id FROM sections WHERE"
@@ -819,7 +819,7 @@ class ProjectsUtils:
                 projects[_projectID] = IDs
         return projects
 
-    def notebook_is_deleted(self, projectID:int, notebookID:int, keep_sections:bool) -> bool:
+    def notebook_is_deleted(self, projectID:str, notebookID:int, keep_sections:bool) -> bool:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         try:
             sectionsIDs = []
@@ -854,7 +854,7 @@ class ProjectsUtils:
             traceback.print_exc()
             return False
 
-    def chapter_is_deleted(self, projectID:int, chapterID:int, keep_sections:bool) -> bool:
+    def chapter_is_deleted(self, projectID:str, chapterID:int, keep_sections:bool) -> bool:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         try:
             sectionsIDs = []
@@ -878,7 +878,7 @@ class ProjectsUtils:
             traceback.print_exc()
             return False
 
-    def chapter_links_are_deleted(self, projectID:int, chapterID:int) -> bool:
+    def chapter_links_are_deleted(self, projectID:str, chapterID:int) -> bool:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         try:
             with contextlib.closing(sqlite3.connect(projectDB)) as conn:
@@ -891,7 +891,7 @@ class ProjectsUtils:
             return False
         return True
 
-    def project_is_deleted(self, projectID:int) -> bool:
+    def project_is_deleted(self, projectID:str) -> bool:
         try:
             projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
             if not Path(projectDirectory).exists():
@@ -899,7 +899,7 @@ class ProjectsUtils:
             shutil.rmtree(projectDirectory)
             with contextlib.closing(sqlite3.connect(APPDB)) as conn:
                 with contextlib.closing(conn.cursor()) as c:
-                    query = "DELETE FROM projects where id=(?)"
+                    query = "DELETE FROM projects where uuid=(?)"
                     c.execute(query, (projectID, ))
                     conn.commit()
         except Exception:
@@ -907,7 +907,7 @@ class ProjectsUtils:
             return False
         return True
 
-    def chapter_sections_links_are_created(self, projectID:int, chapterID:int, sectionsIDs:list) -> bool:
+    def chapter_sections_links_are_created(self, projectID:str, chapterID:int, sectionsIDs:list) -> bool:
         try:
             projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
             entries = [(chapterID, sID) for sID in sectionsIDs]
@@ -921,7 +921,7 @@ class ProjectsUtils:
             return False
         return True
 
-    def get_data_for_omilayer(self, projectID:int, DBpath:str, layerName:str, nrows:str) -> tuple:
+    def get_data_for_omilayer(self, projectID:str, DBpath:str, layerName:str, nrows:str) -> tuple:
         try:
             projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
             omi = Omilayers(str(Path(projectDirectory).joinpath(DBpath)))
@@ -944,7 +944,7 @@ class ProjectsUtils:
             traceback.print_exc()
             return ([], [], "Cannot load layer data.")
 
-    def get_section_directory_tree(self, projectID:int, sectionID:int) -> list:
+    def get_section_directory_tree(self, projectID:str, sectionID:int) -> list:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         def build_tree(_path):
             tree = []
@@ -965,7 +965,7 @@ class ProjectsUtils:
             return []
         return sectionPathTree
 
-    def omilayer_exists(self, projectID:int, dbPath:str, layerName:str) -> bool:
+    def omilayer_exists(self, projectID:str, dbPath:str, layerName:str) -> bool:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         dbFullPath = Path(projectDirectory).joinpath(dbPath)
         omi = Omilayers(str(dbFullPath))
@@ -973,7 +973,7 @@ class ProjectsUtils:
             return True
         return False
 
-    def new_omilayer_is_created(self, projectID:int, dbPath:str, layerName:str, layerDescription:str, columns:list) -> bool:
+    def new_omilayer_is_created(self, projectID:str, dbPath:str, layerName:str, layerDescription:str, columns:list) -> bool:
         try:
             projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
             dbFullPath = Path(projectDirectory).joinpath(dbPath)
@@ -997,7 +997,7 @@ class ProjectsUtils:
             return False
         return True
 
-    def get_column_names_and_dtypes_for_omilayer(self, projectID:int, dbRelativePath:str, layerName:str) -> dict:
+    def get_column_names_and_dtypes_for_omilayer(self, projectID:str, dbRelativePath:str, layerName:str) -> dict:
         try:
             projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
             dbFullPath = Path(projectDirectory).joinpath(dbRelativePath)
@@ -1010,7 +1010,7 @@ class ProjectsUtils:
             return {}
         return [{"name":record['column_name'], "dtype":dtypesMapper[record['column_type']], "value":""} for record in cols.to_dict(orient='records')]
 
-    def data_are_inserted_to_omilayer(self, projectID:int, dbRelativePath:str, layerName:str, layerData:list) -> bool:
+    def data_are_inserted_to_omilayer(self, projectID:str, dbRelativePath:str, layerName:str, layerData:list) -> bool:
         try:
             projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
             dbFullPath = Path(projectDirectory).joinpath(dbRelativePath)
@@ -1046,7 +1046,7 @@ class ProjectsUtils:
             return False
         return True
 
-    def omilayer_description_is_set(self, projectID:int, dbRelativePath:str, layerName:str, layerInfo:str) -> bool:
+    def omilayer_description_is_set(self, projectID:str, dbRelativePath:str, layerName:str, layerInfo:str) -> bool:
         try:
             projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
             dbFullPath = Path(projectDirectory).joinpath(dbRelativePath)
@@ -1057,7 +1057,7 @@ class ProjectsUtils:
             return False
         return True
 
-    def omilayer_is_deleted(self, projectID:int, dbRelativePath:str, layerName:str) -> bool:
+    def omilayer_is_deleted(self, projectID:str, dbRelativePath:str, layerName:str) -> bool:
         try:
             projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
             dbFullPath = Path(projectDirectory).joinpath(dbRelativePath)
@@ -1071,7 +1071,7 @@ class ProjectsUtils:
 
 class SectionUtils:
 
-    def __init__(self, ID:int, title:str, tags:str, content:str, sectionDate:str, projectID:int, projectName:str, section_dir_exists:int):
+    def __init__(self, ID:int, title:str, tags:str, content:str, sectionDate:str, projectID:str, projectName:str, section_dir_exists:int):
         self.ID = ID
         self.title = title
         self.tags = json.loads(tags)
