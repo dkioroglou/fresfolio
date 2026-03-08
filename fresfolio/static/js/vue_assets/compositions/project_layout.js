@@ -707,7 +707,7 @@ const ProjectLayout = defineComponent({
     },
     template: `
 <q-layout view="hHh LpR fFf">
-    <q-header elevated class="app-header-color">
+    <q-header class="app-header-color">
         <q-toolbar>
 
             <q-btn
@@ -1083,7 +1083,7 @@ const ProjectLayout = defineComponent({
 
                 <q-list v-if="renderedChapterIDX !== ''" dense separator>
                     <q-item>
-                        <q-item-section class="app-text-color-primary text-h6">
+                        <q-item-section class="app-main-text-color text-h6">
 
                             <!-- CHAPTER AND NOTEBOOK MENU START -->
                             <div class="row items-center justify-between full-width">
@@ -1096,12 +1096,12 @@ const ProjectLayout = defineComponent({
                                 <q-btn-dropdown 
                                     rounded 
                                     size="sm"
-                                    color="secondary" 
+                                    color="primary" 
                                     text-color="white"
                                     icon="settings"
                                     :menu-offset="[0,10]"
                                 >
-                                    <q-list separator style="background-color: var(--q-secondary); color: white;">
+                                    <q-list separator style="background-color: var(--q-primary); color: white;">
                                         <q-item clickable v-close-popup @click="rearrangeChapterSections">
                                             <q-item-section>
                                                 <q-item-label>Rearrange sections</q-item-label>
@@ -1167,7 +1167,7 @@ const ProjectLayout = defineComponent({
                         </q-item-section>
                     </q-item>
                     <q-item>
-                        <q-item-section class="app-text-color-primary text-h6">
+                        <q-item-section class="app-main-text-color text-h6">
                             <div class="row full-width">
                                 <div class="cursor-pointer">
                                     {{renderedChapterName}}
@@ -1214,11 +1214,11 @@ const ProjectLayout = defineComponent({
                             color="primary"
                             size="2em"
                         />
-                        <p class="app-spinner-text">Loading data, please wait...</p>
+                        <p class="app-main-text-color">Loading data, please wait...</p>
                     </div>
 
                     <div v-else class="q-ml-md">
-                        <div class="q-mt-xl app-text-color-primary" v-if="renderedSections.length === 0">
+                        <div class="q-mt-xl app-main-text-color" v-if="renderedSections.length === 0">
                             <p class="row justify-center centers">
                                 No available sections.
                             </p>
@@ -1242,7 +1242,7 @@ const ProjectLayout = defineComponent({
 
             <!--CREATE NOTEBOOK DIALOG START-->
             <q-dialog v-model="showCreateNotebookDialog" persistent>
-                <q-card style="width: 700px; max-width: 80vw;background: #e6e6e6">
+                <q-card class="app-bg-color-5" style="width: 700px; max-width: 80vw;">
                     <q-card-section>
                         <div class="row items-start q-col-gutter-md">
                             <div class="text-h6 col-11">
@@ -1257,7 +1257,6 @@ const ProjectLayout = defineComponent({
                                 v-model="newNotebookName"
                                 autofocus
                                 label="Notebook name"
-                                filled
                                 dense
                                 no-error-icon="true"
                                 :rules="[val => !!val || 'Notebook name is required']"
@@ -1279,7 +1278,7 @@ const ProjectLayout = defineComponent({
 
             <!--CREATE CHAPTER DIALOG START-->
             <q-dialog v-model="showCreateChapterDialog" persistent>
-                <q-card style="width: 700px; max-width: 80vw;background: #e6e6e6">
+                <q-card class="app-bg-color-5" style="width: 700px; max-width: 80vw;">
                     <q-card-section>
                         <div class="row items-start q-col-gutter-md">
                             <div class="text-h6 col-11">
@@ -1295,7 +1294,6 @@ const ProjectLayout = defineComponent({
                                 v-model="newChapterName"
                                 autofocus
                                 label="Chapter name"
-                                filled
                                 dense
                                 no-error-icon="true"
                                 :rules="[val => !!val || 'Chapter name is required']"
@@ -1317,7 +1315,7 @@ const ProjectLayout = defineComponent({
 
             <!--REARRANGE CHAPTER SECTIONS DIALOG START-->
             <q-dialog v-model="showRearrangeChapterSectionsDialog" persistent>
-                <q-card style="min-width: 500px; max-width: 90vw;">
+                <q-card class="app-bg-color-5" style="min-width: 500px; max-width: 90vw;">
                     <q-card-section>
                         <div class="text-h6">Edit Chapter Sections</div>
                     </q-card-section>
@@ -1342,7 +1340,7 @@ const ProjectLayout = defineComponent({
 
             <!--UPLOAD FILES DIALOG START-->
             <q-dialog v-model="showFileUploaderDialog" persistent>
-                <q-card style="width: 700px; max-width: 80vw;background: #e6e6e6">
+                <q-card class="app-bg-color-5" style="width: 700px; max-width: 80vw;">
                     <q-card-section>
                         <div class="row items-start q-col-gutter-md">
                             <div class="text-h6 col-11">
@@ -1395,7 +1393,7 @@ const ProjectLayout = defineComponent({
             <!-- PAGE FLOATING BUTTONS -->
             <div v-if="renderedNotebookIDX !== '' && renderedChapterIDX !== ''">
                 <q-page-sticky position="bottom-right" :offset="[10, 10]">
-                    <q-btn round class="frn-button-hover" icon="add" color="secondary" @click="createSection()">
+                    <q-btn round class="frn-button-hover" icon="add" color="primary" @click="createSection()">
                         <q-tooltip :offset="[10, 10]">
                             Add new section
                         </q-tooltip>

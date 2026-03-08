@@ -232,10 +232,19 @@ const ProjectsLayout = defineComponent({
                 console.error(error);
             }
 
+        },
+        toggleTheme() {
+            this.$q.dark.toggle()
+            localStorage.setItem('darkMode', this.$q.dark.isActive)
         }
     },
     async mounted () {
+        const savedTheme = localStorage.getItem('darkMode');
         localStorage.clear();
+        if (savedTheme !== null) {
+            this.$q.dark.set(savedTheme === 'true')
+            localStorage.setItem('darkMode', this.$q.dark.isActive)
+        }
         if (this.projectIdLoad !== "" && this.projectNameLoad !== "") {
             this.loadProject(this.projectIdLoad, this.projectNameLoad)
         } else {
@@ -246,7 +255,7 @@ const ProjectsLayout = defineComponent({
 
 <q-layout v-if="!projectSelectedForLoading" view="hHh lpR fFf">
 
-    <q-header elevated class="app-header-color">
+    <q-header class="app-header-color">
         <q-toolbar>
 
             <q-toolbar-title>
@@ -254,6 +263,12 @@ const ProjectsLayout = defineComponent({
                     <img src="/static/icons/fresfolio_logo.svg">
                 </q-avatar>
             </q-toolbar-title>
+
+            <q-btn
+                flat round
+                :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'"
+                @click="toggleTheme"
+            />
 
         </q-toolbar>
     </q-header>
@@ -263,7 +278,6 @@ const ProjectsLayout = defineComponent({
 
             <div class="q-pa-md flex flex-center">
                 <q-input
-                    dark
                     filled
                     v-model="searchQuery"
                     placeholder="Search projects"
@@ -288,11 +302,11 @@ const ProjectsLayout = defineComponent({
                             color="secondary"
                             size="2em"
                         />
-                        <p class="text-white">Loading projects, please wait...</p>
+                        <p class="app-main-text-color">Loading projects, please wait...</p>
                     </div>
 
                     <div v-else-if="projectsList.length == 0" class="app-spinner-container">
-                        <h3 class="text-white">No projects have been created yet.</h3>
+                        <h3 class="app-main-text-color">No projects have been created yet.</h3>
                     </div>
                     
                     <q-list v-else class="app-select-project-list">
@@ -330,16 +344,16 @@ const ProjectsLayout = defineComponent({
                                     </q-list>
                                 </q-btn-dropdown>
 
-                                <q-item dark class="col" clickable @click="loadProject(JSON.id, JSON.name)">
+                                <q-item class="col" clickable @click="loadProject(JSON.id, JSON.name)">
                                     <q-item-section class="text-h6">
 
-                                            <q-item-label class="text-white">{{JSON['name']}}</q-item-label>
-                                            <q-item-label caption class="text-white text-subtitle1">{{JSON['started']}}: {{JSON['description']}}</q-item-label>
+                                            <q-item-label class="app-main-text-color">{{JSON['name']}}</q-item-label>
+                                            <q-item-label caption class="app-main-text-color text-subtitle1">{{JSON['started']}}: {{JSON['description']}}</q-item-label>
                                     </q-item-section>
                                 </q-item>
                             </div>
 
-                          <q-separator dark spaced inset />
+                          <q-separator spaced inset />
 
                         </template>
                     </q-list>
@@ -349,7 +363,7 @@ const ProjectsLayout = defineComponent({
 
             <!-- CREATE PROJECT DIALOG START -->
             <q-dialog v-model="showCreateProjectDialog" persistent>
-                <q-card style="width: 700px; max-width: 80vw;background: #e6e6e6">
+                <q-card class="app-bg-color-5" style="width: 700px; max-width: 80vw;">
                     <q-card-section>
                         <div class="row items-start q-col-gutter-md">
                             <div class="text-h6 col-11">
@@ -361,10 +375,10 @@ const ProjectsLayout = defineComponent({
                         </div>
                         <q-form @submit.prevent="createProject">
                             <q-input
+                                class="app-main-text-color"
                                 v-model="newProjectName"
                                 autofocus
                                 label="Project name"
-                                filled
                                 dense
                                 no-error-icon="true"
                                 :rules="[
@@ -377,7 +391,6 @@ const ProjectsLayout = defineComponent({
                             <q-input
                                 v-model="newProjectDescription"
                                 label="Project description"
-                                filled
                                 dense
                                 no-error-icon="true"
                                 :rules="[val => !!val || 'Project description is required']"

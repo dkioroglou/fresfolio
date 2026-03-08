@@ -573,10 +573,10 @@ const SectionCard = defineComponent({
             switch-toggle-side 
             :label="sectionData.title" 
             header-class="app-card-header"
-            header-style="bg-primary"
+            header-style="bg-negative"
             expand-icon-class="app-expansion-icon"
-            class="shadow-1 q-mb-sm"
-            style="border-radius: 10px; background:#cfccc9"
+            class="q-mb-sm app-bg-color-3"
+            style="border-radius: 10px;"
             v-model="isExpanded"
             @click="handleExpansion"
         >
@@ -1039,7 +1039,7 @@ const SectionCard = defineComponent({
 
 <!--UPLOAD FILES DIALOG START-->
 <q-dialog v-model="showFileUploaderDialog" persistent>
-    <q-card style="width: 700px; max-width: 80vw;background: #e6e6e6">
+    <q-card class="app-bg-color-5" style="width: 700px; max-width: 80vw;">
         <q-card-section>
             <div class="row items-start q-col-gutter-md">
                 <div class="text-h6 col-11">
