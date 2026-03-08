@@ -263,6 +263,7 @@ const ProjectsLayout = defineComponent({
 
             <div class="q-pa-md flex flex-center">
                 <q-input
+                    dark
                     filled
                     v-model="searchQuery"
                     placeholder="Search projects"
@@ -276,7 +277,7 @@ const ProjectsLayout = defineComponent({
                     </template>
                 </q-input>
 
-                <q-btn color="secondary" class='q-ml-md' @click="showCreateProjectDialog=true">Create project</q-btn>
+                <q-btn color="primary" class='q-ml-md' @click="showCreateProjectDialog=true">Create project</q-btn>
             </div>
 
             <Transition name="fade">
@@ -284,14 +285,14 @@ const ProjectsLayout = defineComponent({
 
                     <div v-if="!projectsFetched" class="app-spinner-container">
                         <q-spinner
-                            color="primary"
+                            color="secondary"
                             size="2em"
                         />
-                        <p class="app-spinner-text">Loading projects, please wait...</p>
+                        <p class="text-white">Loading projects, please wait...</p>
                     </div>
 
                     <div v-else-if="projectsList.length == 0" class="app-spinner-container">
-                        <h3>No projects have been created yet.</h3>
+                        <h3 class="text-white">No projects have been created yet.</h3>
                     </div>
                     
                     <q-list v-else class="app-select-project-list">
@@ -299,16 +300,17 @@ const ProjectsLayout = defineComponent({
 
                             <div class="row full-width">
                                 <q-btn-dropdown 
+                                    dark
                                     size="sm"
                                     rounded
-                                    color="secondary" 
+                                    color="primary" 
                                     text-color="white"
                                     icon="settings"
                                     :menu-offset="[0,10]"
                                     style="height: 10px;"
                                     class="q-mt-sm"
                                 >
-                                    <q-list separator style="background-color: var(--q-secondary); color: white;">
+                                    <q-list separator style="background-color: var(--q-primary); color: white;">
                                         <q-item clickable v-close-popup @click="showSetProjectNameDialog(JSON.id, JSON.name)">
                                             <q-item-section>
                                                 <q-item-label>Rename project</q-item-label>
@@ -328,16 +330,16 @@ const ProjectsLayout = defineComponent({
                                     </q-list>
                                 </q-btn-dropdown>
 
-                                <q-item class="col" clickable @click="loadProject(JSON.id, JSON.name)" class="app-project-list-hover-item">
+                                <q-item dark class="col" clickable @click="loadProject(JSON.id, JSON.name)">
                                     <q-item-section class="text-h6">
 
-                                            <q-item-label class="app-text-color-primary">{{JSON['name']}}</q-item-label>
-                                            <q-item-label caption class="text-subtitle1">{{JSON['started']}}: {{JSON['description']}}</q-item-label>
+                                            <q-item-label class="text-white">{{JSON['name']}}</q-item-label>
+                                            <q-item-label caption class="text-white text-subtitle1">{{JSON['started']}}: {{JSON['description']}}</q-item-label>
                                     </q-item-section>
                                 </q-item>
                             </div>
 
-                          <q-separator spaced inset />
+                          <q-separator dark spaced inset />
 
                         </template>
                     </q-list>

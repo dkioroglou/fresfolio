@@ -5,33 +5,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300&display=swap');
 
 :root {
-  --q-primary: #554265 !important;
+  --q-primary: #425A63 !important;
   --q-secondary: #6c897e !important;
   --q-negative #b65466 !important;
   --q-info: #5c777e !important;
   --q-warning: #c55858 !important;
-  --app-background-color-1: #1A192E;
-  --app-background-color-2: #27263B;
-  --app-background-color-3: #2A2F4C;
-  --app-background-color-4: #5B607B;
-  --app-accent-color-1: #554265;
-  --app-accent-color-2: #F4895C;
-  --app-text-color-1: #F4895C;
+  --app-page-background-color: #d5d3cd;
   --app-card-background-color: #e3e0d9;
   --app-card-text-color: #4f4f4f;
   --app-link-color: #2ea790;
-}
-
-.app-bg-color-1{
-    background-color: var(--app-background-color-1) !important;
-}
-
-.app-bg-color-2{
-    background-color: var(--app-background-color-2) !important;
-}
-
-.app-bg-color-3{
-    background-color: var(--app-background-color-3) !important;
 }
 
 .app-text-color-primary {
@@ -51,7 +33,7 @@
 }
 
 .app-page-container-color {
-    background-color: var(--app-background-color-1);
+    background-color: var(--app-page-background-color);
 }
 
 .q-icon {
@@ -66,7 +48,7 @@
 body {
     font-family: 'Roboto', sans-serif !important;
     font-size: 1.07em !important;
-    background-color: var(--app-page-background-color-1);
+    background-color: #e3e3e3;
 }
 
 h1, .h1 {
@@ -166,7 +148,7 @@ iframe {
 }
 
 .app-header-color {
-    background-color: var(--app-background-color-2) !important;
+    background-color: --primary-color !important;
 }
 
 .app-card-header {
@@ -180,7 +162,7 @@ iframe {
 }
 
 .app-project-list-hover-item:hover {
-  background-color: var(--app-background-color-4);
+  background-color: #d5e0e3;
 }
 
 .app-select-project-list {

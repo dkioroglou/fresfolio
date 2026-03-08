@@ -726,7 +726,7 @@ const ProjectLayout = defineComponent({
             <q-btn
                 round
                 class="q-mr-md"
-                color="teal"
+                color="primary"
                 size="md"
                 v-if="viewSections.length"
                 icon="visibility"
@@ -736,7 +736,7 @@ const ProjectLayout = defineComponent({
             <q-btn
                 round
                 class="q-mr-md"
-                color="teal"
+                color="primary"
                 size="md"
                 v-if="pinnedSections.length"
                 icon="push_pin"
@@ -746,7 +746,7 @@ const ProjectLayout = defineComponent({
             <q-btn
                 round
                 class="q-mr-md"
-                color="teal"
+                color="primary"
                 size="md"
                 v-if="searchSections.length"
                 icon="search"
@@ -758,7 +758,7 @@ const ProjectLayout = defineComponent({
                 filled
                 dense
                 v-model="searchText" 
-                standout="bg-teal text-white"
+                standout="bg-info text-white"
                 input-style="color: white"
                 label-color="white"
                 class="col-4 q-mr-lg text-h6" 
@@ -771,12 +771,12 @@ const ProjectLayout = defineComponent({
             </q-input>
             <!-- SEARCH BAR END -->
 
-            <q-btn color="secondary" label="Menu">
+            <q-btn color="primary" label="Menu">
                 <q-menu
                     :offset="[0, 10]"
                     transition-show="jump-down"
                     transition-hide="jump-up"
-                    :style="{ backgroundColor: 'var(--q-secondary)', color: 'white'}"
+                    :style="{ backgroundColor: 'var(--q-primary)', color: 'white'}"
                 >
                     <q-list dense style="min-width: 100px">
 
@@ -794,13 +794,13 @@ const ProjectLayout = defineComponent({
     <q-drawer 
         v-model="leftDrawerOpen" 
         side='left' 
-        class="app-bg-dark" 
+        class="app-bg-color-1" 
         :width="leftDrawerWidth"
     >
         <div class="row full-height no-wrap">
 
             <!-- NOTEBOOKS DRAWER START -->
-            <div class="col bg-primary" v-show="notebooksDrawerOpen">
+            <div class="col app-bg-color-2" v-show="notebooksDrawerOpen">
                 <q-scroll-area class="fit">
                     <Transition name="fade">
                         <div v-if="!notebooksFetched" class="app-spinner-container q-mt-xl">
@@ -850,13 +850,13 @@ const ProjectLayout = defineComponent({
                     </Transition>
 
                     <q-btn-group rounded class="absolute-bottom-right q-mb-md q-mr-md">
-                        <q-btn color="secondary" icon="add" @click="showCreateNotebookDialog=true">
-                            <q-tooltip class="bg-teal" :offset="[10, 10]">
+                        <q-btn color="primary" icon="add" @click="showCreateNotebookDialog=true">
+                            <q-tooltip class="bg-primary" :offset="[10, 10]">
                                 Create new notebook.
                             </q-tooltip>
                         </q-btn>
-                        <q-btn color="secondary" icon="update" @click="refreshNotebooks">
-                            <q-tooltip class="bg-teal" :offset="[10, 10]">
+                        <q-btn color="primary" icon="update" @click="refreshNotebooks">
+                            <q-tooltip class="bg-primary" :offset="[10, 10]">
                                 Refresh notebooks
                             </q-tooltip>
                         </q-btn>
@@ -866,7 +866,7 @@ const ProjectLayout = defineComponent({
             <!-- NOTEBOOKS DRAWER END -->
 
             <!-- CHAPTERS DRAWER START -->
-            <div class="col bg-secondary">
+            <div class="col app-bg-color-3">
                 <q-scroll-area class="fit">
                     <q-list dense>
 
@@ -929,7 +929,7 @@ const ProjectLayout = defineComponent({
                         this.selectedChapterID
                         class="absolute-bottom-right q-mb-md q-mr-md"
                     >
-                            <q-tooltip class="bg-teal" :offset="[10, 10]">
+                            <q-tooltip class="bg-primary" :offset="[10, 10]">
                                 Add chapter.
                             </q-tooltip>
                     </q-btn>
