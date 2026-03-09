@@ -1,6 +1,7 @@
 const ProjectLayout = defineComponent({
     components: {
-        SectionCard
+        SectionCard,
+        Todos
     },
     props:['selectedProjectID', 'selectedProjectName'],
     data () {
@@ -10,6 +11,7 @@ const ProjectLayout = defineComponent({
             searchDrawerOpen: false,
             viewDrawerOpen: false,
             pinnedDrawerOpen: false,
+            todosDrawerOpen: false,
             notebooksDrawerOpen: true,
             notebooksFetched: false,
             chaptersBTNCollapseIcon: "chevron_left",
@@ -59,6 +61,7 @@ const ProjectLayout = defineComponent({
             }
         },
         toggleSearchDrawer() {
+            this.todosDrawerOpen = false;
             this.viewDrawerOpen = false;
             this.pinnedDrawerOpen = false;
             if (this.searchDrawerOpen) {
@@ -68,6 +71,7 @@ const ProjectLayout = defineComponent({
             }
         },
         toggleViewDrawer() {
+            this.todosDrawerOpen = false;
             this.searchDrawerOpen = false;
             this.pinnedDrawerOpen = false;
             if (this.viewDrawerOpen) {
@@ -77,12 +81,23 @@ const ProjectLayout = defineComponent({
             }
         },
         togglePinnedDrawer() {
+            this.todosDrawerOpen = false;
             this.searchDrawerOpen = false;
             this.viewDrawerOpen = false;
             if (this.pinnedDrawerOpen) {
                 this.pinnedDrawerOpen = false;
             } else {
                 this.pinnedDrawerOpen = true;
+            }
+        },
+        toggleTodosDrawer() {
+            this.pinnedDrawerOpen = false;
+            this.searchDrawerOpen = false;
+            this.viewDrawerOpen = false;
+            if (this.todosDrawerOpen) {
+                this.todosDrawerOpen = false;
+            } else {
+                this.todosDrawerOpen = true;
             }
         },
         clearSearchSections() {
@@ -701,9 +716,20 @@ const ProjectLayout = defineComponent({
             }
 
         },
+        handleShortcut(e) {
+            if (e.altKey && e.key === 'j') {
+                e.preventDefault()
+                this.toggleTodosDrawer()
+            }
+
+        }
     },
     async mounted () {
         this.get_notebooks();
+        window.addEventListener('keydown', this.handleShortcut)
+    },
+    beforeUnmount() {
+        window.removeEventListener('keydown', this.handleShortcut)
     },
     template: `
 <q-layout view="hHh LpR fFf">
@@ -751,6 +777,15 @@ const ProjectLayout = defineComponent({
                 v-if="searchSections.length"
                 icon="search"
                 @click="toggleSearchDrawer()"
+            />
+
+            <q-btn
+                round
+                class="q-mr-md"
+                color="primary"
+                size="md"
+                icon="assignment_turned_in"
+                @click="toggleTodosDrawer()"
             />
 
             <!-- SEARCH BAR START -->
@@ -941,6 +976,34 @@ const ProjectLayout = defineComponent({
 
     </q-drawer>
 
+
+    <!-- TODOS DRAWER START -->
+    <q-drawer 
+        overlay
+        v-model="todosDrawerOpen" 
+        side='right' 
+        class="app-page-container-color" 
+        :width="searchDrawerWidth()"
+    >
+        <div class="col q-px-xl">
+
+            <div class="q-mt-md q-mb-md row items-center justify-between">
+                <div class="row items-center">
+                    <q-btn 
+                        round
+                        color="primary" 
+                        size='sm' 
+                        @click="toggleTodosDrawer()" 
+                        icon="close"
+                    />
+                    <h3 class="q-ml-md q-ma-none">Todos</h3>
+                </div>
+            </div>
+
+            <todos :projectid="selectedProjectID" :focus="todosDrawerOpen" />
+        </div>
+    </q-drawer>
+    <!-- TODOS DRAWER END -->
 
     <!-- SEARCH DRAWER START -->
     <q-drawer 

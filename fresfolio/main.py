@@ -14,3 +14,6 @@ app.register_blueprint(coreroutes)
 from fresfolio.routes.api import apiroutes
 app.register_blueprint(apiroutes)
 
+from fresfolio.routes.todos_app import todosapp
+app.register_blueprint(todosapp)
+
