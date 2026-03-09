@@ -993,7 +993,7 @@ const SectionCard = defineComponent({
 
 
 <q-dialog v-model="showChangeSectionTitle" persistent>
-    <q-card style="width: 700px; max-width: 80vw;background: #e6e6e6">
+    <q-card class="app-bg-color-5" style="width: 700px; max-width: 80vw;">
         <q-card-section>
             <div class="row items-start q-col-gutter-md">
                 <div class="text-h6 app-text-color-primary col-11">
@@ -1007,7 +1007,6 @@ const SectionCard = defineComponent({
                 v-model="newSectionTitle"
                 autofocus
                 label="Section title"
-                filled
                 dense
                 no-error-icon="true"
                 :rules="[val => !!val || 'Section title is required']"
