@@ -589,15 +589,14 @@ const SectionCard = defineComponent({
 
                     <!-- SECTION MENU BUTTONS START -->
                     <div class='absolute-top-left q-gutter-xs' style="height: 2px; font-size: 11px; margin-top: 1px; margin-left: 17px;">
-                        <q-badge color="info" outline>{{sectionData.projectName}}</q-badge>
-                        <q-badge color="info" outline>id:{{sectionData.ID}}</q-badge>
-                        <q-badge color="info" outline>{{sectionData.date}}</q-badge>
+                        <q-badge class="app-text-color-muted" outline>{{sectionData.projectName}}</q-badge>
+                        <q-badge class="app-text-color-muted" outline>id:{{sectionData.ID}}</q-badge>
+                        <q-badge class="app-text-color-muted" outline>{{sectionData.date}}</q-badge>
 
                         <q-badge
                             v-for="(tag, index) in sectionData.tags"
                             :key="index"
-                            class="q-mr-sm"
-                            color="info"
+                            class="q-mr-sm app-text-color-muted"
                             outline
                         >
                             {{ tag }}
@@ -994,7 +993,7 @@ const SectionCard = defineComponent({
 
 
 <q-dialog v-model="showChangeSectionTitle" persistent>
-    <q-card style="width: 700px; max-width: 80vw;background: #e6e6e6">
+    <q-card class="app-bg-color-5" style="width: 700px; max-width: 80vw;">
         <q-card-section>
             <div class="row items-start q-col-gutter-md">
                 <div class="text-h6 app-text-color-primary col-11">
@@ -1008,7 +1007,6 @@ const SectionCard = defineComponent({
                 v-model="newSectionTitle"
                 autofocus
                 label="Section title"
-                filled
                 dense
                 no-error-icon="true"
                 :rules="[val => !!val || 'Section title is required']"

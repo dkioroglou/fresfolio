@@ -923,7 +923,7 @@ const SectionContent = defineComponent({
 
     <!-- SHOW FIGURE DIALOG START -->
     <q-dialog v-model="showFigureDialog">
-        <q-card class="col" style="display: flex; max-width: 70vw; max-height: 90vh; min-height:70vh">
+        <q-card class="col app-bg-color-5" style="display: flex; max-width: 70vw; max-height: 90vh; min-height:70vh">
 
             <q-card-section class="col q-pa-md items-center">
                 <q-carousel
@@ -936,7 +936,7 @@ const SectionContent = defineComponent({
                     >
 
                     <template v-for="(figure, figureIDX) in selectedFigures" :key="figureIDX">
-                        <q-carousel-slide :name="figureIDX" class="flex items-center justify-center">
+                        <q-carousel-slide :name="figureIDX" class="flex items-center justify-center app-bg-color-5">
                                 <q-img
                                     :src="figure.url"
                                     style="max-height: 90%; max-width: 80%;"
@@ -993,7 +993,7 @@ const SectionContent = defineComponent({
 
     <!-- SHOW OMIPLOT DIALOG START -->
     <q-dialog v-model="showRenderedOmiplotDialog">
-        <q-card class="col" style="display: flex; max-width: 70vw; max-height: 90vh; min-height:70vh">
+        <q-card class="col app-bg-color-5" style="display: flex; max-width: 70vw; max-height: 90vh; min-height:70vh">
 
             <q-card-section class="col q-pa-md items-center">
                 <q-carousel
@@ -1047,7 +1047,7 @@ const SectionContent = defineComponent({
 
     <!-- SHOW OMILAYERS DIALOG START -->
     <q-dialog v-model="showSelectOmilayerDialog">
-        <q-card class="full-width">
+        <q-card class="full-width app-bg-color-5">
             <q-card-section class="full-width">
                 <q-list dense class="full-width">
                     <template v-for="(JSON, index) in availableOmilayers" :key="index">

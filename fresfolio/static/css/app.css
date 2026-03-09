@@ -19,6 +19,7 @@
   --app-accent-color-2: #F4895C;
   --app-text-color-1: #4f4f4f;
   --app-text-color-2: #27185A;
+  --app-text-color-3: #5c777e;
   --app-section-title-color: #e3e0d9;
   --app-card-background-color: #e3e0d9;
   --app-card-text-color: #4f4f4f;
@@ -38,9 +39,10 @@ body.body--dark {
   --app-background-color-5: #27263B;
   --app-accent-color-1: #554265;
   --app-accent-color-2: #F4895C;
-  --app-text-color-1: #d2cec4;
+  --app-text-color-1: #dbd7ce;
   --app-section-title-color: #e3e0d9;
   --app-text-color-2: #F4895C;
+  --app-text-color-3: #a39d90;
   --app-card-background-color: #e3e0d9;
   --app-card-text-color: #4f4f4f;
   --app-link-color: #2ea790;
@@ -65,6 +67,10 @@ body.body--dark {
 
 .app-main-text-color {
     color: var(--app-text-color-1) !important;
+}
+
+.app-text-color-muted {
+    color: var(--app-text-color-3) !important;
 }
 
 .app-text-color-headers {
@@ -106,7 +112,7 @@ h1, .h1 {
     line-height: 1rem !important;
     font-size: 1.4em !important;
     font-weight: 400 !important;
-    color: var(--q-primary);
+    color: var(--app-text-color-2);
     margin-top: 20px !important;
     position: relative;
 }
@@ -116,7 +122,7 @@ h2, .h2 {
     line-height: 1rem !important;
     font-size: 1.3em !important;
     font-weight: 400 !important;
-    color: var(--q-primary);
+    color: var(--app-text-color-2);
     margin-bottom: 0px !important;
     position: relative;
 }
@@ -125,7 +131,7 @@ h3, .h3 {
     line-height: 1rem !important;
     font-size: 1.1em !important;
     font-weight: 400 !important;
-    color: var(--q-primary);
+    color: var(--app-text-color-2);
     margin-bottom: 0px !important;
     position: relative;
 }
@@ -141,6 +147,10 @@ li {
 
 ul li::marker {
     color: var(--q-primary); /* Set bullet color */
+  }
+
+body.body--dark ul li::marker {
+    color: var(--app-text-color-muted); /* Set bullet color */
   }
 
 b {
@@ -304,7 +314,7 @@ iframe {
 }
 
 body.body--dark .app-note-blue {
-  background-color: #2A3D4C;
+  background-color: #26455c;
   color: var(--app-main-text-color);
   border-color: #3353C7;
 }
