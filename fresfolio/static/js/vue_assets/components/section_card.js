@@ -589,15 +589,14 @@ const SectionCard = defineComponent({
 
                     <!-- SECTION MENU BUTTONS START -->
                     <div class='absolute-top-left q-gutter-xs' style="height: 2px; font-size: 11px; margin-top: 1px; margin-left: 17px;">
-                        <q-badge color="info" outline>{{sectionData.projectName}}</q-badge>
-                        <q-badge color="info" outline>id:{{sectionData.ID}}</q-badge>
-                        <q-badge color="info" outline>{{sectionData.date}}</q-badge>
+                        <q-badge class="app-text-color-muted" outline>{{sectionData.projectName}}</q-badge>
+                        <q-badge class="app-text-color-muted" outline>id:{{sectionData.ID}}</q-badge>
+                        <q-badge class="app-text-color-muted" outline>{{sectionData.date}}</q-badge>
 
                         <q-badge
                             v-for="(tag, index) in sectionData.tags"
                             :key="index"
-                            class="q-mr-sm"
-                            color="info"
+                            class="q-mr-sm app-text-color-muted"
                             outline
                         >
                             {{ tag }}
