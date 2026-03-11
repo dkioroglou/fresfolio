@@ -164,6 +164,21 @@ def import_project(directory):
         exit()
     print("Project has been imported.")
 
+@frescli.command()
+@click.argument("directory")
+def export_project(directory):
+    "Export fresfolio project as files."
+    if not is_app_initialized():
+        exit()
+    from fresfolio.utils.classes import ProjectsUtils
+    if directory == '.':
+        projectPath = Path.cwd()
+    else:
+        if not Path(directory).is_dir():
+            exit(f"'{directory}' is not a directory.")
+        projectPath = Path(directory).resolve()
+
+    print(projectPath)
 
 if __name__ == '__main__':
     frescli()
