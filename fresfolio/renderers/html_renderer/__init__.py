@@ -1,6 +1,7 @@
 import re
 import traceback
 from fresfolio.utils import tools
+from pathlib import Path
 from fresfolio.renderers.multiline_renderers import (HtmlParagraphTag, 
                                                     HtmlListTag, 
                                                     HtmlNoteTag, 
@@ -29,6 +30,7 @@ class HtmlRenderer:
         self.projectID = projectID
         self.projectName = projectName
         self.lines = section_content.strip().split('\n')
+        self.currentLineIDX = 0
         self.containers = []
         self.buffer = []
         self.bufferRaw = []
@@ -178,9 +180,26 @@ class HtmlRenderer:
     def render_section_content(self) -> list:
         self._addNewContainer("normal", "normal")
         for line in self.lines:
+            self.currentLineIDX += 1
             rawLine = line
             self.bufferRaw.append(rawLine)
             line = line.strip()
+
+            render_file_match = re.match(r'\\render{(.+)}', line)
+            if render_file_match:
+                projectDir, _ = tools.get_paths_for_project_dir_and_db(self.projectID)
+                fileRelativePath = render_file_match.group(1)
+                fileFullPath = Path(projectDir).joinpath(fileRelativePath)
+                if not fileFullPath.exists(): 
+                    self._report_syntax_error
+                    continue
+                fileLines = open(fileFullPath, 'r').read().splitlines()
+                restSectionLines = self.lines[self.currentLineIDX:]
+                self.lines = fileLines
+                self.render_section_content()
+                self.lines = restSectionLines
+                self.currentLineIDX = 0
+                continue
 
             # Manage tags with similar open and close tags
             if line in self.toggle_tags:
@@ -287,6 +306,7 @@ class PDFRenderer:
         self.projectID = projectID
         self.projectName = projectName
         self.lines = section_content.strip().split('\n')
+        self.currentLineIDX = 0
         self.containers = []
         self.buffer = []
         self.bufferRaw = []
@@ -437,6 +457,21 @@ class PDFRenderer:
                 line = line.strip() + " #linebreak()"
             else:
                 line = line.strip()
+
+            render_file_match = re.match(r'\\render{(.+)}', line)
+            if render_file_match:
+                projectDir, _ = tools.get_paths_for_project_dir_and_db(self.projectID)
+                fileRelativePath = render_file_match.group(1)
+                fileFullPath = Path(projectDir).joinpath(fileRelativePath)
+                if not fileFullPath.exists(): 
+                    continue
+                fileLines = open(fileFullPath, 'r').read().splitlines()
+                restSectionLines = self.lines[self.currentLineIDX:]
+                self.lines = fileLines
+                self.render_section_content()
+                self.lines = restSectionLines
+                self.currentLineIDX = 0
+                continue
 
             # Manage tags with similar open and close tags
             if line in self.toggle_tags:

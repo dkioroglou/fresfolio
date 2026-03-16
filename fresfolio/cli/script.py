@@ -165,20 +165,29 @@ def import_project(directory):
     print("Project has been imported.")
 
 @frescli.command()
-@click.argument("directory")
-def export_project(directory):
+@click.argument("project")
+def export_project(project):
     "Export fresfolio project as files."
     if not is_app_initialized():
         exit()
     from fresfolio.utils.classes import ProjectsUtils
-    if directory == '.':
-        projectPath = Path.cwd()
-    else:
-        if not Path(directory).is_dir():
-            exit(f"'{directory}' is not a directory.")
-        projectPath = Path(directory).resolve()
+    PUTL = ProjectsUtils()
+    if not PUTL.project_exists(project):
+        exit(f"Project '{project}' does not exist.")
+    projectDir = Path.cwd().joinpath(project)
+    projectUUID = tools.get_project_ID_based_on_name(project)
+    notebooks = PUTL.get_notebooks_and_chapters_for_project(projectUUID)
+    print(notebooks)
+    # for notebookJSON in notebooks:
+    #     notebookName = notebookJSON['notebookName'].replace(" ", "_")
+    #     chapters = notebookJSON['chapters']
+    #     for chapterJSON in chapters:
+    #         chapterName = chapterJSON['chapterName'].replace(" ", "_")
+    #         chapterID = chapterJSON['chapterID']
+    #         sectionsIDs = PUTL.get_sections_IDs_for_chapter(projectUUID, chapterID)
+    #         print(sectionsIDs)
 
-    print(projectPath)
+
 
 if __name__ == '__main__':
     frescli()
