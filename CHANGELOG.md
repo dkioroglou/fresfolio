@@ -3,5 +3,6 @@ This is a bug fix release for various issues discovered after the release v0.3.0
 
 ## What's Changed
 * FEATURE: each project has a dedicated drawer for todos.
-* FEATURE: section content can also be rendered directly from file.
+* FEATURE: section content can also be rendered directly from file with \render markup.
+* FEATURE: user can define cross-references and use in sections with \ref markup.
 * FIXED: fixed bug related to importlib.util error.

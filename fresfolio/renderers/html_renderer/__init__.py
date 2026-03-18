@@ -2,6 +2,7 @@ import re
 import traceback
 from fresfolio.utils import tools
 from pathlib import Path
+import json
 from fresfolio.renderers.multiline_renderers import (HtmlParagraphTag, 
                                                     HtmlListTag, 
                                                     HtmlNoteTag, 
@@ -29,6 +30,7 @@ class HtmlRenderer:
     def __init__(self, projectID:str, projectName:str, section_content:str):
         self.projectID = projectID
         self.projectName = projectName
+        self.crossrefs = self.get_crossrefs()
         self.lines = section_content.strip().split('\n')
         self.currentLineIDX = 0
         self.containers = []
@@ -69,6 +71,14 @@ class HtmlRenderer:
         if not self.begin_tag or not self.end_tag:
             return False
         return self.begin_tag == self.end_tag
+
+    def get_crossrefs(self) -> dict:
+        projectDir, _ = tools.get_paths_for_project_dir_and_db(self.projectID)
+        crossrefs_fpath = Path(projectDir).joinpath('crossrefs.json')
+        if crossrefs_fpath.exists():
+            with open(crossrefs_fpath,'r') as inf:
+                return json.load(inf)
+        return {}
 
     def _addNewContainer(self, containerType:str, title:str) -> None:
         """
@@ -177,6 +187,18 @@ class HtmlRenderer:
             if self.begin_tag != self.end_tag:
                 self._report_syntax_error
 
+    def replace_crossrefs(self, text: str) -> str:
+        """Replaces ref markup with provided cross-references."""
+        def render_markup(match):
+            refKey = match.group(1)
+            if self.crossrefs.get(refKey, False):
+                refValue = str(self.crossrefs[refKey])
+            else:
+                refValue = 'None'
+            return refValue
+        crossref_regex = re.compile(r'\\ref{(.*?)}')
+        return crossref_regex.sub(render_markup, text)
+
     def render_section_content(self) -> list:
         self._addNewContainer("normal", "normal")
         for line in self.lines:
@@ -184,6 +206,7 @@ class HtmlRenderer:
             rawLine = line
             self.bufferRaw.append(rawLine)
             line = line.strip()
+            line = self.replace_crossrefs(line)
 
             render_file_match = re.match(r'\\render{(.+)}', line)
             if render_file_match:
@@ -305,6 +328,7 @@ class PDFRenderer:
     def __init__(self, projectID:str, projectName:str, section_content:str):
         self.projectID = projectID
         self.projectName = projectName
+        self.crossrefs = self.get_crossrefs()
         self.lines = section_content.strip().split('\n')
         self.currentLineIDX = 0
         self.containers = []
@@ -348,6 +372,14 @@ class PDFRenderer:
         2. fold = content will be rendered inside a fold.
         """
         self.containers.append({"container":containerType, "title":title, "content":[]})
+
+    def get_crossrefs(self) -> dict:
+        projectDir, _ = tools.get_paths_for_project_dir_and_db(self.projectID)
+        crossrefs_fpath = Path(projectDir).joinpath('crossrefs.json')
+        if crossrefs_fpath.exists():
+            with open(crossrefs_fpath,'r') as inf:
+                return json.load(inf)
+        return {}
 
     @property
     def _lastContainerContent(self) -> list:
@@ -448,6 +480,18 @@ class PDFRenderer:
             if self.begin_tag != self.end_tag:
                 self._report_syntax_error
 
+    def replace_crossrefs(self, text: str) -> str:
+        """Replaces ref markup with provided cross-references."""
+        def render_markup(match):
+            refKey = match.group(1)
+            if self.crossrefs.get(refKey, False):
+                refValue = str(self.crossrefs[refKey])
+            else:
+                refValue = 'None'
+            return refValue
+        crossref_regex = re.compile(r'\\ref{(.*?)}')
+        return crossref_regex.sub(render_markup, text)
+
     def render_section_content(self) -> list:
         self._addNewContainer("normal", "normal")
         for line in self.lines:
@@ -457,6 +501,7 @@ class PDFRenderer:
                 line = line.strip() + " #linebreak()"
             else:
                 line = line.strip()
+            line = self.replace_crossrefs(line)
 
             render_file_match = re.match(r'\\render{(.+)}', line)
             if render_file_match:
