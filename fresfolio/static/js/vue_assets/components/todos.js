@@ -6,7 +6,8 @@ const Todos = defineComponent({
             newTodoText: "",
             showTodos: true,
             showDone: false,
-            tab: "todo"
+            tab: "todo",
+            todosSearchQuery: ""
         }
     },
     methods: {
@@ -70,13 +71,13 @@ const Todos = defineComponent({
                     body: JSON.stringify(
                         {
                             "projectID": this.projectid,
-                            "todoID": this.todos[todoIDX]['id']
+                            "todoID": this.filteredTodos[todoIDX]['id']
                         }
                     )
                 });
 
                 if (response.ok) {
-                    this.todos[todoIDX]['done'] = 1
+                    this.filteredTodos[todoIDX]['done'] = 1
                 } else {
                     const responseText = await response.text();
                     this.$q.notify({
@@ -99,13 +100,13 @@ const Todos = defineComponent({
                     body: JSON.stringify(
                         {
                             "projectID": this.projectid,
-                            "todoID": this.todos[todoIDX]['id']
+                            "todoID": this.filteredTodos[todoIDX]['id']
                         }
                     )
                 });
 
                 if (response.ok) {
-                    this.todos[todoIDX]['done'] = 0
+                    this.filteredTodos[todoIDX]['done'] = 0
                 } else {
                     const responseText = await response.text();
                     this.$q.notify({
@@ -118,7 +119,7 @@ const Todos = defineComponent({
                   console.error(error);
             }
         },
-        async deleteTodo(todoIDX) {
+        async deleteTodo(todoID) {
             try {
                 const response = await fetch("/todos/api/delete-todo", {
                     method: "POST",
@@ -128,7 +129,7 @@ const Todos = defineComponent({
                     body: JSON.stringify(
                         {
                             "projectID": this.projectid,
-                            "todoID": this.todos[todoIDX]['id']
+                            "todoID": todoID
                         }
                     )
                 });
@@ -139,7 +140,7 @@ const Todos = defineComponent({
                         color: 'green',
                         position: "top-right"
                     })
-                    this.todos.splice(todoIDX, 1)
+                    this.todos = this.todos.filter(item => item.id !== todoID)
                 } else {
                     const responseText = await response.text();
                     this.$q.notify({
@@ -193,7 +194,7 @@ const Todos = defineComponent({
             let numTodo = 0;
             let numDone = 0;
 
-            this.todos.forEach(function(todo) {
+            this.filteredTodos.forEach(function(todo) {
                 numTotal += 1;
                 if (todo['done'] == 1) {
                     numDone += 1;
@@ -209,10 +210,22 @@ const Todos = defineComponent({
     },
     computed: {
         doneTodos() {
-            return this.todos.filter(todo => todo.done === 1);
+            return this.filteredTodos.filter(todo => todo.done === 1);
         },
         notDoneTodos() {
-            return this.todos.filter(todo => todo.done === 0);
+            return this.filteredTodos.filter(todo => todo.done === 0);
+        },
+        filteredTodos() {
+            const terms = (this.todosSearchQuery || "")
+                .toLowerCase()
+                .split(/\s+/)
+                .filter(Boolean);
+
+            if (terms.length === 0) return this.todos;
+
+            return this.todos.filter((item) =>
+                terms.every((term) => item.todo.toLowerCase().includes(term))
+            );
         }
     },
     watch: {
@@ -227,6 +240,18 @@ const Todos = defineComponent({
 <div class="row flex justify-center q-mb-md">
     <div class="col-2" style="margin-top:4px; margin-left:15px">
     </div>
+</div>
+
+<div class="row justify-left q-mb-md">
+    <q-input
+        autofocus
+        v-model="todosSearchQuery"
+        class="col-10"  
+        placeholder="Search todos"
+        @input="filteredTodos"
+        clearable
+        dense
+    />
 </div>
 
 <div class="row justify-left q-mb-md">
@@ -263,7 +288,7 @@ const Todos = defineComponent({
 
 </div>
 
-<div v-if="todos.length !== 0">
+<div v-if="filteredTodos.length !== 0">
     <div class="row flex justify-left">
         <div class="col-10">
             <div>
@@ -285,7 +310,7 @@ const Todos = defineComponent({
 
             <q-tab-panel name="todo">
                 <div class="bg-transparent">
-                    <q-list v-for="(item, itemIDX) in todos" :key="itemIDX">
+                    <q-list v-for="(item, itemIDX) in filteredTodos" :key="itemIDX">
                         <q-item v-if="item['done'] === 0">
                             <q-item-section>
                                 <q-item-label class='text-white'>
@@ -309,7 +334,7 @@ const Todos = defineComponent({
                                             :menu-offset="[0,10]"
                                         >
                                             <q-list separator class="bg-primary" style="color: white;">
-                                                <q-item clickable v-close-popup @click="deleteTodo(itemIDX)">
+                                                <q-item clickable v-close-popup @click="deleteTodo(item.id)">
                                                     <q-item-section>
                                                         <q-item-label>Delete todo</q-item-label>
                                                     </q-item-section>
@@ -324,7 +349,7 @@ const Todos = defineComponent({
 
                                 </q-item-label>
 
-                                <q-popup-edit v-model="todos[itemIDX]['todo']" :validate="val => val.length > 1" v-slot="scope">
+                                <q-popup-edit v-model="filteredTodos[itemIDX]['todo']" :validate="val => val.length > 1" v-slot="scope">
                                     <q-input
                                         autofocus
                                         dense
@@ -345,7 +370,7 @@ const Todos = defineComponent({
 
             <q-tab-panel name="done">
                 <div class="bg-transparent">
-                    <q-list v-for="(item, itemIDX) in todos" :key="itemIDX">
+                    <q-list v-for="(item, itemIDX) in filteredTodos" :key="itemIDX">
                         <q-item v-if="item['done'] === 1">
                             <q-item-section>
                                 <q-item-label class='text-white'>
@@ -368,7 +393,7 @@ const Todos = defineComponent({
                                             :menu-offset="[0,10]"
                                         >
                                             <q-list separator class="bg-primary" style="color: white;">
-                                                <q-item clickable v-close-popup @click="deleteTodo(itemIDX)">
+                                                <q-item clickable v-close-popup @click="deleteTodo(item.id)">
                                                     <q-item-section>
                                                         <q-item-label>Delete todo</q-item-label>
                                                     </q-item-section>
@@ -384,7 +409,7 @@ const Todos = defineComponent({
 
                                 </q-item-label>
 
-                                <q-popup-edit v-model="todos[itemIDX]['todo']" :validate="val => val.length > 1" v-slot="scope">
+                                <q-popup-edit v-model="filteredTodos[itemIDX]['todo']" :validate="val => val.length > 1" v-slot="scope">
                                     <q-input
                                         autofocus
                                         dense
