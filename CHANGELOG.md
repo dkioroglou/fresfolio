@@ -5,4 +5,5 @@ This is a bug fix release for various issues discovered after the release v0.3.0
 * FEATURE: each project has a dedicated drawer for todos.
 * FEATURE: section content can also be rendered directly from file with \render markup.
 * FEATURE: user can define cross-references and use in sections with \ref markup.
+* FEATURE: layers in omitable can be filtered.
 * FIXED: fixed bug related to importlib.util error.

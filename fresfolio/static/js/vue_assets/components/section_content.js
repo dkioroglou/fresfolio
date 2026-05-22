@@ -33,6 +33,7 @@ const SectionContent = defineComponent({
             datatypeOptions: ['TEXT', 'INTEGER', 'FLOAT'],
             uploadToSectionRoute: [],
             uploadToOmilayerRoute: "/api/upload-file-to-omilayer",
+            filterQuery: ""
         };
     },
     methods: {
@@ -382,7 +383,9 @@ const SectionContent = defineComponent({
                         color: 'green',
                         position: "top-right"
                     })
+                    this.availableOmilayers = this.availableOmilayers.filter(item => item.name !== fileJSON['layer'])
                     this.cJSON['html'][fJSONIDX]['layer'] = "";
+                    this.cJSON['html'][fJSONIDX]['nLayers'] = this.cJSON['html'][fJSONIDX]['nLayers'] -1;
                     this.cJSON['html'][fJSONIDX]['layer_exists'] = 0;
                     this.cJSON['html'][fJSONIDX]['layerInfo'] = "";
                 } else {
@@ -472,6 +475,19 @@ const SectionContent = defineComponent({
             },
         }
     },
+    computed: {
+        filteredOmilayers() {
+            const q = (this.filterQuery || '').toLowerCase().trim();
+            return this.availableOmilayers.filter(layer =>
+                !q ||
+                layer.name?.toLowerCase().includes(q) ||
+                layer.info?.toLowerCase().includes(q)
+            );
+        },
+        textColor() {
+            return this.$q.dark.isActive ? 'text-white' : 'text-dark';
+        }
+    },
     template: `
 
 <!-- TABLES RENDERING START -->
@@ -555,14 +571,6 @@ const SectionContent = defineComponent({
                     <q-item-label caption class="text-white">layer-info: {{fileJSON['layerInfo']}}</q-item-label>
                 </div>
                 <div class='absolute-top-right q-gutter-xs q-pa-md'>
-                    <q-btn v-if="fileJSON['layer_exists'] !== 0" 
-                        class="q-ml-md" 
-                        size="sm" 
-                        color="primary" 
-                        label="Render layer" 
-                        @click="getSelectedOmilayer(fileJSON, fJSONIDX)" 
-                    />
-
                     <q-btn 
                         class="q-ml-md" 
                         size="sm" 
@@ -1049,14 +1057,41 @@ const SectionContent = defineComponent({
     <q-dialog v-model="showSelectOmilayerDialog">
         <q-card class="full-width app-bg-color-5">
             <q-card-section class="full-width">
+
+                <q-input
+                    v-model="filterQuery"
+                    placeholder="Filter layers..."
+                    dark
+                    dense
+                    clearable
+                    debounce="200"
+                    class="q-mb-md"
+                >
+                    <template #prepend>
+                        <q-icon name="search" />
+                    </template>
+                </q-input>
+
                 <q-list dense class="full-width">
-                    <template v-for="(JSON, index) in availableOmilayers" :key="index">
+                    <template v-for="(JSON, index) in filteredOmilayers" :key="index">
                         <q-item-section class="full-width">
                             <div class="q-mb-sm row items-center justify-between">
                                 <q-item-label><b>{{JSON['name']}}</b></q-item-label>
                                 <div>
-                                    <q-btn color="secondary" size="sm" @click="renderOmilayer(JSON['name'], '5')">Top 5 rows</q-btn>
-                                    <q-btn class="q-ml-md" color="secondary" size="sm" @click="renderOmilayer(JSON['name'], 'all')">All rows</q-btn>
+                                    <q-btn class='q-mr-sm' round color="secondary" size="sm" icon="filter_5" @click="renderOmilayer(JSON['name'], '5')">
+                                        <q-tooltip>Top 5 rows</q-tooltip>
+                                    </q-btn>
+
+                                    <q-btn class='q-mr-sm' round color="secondary" size="sm" icon="table_rows" @click="renderOmilayer(JSON['name'], 'all')">
+                                        <q-tooltip>All rows</q-tooltip>
+                                    </q-btn>
+
+
+                                    <q-btn round color="negative" size="sm" icon="delete" 
+                                        @click="() => { selectedOmilayersJSON['layer'] = JSON['name']; deleteSelectedLayer(selectedOmilayersJSON, selectedOmilayersIDX); }">
+                                        <q-tooltip>Delete layer</q-tooltip>
+                                    </q-btn>
+
                                 </div>
                             </div>
                             <div class="full-width">
@@ -1138,7 +1173,7 @@ const SectionContent = defineComponent({
             <q-card-section>
                 <div class="text-h6">Insert data from form</div>
                 <div>
-                    <q-item-label caption>layer: {{selectedOmilayersJSON['layer']}}</q-item-label>
+                    <q-item-label caption dark :class="textColor">layer: {{selectedOmilayersJSON['layer']}}</q-item-label>
                 </div>
             </q-card-section>
 
@@ -1162,7 +1197,7 @@ const SectionContent = defineComponent({
 
  <!-- INSERT FILE TO OMILAYER DIALOG START -->
     <q-dialog v-model="showInsertFileToOmilayer">
-        <q-card style="width: 700px; max-width: 80vw;background: #e6e6e6">
+        <q-card class="app-bg-color-5" style="width: 700px; max-width: 80vw;">
             <q-card-section>
                     <div class="text-h6">Insert data from file</div>
                     <div>
@@ -1212,11 +1247,11 @@ const SectionContent = defineComponent({
 
  <!-- SET OMILAYER DESCRIPTION DIALOG START -->
     <q-dialog v-model="showSetSelectedOmilayerDescriptionDialog">
-        <q-card style="width: 700px; max-width: 80vw;background: #e6e6e6">
+        <q-card class="app-bg-color-5" style="width: 700px; max-width: 80vw;">
             <q-card-section>
                     <div class="text-h6">Set description</div>
                     <div>
-                        <q-item-label caption>layer: {{selectedOmilayersJSON['layer']}}</q-item-label>
+                        <q-item-label dark caption :class="textColor">layer: {{selectedOmilayersJSON['layer']}}</q-item-label>
                     </div>
             </q-card-section>
             <q-card-section>

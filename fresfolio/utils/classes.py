@@ -1062,7 +1062,7 @@ class ProjectsUtils:
             projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
             dbFullPath = Path(projectDirectory).joinpath(dbRelativePath)
             omi = Omilayers(str(dbFullPath))
-            omi.layers.drop(layerName)
+            omi.layers.drop([layerName])
         except Exception:
             traceback.print_exc()
             return False
