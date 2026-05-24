@@ -418,17 +418,20 @@ def get_filepath(projectid, filename):
                      '.doc', 
                      '.xls', 
                      '.xlsx',
+                     '.ppt',
+                     '.pptx'
+                     ]
+
+    flatExtensions = [
                      '.csv',
                      '.tsv',
                      '.txt',
                      '.md',
-                     '.ppt',
-                     '.pptx',
                      '.py',
                      '.sh',
                      '.R',
                      '.Rscript'
-                     ]
+                    ]
 
     if fileExtention in docExtensions:
         fileViewer = {
@@ -439,7 +442,10 @@ def get_filepath(projectid, filename):
                 }
         subprocess.run([fileViewer[OSname], filePath], capture_output=True, check=False, text=True)
         return '', 204 
-
+    elif fileExtention in flatExtensions:
+        with open(filePath, 'r') as inf:
+            fileContents = inf.read()
+        return jsonify({"fileContents":fileContents})
     dirPath = filePath.parent
     filename = filePath.name
     return send_from_directory(dirPath, filename)
@@ -727,5 +733,22 @@ def app_api_sections_to_pdf():
     except Exception:
         traceback.print_exc()
         return 'Error creating PDF', 400
+    return "", 200
+
+@apiroutes.route('/api/store-ace-editor-content', methods=['POST'])
+def api_store_ace_editor_content():
+    try:
+        data = request.get_json()
+        file_path = data['file_path']
+        file_content = data['file_content']
+        projectid, *rest = file_path.split("/")
+        file_rel_path = "/".join(rest)
+        projectDir, projectDB = tools.get_paths_for_project_dir_and_db(projectid)
+        filePath = Path(projectDir).joinpath(file_rel_path)
+        with open(filePath, 'w') as outf:
+            print(file_content, file=outf)
+    except Exception:
+        traceback.print_exc()
+        return 'Cannot store file content.', 400
     return "", 200
 

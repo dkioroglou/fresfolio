@@ -2,7 +2,6 @@
 <html>
 
     <head>
-
         <!-- APP CSS -->
         <link rel="stylesheet" href="{{url_for('static', filename='css/app.css')}}">
 
@@ -45,6 +44,9 @@
 
         <!-- VUE JS EXPOSE-LAYOUTS -->
         <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/vue_app.js')}}"></script>
-
+        
+        <!-- ACE JS -->
+        <script src="{{url_for('static', filename='ace_builds/src/ace.js')}}" type="text/javascript" charset="utf-8"></script>
+        <script src="{{url_for('static', filename='ace_builds/src/keybinding-vim.js')}}" type="text/javascript" charset="utf-8"></script>
     </body>
 </html>
