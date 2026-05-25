@@ -34,23 +34,18 @@ const SectionContent = defineComponent({
             uploadToSectionRoute: [],
             uploadToOmilayerRoute: "/api/upload-file-to-omilayer",
             filterQuery: "",
-            showAceEditor: false,
-            aceEditorModeMapper: {"MD": "markdown", 
-                                  "PY": "python", 
-                                  "HTML": "html", 
-                                  "JS": "javascript",
-                                  "SH": "sh",
-                                  "R": "r",
-                                  "Rscript":"r",
-                                  "CSV":"csv",
-                                  "TSV":"tsv",
-                                  "JSON":"json",
-                                  "TEX":"latex"
-            },
-            aceEditorMode: "markdown",
-            aceEditorFilePath: "",
-            editorInstance: null,
-            initialCode: ""
+            flatFilesExtensions: ["MD", 
+                                  "TXT", 
+                                  "PY", 
+                                  "HTML", 
+                                  "JS",
+                                  "SH",
+                                  "R",
+                                  "Rscript",
+                                  "CSV",
+                                  "TSV",
+                                  "JSON",
+                                  "TEX"]
         };
     },
     methods: {
@@ -428,14 +423,12 @@ const SectionContent = defineComponent({
             const parsedArgs = args ? args.split(",").map(a => a.trim()) : [];
             this.$emit('get-view', parsedArgs)
         },
+        openWithAceEditor(fileJSON) {
+            this.$emit('open-with-ace-editor', fileJSON)
+        },
         getFilenameFromUrl(fileUrl) {
             const url = new URL(fileUrl, window.location.origin);
             return url.pathname.split("/").pop();
-        },
-        getRelativeFilePathFromUrl(fileUrl) {
-            const url = new URL(fileUrl, window.location.origin);
-            // Replaces "/api/file/" (and any leading slashes) with an empty string
-            return url.pathname.replace(/^\/api\/files\//, "");
         },
         async downloadImage(fileUrl) {
             try {
@@ -471,107 +464,6 @@ const SectionContent = defineComponent({
                     position: "top-right",
                 });
             }
-        },
-        async openInAceEditor(fileJSON){
-            try {
-                const response = await fetch(fileJSON['url'], {
-                    method: "GET",
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    this.aceEditorFilePath = this.getRelativeFilePathFromUrl(fileJSON['url']);
-                    this.initialCode = data['fileContents'];
-                    this.aceEditorMode = this.aceEditorModeMapper[fileJSON['extension']];
-                    this.showAceEditor = true;
-                } else {
-                    const responseText = await response.text();
-                    this.$q.notify({
-                        message: responseText,
-                        color: 'negative',
-                        position: "top-right"
-                    })
-                }
-            } catch (error) {
-                console.error(error);
-            }
-        },
-        initAceEditor() {
-            // Use $nextTick to ensure q-dialog has rendered the inner card
-            this.$nextTick(() => {
-                if (this.editorInstance) {
-                    this.destroyAceEditor();
-                }
-
-                // Initialize using the Vue ref instead of document.getElementById
-                this.editorInstance = ace.edit(this.$refs.aceEditor);
-
-                // Set themes and modes if you brought them in via Flask static
-                this.editorInstance.setTheme("ace/theme/github_dark");
-                this.editorInstance.session.setMode("ace/mode/"+this.aceEditorMode);
-
-                // Set the initial value
-                this.editorInstance.setValue(this.initialCode, -1); // -1 moves cursor to the start
-
-                // Activate vim mode
-                this.editorInstance.setKeyboardHandler("ace/keyboard/vim")
-                // Access the Vim extension core
-                const vimApi = ace.require("ace/keyboard/vim").CodeMirror.Vim;
-                // Map 'jk' to behave exactly like '<Esc>' during insert mode
-                vimApi.map("jk", "<Esc>", "insert");
-
-                // Force the cursor to the top-left (Line 1, Column 0)
-                this.editorInstance.gotoLine(1, 0, true);
-                
-                // Clear selection to prevent the whole text from being highlighted
-                this.editorInstance.clearSelection();
-
-                // Force HTML focus onto the editor
-                this.editorInstance.focus();
-
-                // Optional: Resize handler to ensure it fits perfectly inside Quasar's card
-                this.editorInstance.resize();
-            });
-        },
-        destroyAceEditor() {
-            if (this.editorInstance) {
-                this.editorInstance.destroy();
-                this.editorInstance = null;
-            }
-        },
-        async saveAceEditorContent() {
-            try {
-                const response = await fetch("/api/store-ace-editor-content", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(
-                        {
-                            "file_path": this.aceEditorFilePath,
-                            "file_content": this.editorInstance.getValue()
-                        }
-                    )
-                });
-
-                if (response.ok) {
-                    this.$q.notify({
-                        message: "Content stored.",
-                        color: 'green',
-                        position: "top-right"
-                    })
-                } else {
-                    const responseText = await response.text();
-                    this.$q.notify({
-                        message: responseText,
-                        color: 'negative',
-                        position: "top-right"
-                    })
-                }
-            } catch (error) {
-                console.error(error);
-            }
-
         }
     },
     watch: {
@@ -997,12 +889,18 @@ const SectionContent = defineComponent({
 
         <q-list bordered separator class="app-section-files">
             <template v-for="(fileJSON, index) in cJSON['html']" :key="index">
-                    <q-item clickable @click="openInAceEditor(fileJSON)" v-if="fileJSON['file_exists'] === 1">
+                    <q-item clickable @click="openWithAceEditor(fileJSON)" v-if="fileJSON['file_exists'] === 1">
                         <q-item-section class="app-section-files text-white">
                             <q-item-label class="q-mb-xs">
                                 <q-badge outline>{{fileJSON["extension"]}}</q-badge> 
                                 {{fileJSON["filename"]}}
                             </q-item-label>
+                            <q-item-label class="text-white" v-render-katex caption v-html="fileJSON['caption']"></q-item-label>
+                        </q-item-section>
+                    </q-item>
+                    <q-item clickable @click="openWithAceEditor(fileJSON)" v-else-if="flatFilesExtensions.includes(fileJSON['extension'])" style="background-color: #523434">
+                        <q-item-section>
+                            <q-item-label class="q-mb-xs text-white">{{fileJSON["filename"]}}</q-item-label>
                             <q-item-label class="text-white" v-render-katex caption v-html="fileJSON['caption']"></q-item-label>
                         </q-item-section>
                     </q-item>
@@ -1397,23 +1295,6 @@ const SectionContent = defineComponent({
         </q-card>
     </q-dialog>
  <!-- SET OMILAYER DESCRIPTION DIALOG END -->
-
- <!-- ACE EDITOR  DIALOG START -->
-    <q-dialog 
-        persistent
-        v-model="showAceEditor" 
-        @show="initAceEditor" 
-        @hide="destroyAceEditor" 
-        position="bottom"
-    >
-        <q-card class="app-bg-color-5" style="width: 1000px; max-width: 80vw;">
-            <q-card-section>
-                <div ref="aceEditor" style="height: 400px; width: 100%;"></div>
-            </q-card-section>
-            <q-btn @click='saveAceEditorContent'>Save</q-btn>
-        </q-card>
-    </q-dialog>
- <!-- ACE EDITOR  DIALOG END -->
 
     `
 });

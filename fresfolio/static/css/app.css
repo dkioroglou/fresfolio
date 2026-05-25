@@ -435,3 +435,80 @@ body.body--dark .app-note-green {
     display: inline-block; /* or block */
     padding-left: 20px;
 }
+
+/* ── Panel shell ─────────────────────────────────────────── */
+.bottom-panel {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1200px;
+  max-width: 90vw;
+  z-index: 6000;          /* above Quasar's default z-index layers */
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.35);
+  transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.bottom-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: default;
+  user-select: none;
+}
+
+.bottom-panel__title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+.bottom-panel__actions {
+  display: flex;
+  gap: 4px;
+}
+
+/* ── Body / footer ───────────────────────────────────────── */
+.bottom-panel__body {
+  padding: 12px;
+}
+
+.bottom-panel__footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 10px;
+}
+
+/* ── Slide-up enter/leave (matches q-dialog "bottom") ───── */
+.panel-slide-enter-active,
+.panel-slide-leave-active {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity  0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.panel-slide-enter-from,
+.panel-slide-leave-to {
+  transform: translateX(-50%) translateY(100%);
+  opacity: 0;
+}
+
+/* ── Minimize body collapse ──────────────────────────────── */
+.panel-body-enter-active,
+.panel-body-leave-active {
+  transition: max-height 0.25s ease, opacity 0.2s ease;
+  max-height: 500px;
+  overflow: hidden;
+}
+.panel-body-enter-from,
+.panel-body-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+
+.ace_active-line {
+    background: rgba(255, 255, 255, 0.08) !important;
+}

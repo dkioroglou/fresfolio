@@ -46,6 +46,27 @@ const ProjectLayout = defineComponent({
             sectionIDToUploadFiles: null,
             uploadToSectionRoute: "/api/upload-files-to-section",
             uploadToSectionFields: [],
+            showAceEditor: false,
+            aceEditorModeMapper: {"MD": "markdown", 
+                                  "TXT": "markdown", 
+                                  "PY": "python", 
+                                  "HTML": "html", 
+                                  "JS": "javascript",
+                                  "SH": "sh",
+                                  "R": "r",
+                                  "Rscript":"r",
+                                  "CSV":"csv",
+                                  "TSV":"tsv",
+                                  "JSON":"json",
+                                  "TEX":"latex"
+            },
+            aceEditorMode: "markdown",
+            aceEditorFilePath: "",
+            aceEditorFileTitle: "",
+            editorInstance: null,
+            isMinimized: false,
+            isExpanded: false,
+            initialCode: ""
         }
     },
     methods: {
@@ -475,6 +496,141 @@ const ProjectLayout = defineComponent({
             } catch (error) {
                 console.error(error);
             }
+        },
+        getRelativeFilePathFromUrl(fileUrl) {
+            const url = new URL(fileUrl, window.location.origin);
+            // Replaces "/api/file/" (and any leading slashes) with an empty string
+            return url.pathname.replace(/^\/api\/files\//, "");
+        },
+        async loadFileIntoAceEditor(fileJSON) {
+            try {
+                const response = await fetch(fileJSON['url'], { method: "GET" });
+                if (response.ok) {
+                    const data = await response.json();
+                    const relativePath = this.getRelativeFilePathFromUrl(fileJSON['url']);
+                    this.aceEditorFilePath = relativePath; 
+                    this.aceEditorFileTitle = relativePath.slice(relativePath.indexOf('/') + 1)
+                    this.initialCode = data['fileContents'];
+                    this.aceEditorMode = this.aceEditorModeMapper[fileJSON['extension']];
+                    this.isMinimized = false;
+                    this.$nextTick(() => {
+                        this.showAceEditor = true;
+                        this.$nextTick(() => {
+                            this.$nextTick(() => this.initAceEditor())
+                        })
+                    })
+                } else {
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    });
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        },
+        async openWithAceEditor(fileJSON) {
+            if (this.editorInstance != null) {
+                this.$q.dialog({
+                    title: 'Close previously open file?',
+                    message: 'Any unsaved changes will be lost.',
+                    cancel: true,
+                }).onOk(async () => {
+                    this.destroyAceEditor();   // destroy before loading new file
+                    await this.loadFileIntoAceEditor(fileJSON);
+                });
+            } else {
+                await this.loadFileIntoAceEditor(fileJSON);
+            }
+        },
+        closePanel() {
+            this.destroyAceEditor();
+            this.showAceEditor = false;
+        },
+        toggleMinimize() {
+            this.isMinimized = !this.isMinimized
+            // Ace needs a resize hint when revealed again
+            if (!this.isMinimized && this.editor) {
+            this.$nextTick(() => this.editorInstance.resize())
+            }
+        },
+        toggleExpand() {
+            this.isExpanded = !this.isExpanded
+            this.$nextTick(() => this.editorInstance?.resize())
+        },
+        initAceEditor() {
+            // Initialize using the Vue ref instead of document.getElementById
+            this.editorInstance = ace.edit(this.$refs.aceEditor);
+
+            // Set themes and modes if you brought them in via Flask static
+            this.editorInstance.setTheme("ace/theme/github_dark");
+            this.editorInstance.session.setMode("ace/mode/"+this.aceEditorMode);
+
+            this.editorInstance.setOption("fontSize", "14px");
+
+            // Set the initial value
+            this.editorInstance.setValue(this.initialCode, -1); // -1 moves cursor to the start
+
+            // Activate vim mode
+            this.editorInstance.setKeyboardHandler("ace/keyboard/vim")
+            // Access the Vim extension core
+            const vimApi = ace.require("ace/keyboard/vim").CodeMirror.Vim;
+            // Map 'jk' to behave exactly like '<Esc>' during insert mode
+            vimApi.map("jk", "<Esc>", "insert");
+
+            // Force the cursor to the top-left (Line 1, Column 0)
+            this.editorInstance.gotoLine(1, 0, true);
+            
+            // Clear selection to prevent the whole text from being highlighted
+            this.editorInstance.clearSelection();
+
+            // Force HTML focus onto the editor
+            this.editorInstance.focus();
+
+            // Optional: Resize handler to ensure it fits perfectly inside Quasar's card
+            this.editorInstance.resize();
+        },
+        destroyAceEditor() {
+            if (this.editorInstance) {
+                this.editorInstance.destroy();
+                this.editorInstance = null;
+            }
+        },
+        async saveAceEditorContent() {
+            try {
+                const response = await fetch("/api/store-ace-editor-content", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(
+                        {
+                            "file_path": this.aceEditorFilePath,
+                            "file_content": this.editorInstance.getValue()
+                        }
+                    )
+                });
+
+                if (response.ok) {
+                    this.$q.notify({
+                        message: "File saved.",
+                        color: 'green',
+                        position: "top-right"
+                    })
+                } else {
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
+
         },
         uploadFilesToSection(sectionID) {
             this.sectionIDToUploadFiles = sectionID
@@ -1042,6 +1198,7 @@ const ProjectLayout = defineComponent({
                     @delete-section="deleteRenderedSection"
                     @pin-section="pinSection"
                     @get-view="getView"
+                    @open-with-ace-editor="openWithAceEditor"
                 >
             </template>
 
@@ -1087,6 +1244,7 @@ const ProjectLayout = defineComponent({
                     @delete-section="deleteRenderedSection"
                     @pin-section="pinSection"
                     @get-view="getView"
+                    @open-with-ace-editor="openWithAceEditor"
                 >
             </template>
 
@@ -1132,6 +1290,7 @@ const ProjectLayout = defineComponent({
                     @delete-section="deleteRenderedSection"
                     @pin-section="pinSection"
                     @get-view="getView"
+                    @open-with-ace-editor="openWithAceEditor"
                 >
             </template>
 
@@ -1296,6 +1455,7 @@ const ProjectLayout = defineComponent({
                                 @delete-section="deleteRenderedSection"
                                 @pin-section="pinSection"
                                 @get-view="getView"
+                                @open-with-ace-editor="openWithAceEditor"
                             >
                         </div>
                     </div>
@@ -1452,6 +1612,59 @@ const ProjectLayout = defineComponent({
             </q-dialog>
             <!--UPLOAD FILES DIALOG END-->
 
+            <!-- ACE EDITOR  DIALOG START -->
+            <Teleport to="body">
+                <Transition name="panel-slide">
+                    <div
+                        v-if="showAceEditor"
+                        class="bottom-panel app-bg-color-5"
+                        :class="{ minimized: isMinimized }"
+                        :style="{ height: isMinimized ? 'auto' : isExpanded ? '90vh' : '400px' }"
+                    >
+                        <!-- Header / Toolbar -->
+                        <div class="bottom-panel__header" @dblclick="toggleMinimize">
+                            <span class="bottom-panel__title">Editor: {{aceEditorFileTitle}}</span>
+                            <div class="bottom-panel__actions">
+                                <!-- Expand/Collapse height button -->
+                                <q-btn
+                                    flat dense round
+                                    :icon="isExpanded ? 'fullscreen_exit' : 'fullscreen'"
+                                    @click="toggleExpand"
+                                    size="sm"
+                                />
+                                <q-btn
+                                    flat dense round
+                                    :icon="isMinimized ? 'expand_less' : 'expand_more'"
+                                    @click="toggleMinimize"
+                                    size="sm"
+                                />
+                                <q-btn
+                                    flat dense round
+                                    icon="close"
+                                    @click="closePanel"
+                                    size="sm"
+                                />
+                            </div>
+                        </div>
+                        <!-- Collapsible body -->
+
+                        <Transition name="panel-body">
+                            <div 
+                                v-show="!isMinimized" 
+                                class="bottom-panel__body"
+                                :style="{ height: isExpanded ? 'calc(90vh - 40px)' : 'calc(400px - 40px)' }"
+                                style="display: flex; flex-direction: column;"
+                            >
+                                <div ref="aceEditor" style="flex: 1; width: 100%;"></div>
+                                <div class="bottom-panel__footer">
+                                    <q-btn color="primary" label="Save" @click="saveAceEditorContent" />
+                                </div>
+                            </div>
+                        </Transition>
+                    </div>
+                </Transition>
+            </Teleport>
+            <!-- ACE EDITOR  DIALOG END -->
 
             <!-- PAGE FLOATING BUTTONS -->
             <div v-if="renderedNotebookIDX !== '' && renderedChapterIDX !== ''">

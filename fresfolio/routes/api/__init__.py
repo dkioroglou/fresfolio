@@ -410,8 +410,6 @@ def get_filepath(projectid, filename):
     projectDir, projectDB = tools.get_paths_for_project_dir_and_db(projectid)
     filePath = Path(projectDir).joinpath(filename)
 
-    if not filePath.exists():
-        return f"File {filePath} does not exist.", 400
 
     fileExtention = Path(filePath).suffix
     docExtensions = ['.docx', 
@@ -419,7 +417,8 @@ def get_filepath(projectid, filename):
                      '.xls', 
                      '.xlsx',
                      '.ppt',
-                     '.pptx'
+                     '.pptx',
+                     '.pdf'
                      ]
 
     flatExtensions = [
@@ -430,8 +429,13 @@ def get_filepath(projectid, filename):
                      '.py',
                      '.sh',
                      '.R',
-                     '.Rscript'
+                     '.Rscript',
+                     '.json',
+                     '.html'
                     ]
+
+    if not filePath.exists() and fileExtention not in flatExtensions:
+        return f"File {filePath} does not exist.", 400
 
     if fileExtention in docExtensions:
         fileViewer = {
@@ -443,8 +447,11 @@ def get_filepath(projectid, filename):
         subprocess.run([fileViewer[OSname], filePath], capture_output=True, check=False, text=True)
         return '', 204 
     elif fileExtention in flatExtensions:
-        with open(filePath, 'r') as inf:
-            fileContents = inf.read()
+        if Path(filePath).exists():
+            with open(filePath, 'r') as inf:
+                fileContents = inf.read()
+        else:
+            fileContents = ""
         return jsonify({"fileContents":fileContents})
     dirPath = filePath.parent
     filename = filePath.name

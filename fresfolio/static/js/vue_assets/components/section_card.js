@@ -467,6 +467,9 @@ const SectionCard = defineComponent({
         getView(parsedArgs) {
             this.$emit('get-view', parsedArgs)
         },
+        openWithAceEditor(fileJSON) {
+            this.$emit('open-with-ace-editor', fileJSON)
+        },
         pinSection(projectID, sectionID) {
             this.$emit('pin-section', projectID, sectionID)
         },
@@ -966,7 +969,12 @@ const SectionCard = defineComponent({
                                                 <q-card class="app-card no-padding">
                                                     <q-card-section class="no-padding">
                                                         <template v-for="(cJSON, cIDX) in sJSON['content']" :key="cIDX">
-                                                            <section-content :cJSON=cJSON :cIDX=cIDX @get-view="getView"></section-content>
+                                                            <section-content 
+                                                                :cJSON=cJSON 
+                                                                :cIDX=cIDX 
+                                                                @get-view="getView"
+                                                                @open-with-ace-editor="openWithAceEditor"
+                                                            />
                                                         </template>
                                                     </q-card-section>
                                                 </q-card>
@@ -976,7 +984,12 @@ const SectionCard = defineComponent({
 
                                     <div v-else>
                                         <template v-for="(cJSON, cIDX) in sJSON['content']" :key="cIDX">
-                                            <section-content :cJSON=cJSON :cIDX=cIDX @get-view="getView"></section-content>
+                                            <section-content 
+                                                :cJSON=cJSON 
+                                                :cIDX=cIDX 
+                                                @get-view="getView"
+                                                @open-with-ace-editor="openWithAceEditor"
+                                            />
                                         </template>
                                     </div>
                                 </div>
