@@ -162,6 +162,9 @@ def app_api_get_section_raw_content():
         projectID = data['projectID']
         sectionID = data['sectionID']
         sectionRawContent = PUTL.get_section_raw_content(projectID, sectionID)
+        if data.get('keepNewLine', False):
+            if data['keepNewLine'] == 1:
+                return jsonify({"sectionRawContent":sectionRawContent}), 200
         return jsonify({"sectionRawContent":sectionRawContent.replace("\n", "<br>")}), 200
     except Exception:
         traceback.print_exc()

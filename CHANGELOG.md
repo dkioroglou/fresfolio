@@ -7,4 +7,5 @@ This is a bug fix release for various issues discovered after the release v0.3.0
 * FEATURE: user can define cross-references and use in sections with \ref markup.
 * FEATURE: layers in omitable can be filtered.
 * FEATURE: ACE editor has been added for editing flat files.
+* FEATURE: section content can be copied to clipboard.
 * FIXED: fixed bug related to importlib.util error.

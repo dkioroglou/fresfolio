@@ -95,6 +95,43 @@ const SectionCard = defineComponent({
             }
 
         },
+        async copySectionContentToClipboard(projectID, sectionID) {
+            try {
+                const response = await fetch("/api/get-section-raw-content", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(
+                        {
+                            "projectID": projectID, 
+                            "sectionID": sectionID,
+                            "keepNewLine": 1
+                        }
+                    )
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    await navigator.clipboard.writeText(data['sectionRawContent'])
+                    this.$q.notify({
+                        message: "Section copied",
+                        color: 'green',
+                        position: "top-right"
+                    })
+                } else {
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
+
+        },
         cancelSetSectionContent() {
             this.showEditor = false;
             this.qEditorContent = "";
@@ -682,6 +719,12 @@ const SectionCard = defineComponent({
                                 <q-item v-if="sectionData['section_dir_exists'] === 1" clickable v-close-popup @click="uploadFilesToSection">
                                     <q-item-section>
                                         <q-item-label>Upload files</q-item-label>
+                                    </q-item-section>
+                                </q-item>
+
+                                <q-item clickable @click="copySectionContentToClipboard(sectionData['projectID'], sectionData['ID'])">
+                                    <q-item-section>
+                                        <q-item-label>Copy to clipboard</q-item-label>
                                     </q-item-section>
                                 </q-item>
 
