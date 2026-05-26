@@ -569,6 +569,9 @@ const ProjectLayout = defineComponent({
             this.editorInstance.session.setMode("ace/mode/"+this.aceEditorMode);
 
             this.editorInstance.setOption("fontSize", "14px");
+            
+            // Remove vertical line that marks 80 characters width
+            this.editorInstance.setOption("showPrintMargin", false);
 
             // Set the initial value
             this.editorInstance.setValue(this.initialCode, -1); // -1 moves cursor to the start
