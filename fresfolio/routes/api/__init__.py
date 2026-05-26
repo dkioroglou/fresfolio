@@ -119,6 +119,7 @@ def app_api_get_chapter_sections():
         projectID = data['projectID']
         chapterID = data['chapterID']
         sections = PUTL.get_chapter_sections(projectID, chapterID)
+        print(sections)
         return jsonify(sections)
     except Exception:
         traceback.print_exc()

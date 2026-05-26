@@ -1075,3 +1075,95 @@ class PDFOmilayersPlotTag:
         return []
 
 
+class HtmlProcessTag:
+
+    def __init__(self, projectName:str, lines:list):
+        self.projectInfo = tools.get_project_info(projectName)
+        self.lines = lines
+        self.expected_singleline_keys = ['conda', 'workdir', 'title']
+        self.expected_multiline_keys = ['script']
+
+    def render_lines(self) -> tuple: 
+        def render_tmpJSON(tmpJSON):
+            defaultFields = {
+                    "project": self.projectInfo,
+                    "conda": "NA",
+                    "title": "untitled"
+                    }
+            requiredFields = [
+                    "workdir",
+                    "script"
+                    ]
+            for field in defaultFields:
+                if not tmpJSON.get(field, False):
+                    tmpJSON[field] = defaultFields[field]
+
+            missingFields = []
+            for field in requiredFields:
+                if not tmpJSON.get(field, False):
+                    tmpJSON[field] = ""
+                    missingFields.append(field)
+            if missingFields:
+                return {"missingFields": missingFields}
+            return {
+                    "projectID":tmpJSON['project']['ID'], 
+                    "title":tmpJSON['title'], 
+                    "workdir":tmpJSON['workdir'], 
+                    "conda":tmpJSON['conda'], 
+                    "script":tmpJSON['script'],
+                    "missingFields": missingFields
+                    }
+
+        tmpJSON = {}
+        filesJSON = []
+        multilineKey = None
+        multilineValue = []
+        for line in self.lines:
+            line = line.strip()
+            if ":" in line:
+                potentialKey, potentialValue = line.split(":")
+                potentialKey = potentialKey.strip()
+                potentialValue = potentialValue.strip()
+                if potentialKey in self.expected_singleline_keys:
+                    if multilineKey is None:
+                        tmpJSON[potentialKey] = potentialValue
+                        continue
+                    else:
+                        tmpJSON[multilineKey] = " ".join(multilineValue)
+                        multilineKey = None
+                        multilineValue = []
+                        tmpJSON[potentialKey] = potentialValue
+                        continue
+                elif potentialKey in self.expected_multiline_keys:
+                    if multilineKey is None:
+                        multilineKey = potentialKey
+                        if potentialValue:
+                            multilineValue.append(potentialValue)
+                        continue
+                    else:
+                        tmpJSON[multilineKey] = " ".join(multilineValue)
+                        multilineKey = None
+                        multilineValue = []
+                        multilineKey = potentialKey
+                        if potentialValue:
+                            multilineValue.append(potentialValue)
+                else:
+                    multilineValue.append(line)
+            else:
+                if line:
+                    multilineValue.append(line)
+        if multilineKey is not None:
+            tmpJSON[multilineKey] = " ".join(multilineValue)
+        filesJSON.append(render_tmpJSON(tmpJSON))
+        return filesJSON
+
+class PDFProcessTag:
+    """Tag is ignored for PDF rendering."""
+
+    def __init__(self, project_name:str, lines:list):
+        self.project_info = None
+        self.lines = None
+
+    def render_lines(self) -> tuple: 
+        return []
+

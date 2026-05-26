@@ -13,6 +13,7 @@ from fresfolio.renderers.multiline_renderers import (HtmlParagraphTag,
                                                     HtmlFilesTag,
                                                     HtmlOmilayersTableTag,
                                                     HtmlOmilayersPlotTag,
+                                                    HtmlProcessTag,
                                                     PDFParagraphTag,
                                                     PDFCodeTag,
                                                     PDFlListTag,
@@ -22,7 +23,8 @@ from fresfolio.renderers.multiline_renderers import (HtmlParagraphTag,
                                                     PDFFiguresTag,
                                                     PDFFilesTag,
                                                     PDFOmilayersTableTag,
-                                                    PDFOmilayersPlotTag
+                                                    PDFOmilayersPlotTag,
+                                                    PDFProcessTag
                                                     )
 
 class HtmlRenderer:
@@ -56,7 +58,8 @@ class HtmlRenderer:
                 "figures": HtmlFiguresTag,
                 "files": HtmlFilesTag,
                 "omitable": HtmlOmilayersTableTag,
-                "omiplot": HtmlOmilayersPlotTag
+                "omiplot": HtmlOmilayersPlotTag,
+                "process": HtmlProcessTag
                 }
 
         self.syntax_error_message = """
@@ -102,7 +105,7 @@ class HtmlRenderer:
     @property
     def _flush_buffer(self):
         if self.buffer or self.tag_args:
-            customRenderedTags = ['figures', 'table', 'files', 'omitable', 'omiplot']
+            customRenderedTags = ['figures', 'table', 'files', 'omitable', 'omiplot', 'process']
             try:
                 rendererCLS = self.html_tags[self.begin_tag]
             except Exception:
@@ -146,6 +149,12 @@ class HtmlRenderer:
                         filesJSON = renderer.render_lines()
                         for JSON in filesJSON:
                             self._addHTMLToLastInsertedContent(JSON)
+                elif self.begin_tag == "process":
+                    self._addNewContentToLastContainer(self.begin_tag)
+                    renderer = rendererCLS(self.projectName, self.buffer)
+                    filesJSON = renderer.render_lines()
+                    for JSON in filesJSON:
+                        self._addHTMLToLastInsertedContent(JSON)
                 elif self.tag_args:
                     self._addNewContentToLastContainer(self.begin_tag)
                     renderer = rendererCLS(self.buffer, self.tag_args)

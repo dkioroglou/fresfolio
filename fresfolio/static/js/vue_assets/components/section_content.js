@@ -651,6 +651,67 @@ const SectionContent = defineComponent({
 <!-- OMILAYERS TABLE RENDERING END -->
 
 
+<!-- PROCESS RENDERING START -->
+<div v-else-if="cJSON['type'] === 'process'" class="q-mb-lg">
+    <template v-for="(fileJSON, fJSONIDX) in cJSON['html']" :key="fJSONIDX">
+
+        <q-card v-if="fileJSON['missingFields'].length !== 0">
+            <div class="app-note-red">
+                <b>Missing table fields</b><br>
+                    <q-list dense>
+                        <q-item v-for="(item, index) in fileJSON['missingFields']" :key="index">
+                            - {{ item }}
+                        </q-item>
+                    </q-list>
+            </div>
+        </q-card>
+
+        <q-card dark class="process-card">
+          <q-card-section class="q-pa-sm">
+                <div class="row items-center q-mb-xs">
+                    <div style="flex: 1; min-width: 0; font-family: 'JetBrains Mono', monospace; font-size: 11px;">Process: {{ fileJSON['title'] }}</div>
+                    <q-btn unelevated dense color="teal" icon="play_arrow" size="sm" class="q-ml-sm" @click="startProcess" />
+                </div>
+                <!-- Row 1: conda + Run button -->
+                <div class="row items-center q-mb-xs">
+                    <div class="process-row">
+                        <span class="process-key"><q-icon name="eco" size="12px" class="q-mr-xs text-cyan-4" /><span class="label-key">conda</span></span>
+                        <span class="label-sep">|</span>
+                        <span class="label-val text-cyan-4">{{ fileJSON["conda"] }}</span>
+                    </div>
+                </div>
+
+                <!-- Row 2: workdir -->
+                <div class="row items-center q-mb-xs">
+                    <div class="process-row">
+                        <span class="process-key"><q-icon name="folder_open" size="12px" class="q-mr-xs text-amber-4" /><span class="label-key">workdir</span></span>
+                        <span class="label-sep">|</span>
+                        <span class="label-val text-amber-4">{{ fileJSON["workdir"] }}</span>
+                    </div>
+                </div>
+
+                <!-- Row 3: script -->
+                <div class="row items-center">
+                    <div class="process-row">
+                    <span class="process-key"><q-icon name="code" size="12px" class="q-mr-xs text-light-green-4" /><span class="label-key">script</span></span>
+                    <span class="label-sep">|</span>
+                    <span class="label-val text-light-green-4">{{ fileJSON["script"] }}</span>
+                    </div>
+                </div>
+
+          </q-card-section>
+        </q-card>
+
+    </template>
+</div>
+<!-- PROCESS RENDERING END -->
+
+
+
+
+
+
+
 <!-- OMILAYERS PLOT RENDERING START -->
 <div v-else-if="cJSON['type'] === 'omiplot'" class="q-mb-lg">
 
