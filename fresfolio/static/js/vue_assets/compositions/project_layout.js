@@ -583,6 +583,22 @@ const ProjectLayout = defineComponent({
             // Map 'jk' to behave exactly like '<Esc>' during insert mode
             vimApi.map("jk", "<Esc>", "insert");
 
+            // :w → trigger a save (emit an event or call your save method)
+            vimApi.defineEx("write", "w", () => {
+                this.saveAceEditorContent();           // replace with your save logic
+            });
+
+            // :q → trigger a close/quit (e.g. navigate away, close a panel)
+            vimApi.defineEx("quit", "q", () => {
+                this.closePanel();        // replace with your close logic
+            });
+
+            // :wq → save then quit
+            vimApi.defineEx("wq", "wq", () => {
+                this.saveAceEditorContent();
+                this.closePanel();
+            });
+
             // Force the cursor to the top-left (Line 1, Column 0)
             this.editorInstance.gotoLine(1, 0, true);
             
@@ -879,6 +895,35 @@ const ProjectLayout = defineComponent({
             if (e.altKey && e.key === 'j') {
                 e.preventDefault()
                 this.toggleTodosDrawer()
+            }
+
+        },
+        async startProcess(fileJSON) {
+            try {
+                const response = await fetch("/api/start-process", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(fileJSON)
+                });
+
+                if (response.ok) {
+                    this.$q.notify({
+                        message: "Process started",
+                        color: 'green',
+                        position: "top-right"
+                    })
+                } else {
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
             }
 
         }
@@ -1202,6 +1247,7 @@ const ProjectLayout = defineComponent({
                     @pin-section="pinSection"
                     @get-view="getView"
                     @open-with-ace-editor="openWithAceEditor"
+                    @start-process="startProcess"
                 >
             </template>
 
@@ -1248,6 +1294,7 @@ const ProjectLayout = defineComponent({
                     @pin-section="pinSection"
                     @get-view="getView"
                     @open-with-ace-editor="openWithAceEditor"
+                    @start-process="startProcess"
                 >
             </template>
 
@@ -1294,6 +1341,7 @@ const ProjectLayout = defineComponent({
                     @pin-section="pinSection"
                     @get-view="getView"
                     @open-with-ace-editor="openWithAceEditor"
+                    @start-process="startProcess"
                 >
             </template>
 
@@ -1459,6 +1507,7 @@ const ProjectLayout = defineComponent({
                                 @pin-section="pinSection"
                                 @get-view="getView"
                                 @open-with-ace-editor="openWithAceEditor"
+                                @start-process="startProcess"
                             >
                         </div>
                     </div>

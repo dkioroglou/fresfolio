@@ -1105,12 +1105,29 @@ class HtmlProcessTag:
                     missingFields.append(field)
             if missingFields:
                 return {"missingFields": missingFields}
+            projectID = tmpJSON['project']['ID']
+            projectDir = tmpJSON['project']['dirFullPath']
+            workdir = tmpJSON['workdir']
+            workdir_fullpath = Path(projectDir).joinpath(workdir)
+            if workdir_fullpath.exists():
+                workdir_exists = 1
+            else:
+                workdir_exists = 0
+            scriptCommand = tmpJSON['script']
+            executable, scriptName, *_ = scriptCommand.split(" ")
+            scriptName = scriptName.strip()
+            extension = Path(scriptName).suffix.replace(".", "").upper()
+            filename = Path(workdir).joinpath(scriptName)
+            fileURL = f"/api/files/{projectID}/{filename}"
             return {
-                    "projectID":tmpJSON['project']['ID'], 
-                    "title":tmpJSON['title'], 
-                    "workdir":tmpJSON['workdir'], 
-                    "conda":tmpJSON['conda'], 
-                    "script":tmpJSON['script'],
+                    "projectID": projectID, 
+                    "url": fileURL,
+                    "extension":extension,
+                    "title": tmpJSON['title'], 
+                    "workdir": workdir, 
+                    "workdir_exists": workdir_exists, 
+                    "conda": tmpJSON['conda'], 
+                    "script": scriptCommand,
                     "missingFields": missingFields
                     }
 

@@ -464,6 +464,9 @@ const SectionContent = defineComponent({
                     position: "top-right",
                 });
             }
+        },
+        startProcess(fileJSON) {
+            this.$emit('start-process', fileJSON)
         }
     },
     watch: {
@@ -670,7 +673,8 @@ const SectionContent = defineComponent({
           <q-card-section class="q-pa-sm">
                 <div class="row items-center q-mb-xs">
                     <div style="flex: 1; min-width: 0; font-family: 'JetBrains Mono', monospace; font-size: 11px;">Process: {{ fileJSON['title'] }}</div>
-                    <q-btn unelevated dense color="teal" icon="play_arrow" size="sm" class="q-ml-sm" @click="startProcess" />
+                    <q-btn v-if='fileJSON["workdir_exists"]==1' unelevated dense color="secondary" icon="visibility" size="sm" class="q-ml-sm" @click="openWithAceEditor(fileJSON)" />
+                    <q-btn v-if='fileJSON["workdir_exists"]==1' unelevated dense color="secondary" icon="play_arrow" size="sm" class="q-ml-sm" @click="startProcess(fileJSON)" />
                 </div>
                 <!-- Row 1: conda + Run button -->
                 <div class="row items-center q-mb-xs">
@@ -950,27 +954,40 @@ const SectionContent = defineComponent({
 
         <q-list bordered separator class="app-section-files">
             <template v-for="(fileJSON, index) in cJSON['html']" :key="index">
-                    <q-item clickable @click="openWithAceEditor(fileJSON)" v-if="fileJSON['file_exists'] === 1">
-                        <q-item-section class="app-section-files text-white">
-                            <q-item-label class="q-mb-xs">
-                                <q-badge outline>{{fileJSON["extension"]}}</q-badge> 
-                                {{fileJSON["filename"]}}
-                            </q-item-label>
-                            <q-item-label class="text-white" v-render-katex caption v-html="fileJSON['caption']"></q-item-label>
-                        </q-item-section>
-                    </q-item>
-                    <q-item clickable @click="openWithAceEditor(fileJSON)" v-else-if="flatFilesExtensions.includes(fileJSON['extension'])" style="background-color: #523434">
-                        <q-item-section>
-                            <q-item-label class="q-mb-xs text-white">{{fileJSON["filename"]}}</q-item-label>
-                            <q-item-label class="text-white" v-render-katex caption v-html="fileJSON['caption']"></q-item-label>
-                        </q-item-section>
-                    </q-item>
-                    <q-item v-else style="background-color: #523434">
-                        <q-item-section>
-                            <q-item-label class="q-mb-xs text-white">{{fileJSON["filename"]}}</q-item-label>
-                            <q-item-label class="text-white" v-render-katex caption v-html="fileJSON['caption']"></q-item-label>
-                        </q-item-section>
-                    </q-item>
+                    <div v-if="flatFilesExtensions.includes(fileJSON['extension'])">
+                        <q-item clickable @click="openWithAceEditor(fileJSON)" v-if="fileJSON['file_exists'] === 1">
+                            <q-item-section class="app-section-files text-white">
+                                <q-item-label class="q-mb-xs">
+                                    <q-badge outline>{{fileJSON["extension"]}}</q-badge> 
+                                    {{fileJSON["filename"]}}
+                                </q-item-label>
+                                <q-item-label class="text-white" v-render-katex caption v-html="fileJSON['caption']"></q-item-label>
+                            </q-item-section>
+                        </q-item>
+                        <q-item v-else clickable @click="openWithAceEditor(fileJSON)" style="background-color: #523434">
+                            <q-item-section>
+                                <q-item-label class="q-mb-xs text-white">{{fileJSON["filename"]}}</q-item-label>
+                                <q-item-label class="text-white" v-render-katex caption v-html="fileJSON['caption']"></q-item-label>
+                            </q-item-section>
+                        </q-item>
+                    </div>
+                    <div v-else>
+                        <q-item clickable :href="fileJSON['url']" v-if="fileJSON['file_exists'] === 1">
+                            <q-item-section class="app-section-files text-white">
+                                <q-item-label class="q-mb-xs">
+                                    <q-badge outline>{{fileJSON["extension"]}}</q-badge> 
+                                    {{fileJSON["filename"]}}
+                                </q-item-label>
+                                <q-item-label class="text-white" v-render-katex caption v-html="fileJSON['caption']"></q-item-label>
+                            </q-item-section>
+                        </q-item>
+                        <q-item v-else style="background-color: #523434">
+                            <q-item-section>
+                                <q-item-label class="q-mb-xs text-white">{{fileJSON["filename"]}}</q-item-label>
+                                <q-item-label class="text-white" v-render-katex caption v-html="fileJSON['caption']"></q-item-label>
+                            </q-item-section>
+                        </q-item>
+                    </div>
             </template>
         </q-list>
 </div>

@@ -555,6 +555,9 @@ const SectionCard = defineComponent({
             }
 
         },
+        startProcess(fileJSON) {
+            this.$emit('start-process', fileJSON)
+        }
     },
     watch: {
         expandSection(newVal) {
@@ -1017,6 +1020,7 @@ const SectionCard = defineComponent({
                                                                 :cIDX=cIDX 
                                                                 @get-view="getView"
                                                                 @open-with-ace-editor="openWithAceEditor"
+                                                                @start-process="startProcess"
                                                             />
                                                         </template>
                                                     </q-card-section>
@@ -1032,6 +1036,7 @@ const SectionCard = defineComponent({
                                                 :cIDX=cIDX 
                                                 @get-view="getView"
                                                 @open-with-ace-editor="openWithAceEditor"
+                                                @start-process="startProcess"
                                             />
                                         </template>
                                     </div>

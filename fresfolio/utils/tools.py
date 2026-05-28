@@ -6,6 +6,11 @@ import traceback
 import importlib.util
 import shutil
 import uuid
+import subprocess
+import threading
+import os
+from datetime import datetime
+import json
 if importlib.util.find_spec("omilayers") is not None:
     from omilayers import Omilayers
 
@@ -240,4 +245,56 @@ def get_sections_IDs_for_chapter(projectID:str, chapterID:int) -> list:
     except Exception:
         traceback.print_exc()
         return []
+
+def run_and_log(
+    script_cmd: str,
+    conda_env: str,
+    workdir: str,
+    log_file: str,
+):
+    if conda_env != "NA":
+        full_cmd = f"conda run -n {conda_env} --no-capture-output {script_cmd}"
+    else:
+        full_cmd = script_cmd
+
+    proc = subprocess.Popen(
+        full_cmd,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=workdir,
+        text=True,
+    )
+
+    initial_payload = {
+        "status":     "running",
+        "pid":        proc.pid,
+        "script":     script_cmd,
+        "conda":      conda_env,
+        "workdir":    workdir,
+        "date_start": datetime.now().isoformat(),  # ← renamed
+        "date_end":   None,                        # ← placeholder
+        "stdout":     None,
+        "stderr":     None,
+        "returncode": None,
+    }
+    with open(log_file, "w") as f:
+        json.dump(initial_payload, f, indent=2)
+
+    def _collect_and_log():
+        stdout, stderr = proc.communicate()
+        final_payload = {
+            **initial_payload,
+            "status":     "finished",
+            "date_end":   datetime.now().isoformat(),  # ← filled on completion
+            "stdout":     stdout,
+            "stderr":     stderr,
+            "returncode": proc.returncode,
+        }
+        with open(log_file, "w") as f:
+            json.dump(final_payload, f, indent=2)
+
+    t = threading.Thread(target=_collect_and_log, daemon=True)
+    t.start()
+    return proc, t
 

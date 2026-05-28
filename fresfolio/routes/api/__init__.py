@@ -119,7 +119,6 @@ def app_api_get_chapter_sections():
         projectID = data['projectID']
         chapterID = data['chapterID']
         sections = PUTL.get_chapter_sections(projectID, chapterID)
-        print(sections)
         return jsonify(sections)
     except Exception:
         traceback.print_exc()
@@ -761,5 +760,37 @@ def api_store_ace_editor_content():
     except Exception:
         traceback.print_exc()
         return 'Cannot store file content.', 400
+    return "", 200
+
+@apiroutes.route('/api/start-process', methods=['POST'])
+def api_start_process():
+    try:
+        data = request.get_json()
+        projectID = data['projectID']
+        condaEnv = data['conda']
+        workdir = data['workdir']
+        command = data['script']
+
+        executable, scriptName, *_ = command.split(" ")
+
+        projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
+        workdir_fullpath = Path(projectDirectory).joinpath(workdir)
+        script_fullpath = workdir_fullpath.joinpath(scriptName)
+        if not script_fullpath.exists():
+            return 'Script does not exist', 400
+        logDir = Path(projectDirectory).joinpath("processes_logs")
+        logDir.mkdir(exist_ok=True)
+        logFilename = f"{workdir.replace('/', '_')}_{scriptName}"
+        logFilename_fullpath = logDir.joinpath(logFilename).with_suffix(".json")
+        tools.run_and_log(
+                script_cmd=command,
+                conda_env=condaEnv,
+                workdir=str(workdir_fullpath),
+                log_file=str(logFilename_fullpath)
+                )
+
+    except Exception:
+        traceback.print_exc()
+        return 'Cannot start process', 400
     return "", 200
 
