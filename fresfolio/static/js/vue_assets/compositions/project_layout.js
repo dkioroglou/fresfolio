@@ -12,6 +12,7 @@ const ProjectLayout = defineComponent({
             viewDrawerOpen: false,
             pinnedDrawerOpen: false,
             todosDrawerOpen: false,
+            processesDrawerOpen: false,
             notebooksDrawerOpen: true,
             notebooksFetched: false,
             chaptersBTNCollapseIcon: "chevron_left",
@@ -66,7 +67,8 @@ const ProjectLayout = defineComponent({
             editorInstance: null,
             isMinimized: false,
             isExpanded: false,
-            initialCode: ""
+            initialCode: "",
+            processesList: []
         }
     },
     methods: {
@@ -85,41 +87,36 @@ const ProjectLayout = defineComponent({
             this.todosDrawerOpen = false;
             this.viewDrawerOpen = false;
             this.pinnedDrawerOpen = false;
-            if (this.searchDrawerOpen) {
-                this.searchDrawerOpen = false;
-            } else {
-                this.searchDrawerOpen = true;
-            }
+            this.processesDrawerOpen = false;
+            this.searchDrawerOpen = !this.searchDrawerOpen;
         },
         toggleViewDrawer() {
             this.todosDrawerOpen = false;
             this.searchDrawerOpen = false;
             this.pinnedDrawerOpen = false;
-            if (this.viewDrawerOpen) {
-                this.viewDrawerOpen = false;
-            } else {
-                this.viewDrawerOpen = true;
-            }
+            this.processesDrawerOpen = false;
+            this.viewDrawerOpen = !this.viewDrawerOpen;
         },
         togglePinnedDrawer() {
             this.todosDrawerOpen = false;
             this.searchDrawerOpen = false;
             this.viewDrawerOpen = false;
-            if (this.pinnedDrawerOpen) {
-                this.pinnedDrawerOpen = false;
-            } else {
-                this.pinnedDrawerOpen = true;
-            }
+            this.processesDrawerOpen = false;
+            this.pinnedDrawerOpen = !this.pinnedDrawerOpen;
         },
         toggleTodosDrawer() {
             this.pinnedDrawerOpen = false;
             this.searchDrawerOpen = false;
             this.viewDrawerOpen = false;
-            if (this.todosDrawerOpen) {
-                this.todosDrawerOpen = false;
-            } else {
-                this.todosDrawerOpen = true;
-            }
+            this.processesDrawerOpen = false;
+            this.todosDrawerOpen = !this.todosDrawerOpen;
+        },
+        toggleProcessesDrawer() {
+            this.pinnedDrawerOpen = false;
+            this.searchDrawerOpen = false;
+            this.viewDrawerOpen = false;
+            this.todosDrawerOpen = false;
+            this.processesDrawerOpen = !this.processesDrawerOpen;
         },
         clearSearchSections() {
             this.searchDrawerOpen = false;
@@ -155,6 +152,7 @@ const ProjectLayout = defineComponent({
             this.fetchedSectionsToRender = false;
             this.renderedSections = [];
             this.getChapterSections();
+            this.closeAllDrawers();
         },
         computed: {
             selectedItem() {
@@ -899,21 +897,58 @@ const ProjectLayout = defineComponent({
 
         },
         async startProcess(fileJSON) {
+            if (this.processesList.includes(fileJSON['processName'])) {
+                this.$q.notify({
+                    message: "Process is currently running",
+                    color: 'negative',
+                    position: "top-right"
+                })
+            } else {
+                try {
+                    const response = await fetch("/api/start-process", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(fileJSON)
+                    });
+
+                    if (response.ok) {
+                        this.$q.notify({
+                            message: "Process started",
+                            color: 'green',
+                            position: "top-right"
+                        })
+                        this.processesList.push(fileJSON['processName']);
+                    } else {
+                        const responseText = await response.text();
+                        this.$q.notify({
+                            message: responseText,
+                            color: 'negative',
+                            position: "top-right"
+                        })
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+        },
+        async getProcesses() {
             try {
-                const response = await fetch("/api/start-process", {
+                const response = await fetch("/api/get-processes", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify(fileJSON)
+                    body: JSON.stringify(
+                        {
+                            "projectID": this.selectedProjectID, 
+                        }
+                    )
                 });
 
                 if (response.ok) {
-                    this.$q.notify({
-                        message: "Process started",
-                        color: 'green',
-                        position: "top-right"
-                    })
+                    this.processesList = await response.json();
                 } else {
                     const responseText = await response.text();
                     this.$q.notify({
@@ -925,11 +960,18 @@ const ProjectLayout = defineComponent({
             } catch (error) {
                 console.error(error);
             }
-
+        },
+        closeAllDrawers() {
+            this.todosDrawerOpen = false;
+            this.viewDrawerOpen = false;
+            this.todosDrawerOpen = false;
+            this.searchDrawerOpen = false;
+            this.processesDrawerOpen = false
         }
     },
     async mounted () {
         this.get_notebooks();
+        this.getProcesses();
         window.addEventListener('keydown', this.handleShortcut)
     },
     beforeUnmount() {
@@ -981,6 +1023,16 @@ const ProjectLayout = defineComponent({
                 v-if="searchSections.length"
                 icon="search"
                 @click="toggleSearchDrawer()"
+            />
+
+            <q-btn
+                v-if="processesList.length"
+                round
+                class="q-mr-md"
+                color="primary"
+                size="md"
+                icon="terminal"
+                @click="toggleProcessesDrawer()"
             />
 
             <q-btn
@@ -1208,6 +1260,55 @@ const ProjectLayout = defineComponent({
         </div>
     </q-drawer>
     <!-- TODOS DRAWER END -->
+
+    <!-- PROCESSES DRAWER START -->
+    <q-drawer 
+        overlay
+        v-model="processesDrawerOpen" 
+        side='right' 
+        class="app-page-container-color" 
+        :width="searchDrawerWidth()"
+    >
+        <div class="col q-px-xl">
+
+            <div class="q-mt-md q-mb-md row items-center justify-between">
+                <div class="row items-center">
+                    <q-btn 
+                        round
+                        color="primary" 
+                        size='sm' 
+                        @click="toggleProcessesDrawer()" 
+                        icon="close"
+                    />
+                    <q-btn 
+                        class='q-ml-sm'
+                        round
+                        color="primary" 
+                        size='sm' 
+                        @click="getProcesses()" 
+                        icon="sync"
+                    />
+                    <h3 class="q-ml-md q-ma-none">Processes running</h3>
+                </div>
+            </div>
+
+            <div v-if="processesList.length !== 0" class="bg-transparent">
+                <q-list v-for="(item, itemIDX) in processesList" :key="itemIDX">
+                        <q-item-section>
+                            <q-item-label class='text-white'>
+                                {{item}}
+                            </q-item-label>
+                        </q-item-section>
+                    </q-item>
+                </q-list>
+            </div>
+            <div v-else>
+                No process is currently running
+            </div>
+
+        </div>
+    </q-drawer>
+    <!-- PROCESSES DRAWER END -->
 
     <!-- SEARCH DRAWER START -->
     <q-drawer 

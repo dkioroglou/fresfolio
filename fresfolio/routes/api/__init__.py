@@ -4,6 +4,7 @@ import re
 import traceback
 from platform import system
 import subprocess
+import json
 from fresfolio.utils import tools
 from fresfolio.utils.classes import ProjectsUtils
 
@@ -786,7 +787,8 @@ def api_start_process():
                 script_cmd=command,
                 conda_env=condaEnv,
                 workdir=str(workdir_fullpath),
-                log_file=str(logFilename_fullpath)
+                log_file=str(logFilename_fullpath),
+                process_name=logFilename
                 )
 
     except Exception:
@@ -794,3 +796,22 @@ def api_start_process():
         return 'Cannot start process', 400
     return "", 200
 
+@apiroutes.route('/api/get-processes', methods=['POST'])
+def api_get_processes():
+    processesLogs = []
+    try:
+        data = request.get_json()
+        projectID = data['projectID']
+        projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
+        logDir = Path(projectDirectory).joinpath("processes_logs")
+        if not logDir.exists():
+            return [], 200
+        for log_file in logDir.glob("*.json"):
+            with open(log_file) as f:
+                pJSON = json.load(f)
+            if pJSON['status'] == 'running':
+                processesLogs.append(pJSON['processName'])
+    except Exception:
+        traceback.print_exc()
+        return 'Cannot load processes logs', 400
+    return jsonify(processesLogs), 200

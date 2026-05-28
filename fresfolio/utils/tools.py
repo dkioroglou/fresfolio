@@ -251,6 +251,7 @@ def run_and_log(
     conda_env: str,
     workdir: str,
     log_file: str,
+    process_name: str
 ):
     if conda_env != "NA":
         full_cmd = f"conda run -n {conda_env} --no-capture-output {script_cmd}"
@@ -273,6 +274,7 @@ def run_and_log(
         "conda":      conda_env,
         "workdir":    workdir,
         "date_start": datetime.now().isoformat(),  # ← renamed
+        "processName": process_name,
         "date_end":   None,                        # ← placeholder
         "stdout":     None,
         "stderr":     None,

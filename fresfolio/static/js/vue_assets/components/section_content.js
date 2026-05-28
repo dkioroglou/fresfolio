@@ -673,6 +673,7 @@ const SectionContent = defineComponent({
           <q-card-section class="q-pa-sm">
                 <div class="row items-center q-mb-xs">
                     <div style="flex: 1; min-width: 0; font-family: 'JetBrains Mono', monospace; font-size: 11px;">Process: {{ fileJSON['title'] }}</div>
+                    <q-badge>{{fileJSON['dateExecuted']}}</q-badge>
                     <q-btn v-if='fileJSON["workdir_exists"]==1' unelevated dense color="secondary" icon="visibility" size="sm" class="q-ml-sm" @click="openWithAceEditor(fileJSON)" />
                     <q-btn v-if='fileJSON["workdir_exists"]==1' unelevated dense color="secondary" icon="play_arrow" size="sm" class="q-ml-sm" @click="startProcess(fileJSON)" />
                 </div>

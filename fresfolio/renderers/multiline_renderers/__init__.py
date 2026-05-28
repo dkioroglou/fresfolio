@@ -1113,12 +1113,27 @@ class HtmlProcessTag:
                 workdir_exists = 1
             else:
                 workdir_exists = 0
+
             scriptCommand = tmpJSON['script']
             executable, scriptName, *_ = scriptCommand.split(" ")
             scriptName = scriptName.strip()
+
+            logDir = Path(projectDir).joinpath("processes_logs")
+            logFilename = f"{workdir.replace('/', '_')}_{scriptName}"
+            logFilename_fullpath = logDir.joinpath(logFilename).with_suffix(".json")
+
+            if logFilename_fullpath.exists():
+                with open(logFilename_fullpath, 'r') as inf:
+                    logJSON = json.load(inf)
+                dateExecuted = logJSON['date_start'].split("T")[0]
+            else:
+                dateExecuted = "pending"
+
+            processName = f"{workdir.replace('/','_')}_{scriptName}"
             extension = Path(scriptName).suffix.replace(".", "").upper()
             filename = Path(workdir).joinpath(scriptName)
             fileURL = f"/api/files/{projectID}/{filename}"
+
             return {
                     "projectID": projectID, 
                     "url": fileURL,
@@ -1128,7 +1143,9 @@ class HtmlProcessTag:
                     "workdir_exists": workdir_exists, 
                     "conda": tmpJSON['conda'], 
                     "script": scriptCommand,
-                    "missingFields": missingFields
+                    "processName": processName,
+                    "missingFields": missingFields,
+                    "dateExecuted": dateExecuted
                     }
 
         tmpJSON = {}
