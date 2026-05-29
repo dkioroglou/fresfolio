@@ -410,7 +410,7 @@ const SectionCard = defineComponent({
             edit.caret.restore()
             edit.runCmd(
             'insertHTML',
-                '\\begin{process}<br>conda:NA<br>workdir:<br>script:<br>\\end{process}'
+                '\\begin{process}<br>title:NA<br>conda:NA<br>workdir:<br>script:<br>\\end{process}'
             )
             edit.focus()
         },

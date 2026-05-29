@@ -1163,6 +1163,8 @@ class HtmlProcessTag:
                 potentialValue = potentialValue.strip()
                 if potentialKey in self.expected_singleline_keys:
                     if multilineKey is None:
+                        if potentialKey == 'title' and potentialValue == "NA":
+                            continue
                         tmpJSON[potentialKey] = potentialValue
                         continue
                     else:
