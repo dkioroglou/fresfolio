@@ -1129,8 +1129,14 @@ class HtmlProcessTag:
                 with open(logFilename_fullpath, 'r') as inf:
                     logJSON = json.load(inf)
                 dateExecuted = logJSON['date_start'].split("T")[0]
+                exitCode = logJSON['returncode']
+                stdout = logJSON['stdout']
+                stderror = logJSON['stderr']
             else:
                 dateExecuted = "pending"
+                exitCode = "NA"
+                stdout = "NA"
+                stderror = "NA"
 
             processName = f"{workdir.replace('/','_')}_{scriptName}"
             extension = Path(scriptName).suffix.replace(".", "").upper()
@@ -1148,7 +1154,9 @@ class HtmlProcessTag:
                     "script": scriptCommand,
                     "processName": processName,
                     "missingFields": missingFields,
-                    "dateExecuted": dateExecuted
+                    "dateExecuted": dateExecuted,
+                    "exitCode": exitCode,
+                    "logFilename": str(logFilename_fullpath)
                     }
 
         tmpJSON = {}

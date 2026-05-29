@@ -275,10 +275,10 @@ def run_and_log(
         "workdir":    workdir,
         "date_start": datetime.now().isoformat(),  # ← renamed
         "processName": process_name,
-        "date_end":   None,                        # ← placeholder
-        "stdout":     None,
-        "stderr":     None,
-        "returncode": None,
+        "date_end":   "NA",                        # ← placeholder
+        "stdout":     "NA",
+        "stderr":     "NA",
+        "returncode": "NA",
     }
     with open(log_file, "w") as f:
         json.dump(initial_payload, f, indent=2)

@@ -45,7 +45,9 @@ const SectionContent = defineComponent({
                                   "CSV",
                                   "TSV",
                                   "JSON",
-                                  "TEX"]
+                                  "TEX"],
+            logViewerContent: "",
+            showLogViewer: false
         };
     },
     methods: {
@@ -467,6 +469,37 @@ const SectionContent = defineComponent({
         },
         startProcess(fileJSON) {
             this.$emit('start-process', fileJSON)
+        },
+        async getProcessOutput(logFile, stdType) {
+            try {
+                const response = await fetch("/api/get-process-output", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(
+                        {
+                            "logFile": logFile,
+                            "stdType": stdType
+                        }
+                    )
+                });
+
+                if (response.ok) {
+                    data = await response.json();
+                    this.logViewerContent = data['log'];
+                    this.showLogViewer = true;
+                } else {
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
         }
     },
     watch: {
@@ -673,9 +706,9 @@ const SectionContent = defineComponent({
           <q-card-section class="q-pa-sm">
                 <div class="row items-center q-mb-xs">
                     <div style="flex: 1; min-width: 0; font-family: 'JetBrains Mono', monospace; font-size: 11px;">Process: {{ fileJSON['title'] }}</div>
-                    <q-badge>{{fileJSON['dateExecuted']}}</q-badge>
-                    <q-btn v-if='fileJSON["workdir_exists"]==1' unelevated dense color="secondary" icon="visibility" size="sm" class="q-ml-sm" @click="openWithAceEditor(fileJSON)" />
-                    <q-btn v-if='fileJSON["workdir_exists"]==1' unelevated dense color="secondary" icon="play_arrow" size="sm" class="q-ml-sm" @click="startProcess(fileJSON)" />
+                    <q-badge outline color="secondary">{{fileJSON['dateExecuted']}}</q-badge>
+                    <q-btn v-if='fileJSON["workdir_exists"]==1' round unelevated dense color="secondary" icon="visibility" size="sm" class="q-ml-sm" @click="openWithAceEditor(fileJSON)" />
+                    <q-btn v-if='fileJSON["workdir_exists"]==1' round unelevated dense color="secondary" icon="play_arrow" size="sm" class="q-ml-sm" @click="startProcess(fileJSON)" />
                 </div>
                 <!-- Row 1: conda + Run button -->
                 <div class="row items-center q-mb-xs">
@@ -696,12 +729,20 @@ const SectionContent = defineComponent({
                 </div>
 
                 <!-- Row 3: script -->
-                <div class="row items-center">
+                <div class="row items-center q-mb-xs">
                     <div class="process-row">
                     <span class="process-key"><q-icon name="code" size="12px" class="q-mr-xs text-light-green-4" /><span class="label-key">script</span></span>
                     <span class="label-sep">|</span>
                     <span class="label-val text-light-green-4">{{ fileJSON["script"] }}</span>
                     </div>
+                </div>
+
+                <!-- Bottom row: badge + action buttons -->
+                <div v-if="fileJSON['exitCode'] !== 'NA'" class="row items-center justify-end q-gutter-x-sm q-mt-xs">
+                    <q-badge v-if="fileJSON['exitCode'] === 0" color="teal" label="success" />
+                    <q-badge v-else color="warning" label="failed" />
+                    <q-btn @click="getProcessOutput(fileJSON['logFilename'], 'stdout')" round unelevated dense color="secondary" icon="terminal" size="xs" />
+                    <q-btn @click="getProcessOutput(fileJSON['logFilename'], 'stderr')" round unelevated dense color="secondary" icon="bug_report" size="xs" />
                 </div>
 
           </q-card-section>
@@ -710,12 +751,6 @@ const SectionContent = defineComponent({
     </template>
 </div>
 <!-- PROCESS RENDERING END -->
-
-
-
-
-
-
 
 <!-- OMILAYERS PLOT RENDERING START -->
 <div v-else-if="cJSON['type'] === 'omiplot'" class="q-mb-lg">
@@ -1374,6 +1409,25 @@ const SectionContent = defineComponent({
         </q-card>
     </q-dialog>
  <!-- SET OMILAYER DESCRIPTION DIALOG END -->
+
+
+    <!-- LOG VIEWER DIALOG START -->
+    <q-dialog v-model="showLogViewer">
+        <q-card style="width: 1200px; max-width: 80vw; max-height: 80vh;">
+            <q-card-section class="row items-center q-pb-none">
+                <div class="text-h6">Log viewer</div>
+                    <q-space />
+                    <q-btn icon="close" flat round dense v-close-popup />
+                    </q-card-section>
+
+                    <q-card-section>
+                    <div class="app-logviewer-container" style="overflow: auto; max-height: 60vh;">
+                        <pre><code>{{ logViewerContent }}</code></pre>
+                    </div>
+            </q-card-section>
+        </q-card>
+    </q-dialog>
+    <!-- LOG VIEWER DIALOG END -->
 
     `
 });

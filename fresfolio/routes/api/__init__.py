@@ -188,6 +188,19 @@ def app_api_set_section_content():
         traceback.print_exc()
         return "Something went wrong", 400
 
+@apiroutes.route('/api/update-section-content', methods=['POST'])
+def app_api_update_section_content():
+    try:
+        data = request.get_json()
+        projectID = data['projectID']
+        sectionID = data['sectionID']
+        data = PUTL.get_section_content_rendered(projectID, sectionID) 
+        print(data)
+        return jsonify({"sectionData": data}), 200
+    except Exception:
+        traceback.print_exc()
+        return "Something went wrong", 400
+
 @apiroutes.route('/api/create-section-directory', methods=['POST'])
 def app_api_create_section_directory():
     try:
@@ -815,3 +828,20 @@ def api_get_processes():
         traceback.print_exc()
         return 'Cannot load processes logs', 400
     return jsonify(processesLogs), 200
+
+@apiroutes.route('/api/get-process-output', methods=['POST'])
+def api_get_process_output():
+    try:
+        data = request.get_json()
+        logFile = Path(data['logFile'])
+        stdType = data["stdType"]
+        if not logFile.exists():
+            return "Log file does not exist", 400
+        with open(logFile, 'r') as inf:
+            logJSON = json.load(inf)
+        if stdType not in logJSON:
+            return "Output type not found in log file", 400
+    except Exception:
+        traceback.print_exc()
+        return 'Cannot read log file', 400
+    return jsonify({"log":logJSON[stdType]}), 200

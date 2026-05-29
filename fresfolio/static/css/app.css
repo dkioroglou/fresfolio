@@ -562,3 +562,53 @@ body.body--dark .app-note-green {
   font-weight: 600;
   word-break: break-all;
 }
+
+.app-logviewer-container {
+    position: relative;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 0.7em;
+    line-height: 1.6;
+
+    background: #0d1117;
+    color: #c9d1d9;
+
+    padding: 16px;
+    border-radius: 10px;
+    border: 1px solid #30363d;
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.04),
+        0 8px 32px rgba(0, 0, 0, 0.5);
+
+    overflow-x: auto;
+    overflow-y: auto;
+
+    /* Subtle scanline texture */
+    background-image: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 1px,
+        rgba(255, 255, 255, 0.012) 1px,
+        rgba(255, 255, 255, 0.012) 2px
+    );
+}
+
+/* Scrollbar styling */
+.app-logviewer-container::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.app-logviewer-container::-webkit-scrollbar-track {
+    background: #161b22;
+    border-radius: 4px;
+}
+
+.app-logviewer-container::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 4px;
+}
+
+.app-logviewer-container::-webkit-scrollbar-thumb:hover {
+    background: #484f58;
+}
+

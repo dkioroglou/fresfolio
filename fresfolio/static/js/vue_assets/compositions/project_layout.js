@@ -68,7 +68,8 @@ const ProjectLayout = defineComponent({
             isMinimized: false,
             isExpanded: false,
             initialCode: "",
-            processesList: []
+            processesList: [],
+            processPollingInterval: null
         }
     },
     methods: {
@@ -920,6 +921,7 @@ const ProjectLayout = defineComponent({
                             position: "top-right"
                         })
                         this.processesList.push(fileJSON['processName']);
+                        this.startPolling();
                     } else {
                         const responseText = await response.text();
                         this.$q.notify({
@@ -961,6 +963,25 @@ const ProjectLayout = defineComponent({
                 console.error(error);
             }
         },
+        startPolling() {
+            if (this.processPollingInterval) return; // prevent duplicate intervals
+
+            this.processPollingInterval = setInterval(async () => {
+                await this.getProcesses();
+                if (this.processesList.length === 0) {
+                    this.stopPolling();
+                    this.$q.notify({
+                        message: "Processes finished",
+                        color: 'green',
+                        position: "top-right"
+                    })
+                }
+            }, 5000);
+        },
+        stopPolling() {
+            clearInterval(this.processPollingInterval);
+            this.processPollingInterval = null;
+        },
         closeAllDrawers() {
             this.todosDrawerOpen = false;
             this.viewDrawerOpen = false;
@@ -975,6 +996,7 @@ const ProjectLayout = defineComponent({
         window.addEventListener('keydown', this.handleShortcut)
     },
     beforeUnmount() {
+        this.stopPolling(); // prevent memory leaks
         window.removeEventListener('keydown', this.handleShortcut)
     },
     template: `
