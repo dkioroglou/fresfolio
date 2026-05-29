@@ -405,6 +405,15 @@ const SectionCard = defineComponent({
             )
             edit.focus()
         },
+        insertProcessTagToSectionEditor() {
+            const edit = this.$refs.sectionEditorRef
+            edit.caret.restore()
+            edit.runCmd(
+            'insertHTML',
+                '\\begin{process}<br>conda:NA<br>workdir:<br>script:<br>\\end{process}'
+            )
+            edit.focus()
+        },
         insertFiguresTagToSectionEditor() {
             const edit = this.$refs.sectionEditorRef
             edit.caret.restore()
@@ -797,6 +806,7 @@ const SectionCard = defineComponent({
                                 'linktag',
                                 'files', 
                                 'figures',
+                                'process',
                                 'table',
                                 'noteblue',
                                 'notered',
@@ -846,6 +856,18 @@ const SectionCard = defineComponent({
                                         size="sm"
                                         label="Figures"
                                         @click="insertFiguresTagToSectionEditor"
+                                    />
+                                </template>
+
+                                <template v-slot:process>
+                                    <q-btn
+                                        dense
+                                        unelevated
+                                        color="secondary"
+                                        text-color="white"
+                                        size="sm"
+                                        label="Process"
+                                        @click="insertProcessTagToSectionEditor"
                                     />
                                 </template>
 
