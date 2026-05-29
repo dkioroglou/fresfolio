@@ -1077,8 +1077,9 @@ class PDFOmilayersPlotTag:
 
 class HtmlProcessTag:
 
-    def __init__(self, projectName:str, lines:list):
+    def __init__(self, projectName:str, processIDX:int, lines:list):
         self.projectInfo = tools.get_project_info(projectName)
+        self.processIDX = processIDX
         self.lines = lines
         self.expected_singleline_keys = ['conda', 'workdir', 'title']
         self.expected_multiline_keys = ['script']
@@ -1088,7 +1089,7 @@ class HtmlProcessTag:
             defaultFields = {
                     "project": self.projectInfo,
                     "conda": "NA",
-                    "title": "untitled"
+                    "title": self.processIDX
                     }
             requiredFields = [
                     "workdir",
@@ -1097,6 +1098,8 @@ class HtmlProcessTag:
             for field in defaultFields:
                 if not tmpJSON.get(field, False):
                     tmpJSON[field] = defaultFields[field]
+                elif tmpJSON.get(field, False) and field == 'title':
+                    tmpJSON[field] = f"{defaultFields[field]}. {tmpJSON[field]}"
 
             missingFields = []
             for field in requiredFields:
@@ -1189,7 +1192,8 @@ class HtmlProcessTag:
         if multilineKey is not None:
             tmpJSON[multilineKey] = " ".join(multilineValue)
         filesJSON.append(render_tmpJSON(tmpJSON))
-        return filesJSON
+        self.processIDX += 1
+        return (filesJSON, self.processIDX)
 
 class PDFProcessTag:
     """Tag is ignored for PDF rendering."""

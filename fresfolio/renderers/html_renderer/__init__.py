@@ -44,6 +44,7 @@ class HtmlRenderer:
         self.list_buffer = []
         self.currentTableIDX = 1 # used for enumerating tables
         self.currentFigureIDX = 1 # used for enumerating figures
+        self.currentProcessIDX = 1 # used for enumerating processes
         self.toggle_tags = {
                             '$$': 'math',
                             '```': 'code'
@@ -151,8 +152,8 @@ class HtmlRenderer:
                             self._addHTMLToLastInsertedContent(JSON)
                 elif self.begin_tag == "process":
                     self._addNewContentToLastContainer(self.begin_tag)
-                    renderer = rendererCLS(self.projectName, self.buffer)
-                    filesJSON = renderer.render_lines()
+                    renderer = rendererCLS(self.projectName, self.currentProcessIDX, self.buffer)
+                    (filesJSON, self.currentProcessIDX) = renderer.render_lines()
                     for JSON in filesJSON:
                         self._addHTMLToLastInsertedContent(JSON)
                 elif self.tag_args:
