@@ -447,8 +447,7 @@ def get_filepath(projectid, filename):
                      '.sh',
                      '.R',
                      '.Rscript',
-                     '.json',
-                     '.html'
+                     '.json'
                     ]
 
     if not filePath.exists() and fileExtention not in flatExtensions:

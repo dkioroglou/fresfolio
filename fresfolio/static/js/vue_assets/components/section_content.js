@@ -37,7 +37,6 @@ const SectionContent = defineComponent({
             flatFilesExtensions: ["MD", 
                                   "TXT", 
                                   "PY", 
-                                  "HTML", 
                                   "JS",
                                   "SH",
                                   "R",
