@@ -434,8 +434,7 @@ def get_filepath(projectid, filename):
                      '.xls', 
                      '.xlsx',
                      '.ppt',
-                     '.pptx',
-                     '.pdf'
+                     '.pptx'
                      ]
 
     flatExtensions = [
