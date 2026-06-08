@@ -572,6 +572,10 @@ const ProjectLayout = defineComponent({
             // Remove vertical line that marks 80 characters width
             this.editorInstance.setOption("showPrintMargin", false);
 
+            // Enable text wrap
+            this.editorInstance.setOption("wrap", true);
+            this.editorInstance.session.setUseWrapMode(true);
+
             // Set the initial value
             this.editorInstance.setValue(this.initialCode, -1); // -1 moves cursor to the start
 
