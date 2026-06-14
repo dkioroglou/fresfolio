@@ -8,9 +8,6 @@ import json
 from fresfolio.utils import tools
 from fresfolio.utils.classes import ProjectsUtils
 
-if tools.is_module_installed("omilayers") and tools.is_module_installed("bokeh"):
-    from fresfolio.plotting import omiplot
-
 apiroutes = Blueprint('apiroutes', __name__)
 PUTL = ProjectsUtils()
 OSname = system().lower()
@@ -490,17 +487,6 @@ def upload_files_to_section():
         return '', 400
     return "", 200
 
-@apiroutes.route('/api/render-plot', methods=['POST'])
-def api_render_plot():
-    try:
-        data = request.get_json()
-        oplt = getattr(omiplot, data['plot-type'])
-        oplt(plot_data=data)
-    except Exception:
-        traceback.print_exc()
-        return "Cannot render plot", 400
-    return "", 200
-
 @apiroutes.route('/api/create-new-omilayer', methods=['POST'])
 def api_create_new_omilayer():
     try:
@@ -714,8 +700,6 @@ def app_api_sections_to_pdf():
                     elif contentJSON['type'] == "files":
                         continue
                     elif contentJSON['type'] == "omitable":
-                        continue
-                    elif contentJSON['type'] == "omiplot":
                         continue
                     else:
                         contentText = contentJSON['text'][0] + "\n"
