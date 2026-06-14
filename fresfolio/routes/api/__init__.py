@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, send_from_directory
+from flask import Blueprint, jsonify, request, send_from_directory, Response
 from pathlib import Path
 import re
 import traceback
@@ -7,6 +7,9 @@ import subprocess
 import json
 from fresfolio.utils import tools
 from fresfolio.utils.classes import ProjectsUtils
+
+if toos.tools.is_module_installed("pyarrow"):
+    import pyarrow as pa
 
 apiroutes = Blueprint('apiroutes', __name__)
 PUTL = ProjectsUtils()
@@ -846,6 +849,8 @@ def api_get_project_duckdkb():
 
 @apiroutes.route("/api/fetch-plot-data", methods=["POST"])
 def api_fetch_plot_data():
+    if not tools.is_module_installed('pyarrow'):
+        return "pyarrow is not installed"
     try:
         data = request.get_json()
         projectID = data['projectID']
@@ -859,4 +864,16 @@ def api_fetch_plot_data():
         df = PUTL.get_data_from_omilayer_for_plotting(projectID, DBpath, sqlQuery)
     except Exception as e:
         return "Error executing query", 400
-    return jsonify(df.to_dict(orient="records"))
+
+    table = pa.Table.from_pandas(df, preserve_index=False)
+    sink = pa.BufferOutputStream()
+    writer = pa.ipc.new_stream(sink, table.schema)
+    writer.write_table(table)
+    writer.close()
+    arrow_bytes = sink.getvalue().to_pybytes()
+
+    return Response(
+        arrow_bytes,
+        mimetype="application/vnd.apache.arrow.stream",
+        headers={"Content-Type": "application/vnd.apache.arrow.stream"}
+    )

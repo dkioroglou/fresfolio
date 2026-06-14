@@ -16,9 +16,9 @@ const PlotRenderer = defineComponent({
             isPlotRendering: false,
             plotSpecs: {
                 x: null,
-                y: null,
-                fill: null
-            }
+                y: null
+            },
+            plotErrorMessage: ""
         };
     },
     methods: {
@@ -74,9 +74,9 @@ const PlotRenderer = defineComponent({
                 });
 
                 if (response.ok) {
-                    this.plotdata = await response.json();
-                    this.initPlotSpecs();
+                    this.plotdata = new Uint8Array(await response.arrayBuffer());
                     this.refreshCoordinator();
+                    this.insertData();
                     this.$q.notify({
                         message: "Plot data fetched",
                         color: 'green',
@@ -100,16 +100,14 @@ const PlotRenderer = defineComponent({
             this.$refs.container.innerHTML = "";
             this.showPlotConfigurationDialog = false;
             this.isPlotRendering = true;
-            await this._coordinator.exec([
-                vg.loadObjects("plotdata", this.plotdata),
-            ]);
-            this.$refs.container.innerHTML = "";
             try {
+                this.$refs.container.innerHTML = "";
                 const dashboard = vg.plot(
                     vg.dot(
                         vg.from("plotdata"),
                         {
-                            ...this.plotSpecs,
+                            x:this.plotSpecs['x'], 
+                            y:this.plotSpecs['y'],
                             r:this.plotPointsSize
                         }
                     ),
@@ -120,16 +118,10 @@ const PlotRenderer = defineComponent({
 
                 this.$refs.container.appendChild(dashboard);
             } catch (err) {
-                this.error = err.message;
+                this.plotErrorMessage = err.message;
             } finally {
                 this.isPlotRendering = false;
             }
-        },
-        initPlotSpecs() {
-            const [x, y, fill] = this.columnOptions;
-            this.plotSpecs.x    = x    ?? null;
-            this.plotSpecs.y    = y    ?? null;
-            this.plotSpecs.fill = fill ?? null;
         },
         async initCoordinator() {
             this._coordinator = vg.coordinator();
@@ -141,17 +133,18 @@ const PlotRenderer = defineComponent({
             this._coordinatorReady = false;
             this._coordinator.clear();
             this.initCoordinator();
+        },
+        async insertData() {
+            const db = await this._connector.getDuckDB();
+            const con = await this._connector.getConnection();
+            await this._coordinator.exec(`DROP TABLE IF EXISTS plotdata`);
+            await con.insertArrowFromIPCStream(this.plotdata, { name: "plotdata" });
+
         }
     },
     mounted() {
         this.getDuckdbDatabases();
         this.initCoordinator();
-    },
-    computed: {
-        columnOptions() {
-            if (!this.plotdata?.length) return [];
-            return Object.keys(this.plotdata[0]);
-        },
     },
     created() {
         // Plain instance properties — not reactive, not proxied by Vue
@@ -178,6 +171,9 @@ const PlotRenderer = defineComponent({
                     size="2em"
                 />
                 <p class="app-spinner-text text-white">Plot rendering...</p>
+            </div>
+            <div v-if="plotErrorMessage !== ''">
+                {{plotErrorMessage}}
             </div>
             <div ref="container"></div>
         </div>
@@ -298,101 +294,25 @@ const PlotRenderer = defineComponent({
 
                                 <!-- x -->
                                 <div class="col-6">
-                                    <q-select
+                                    <q-input
                                         v-model="plotSpecs.x"
-                                        :options="columnOptions"
                                         outlined
                                         dense
                                         label="x"
-                                        use-input
-                                        fill-input
-                                        hide-selected
-                                        input-debounce="0"
                                         :input-style="{ fontFamily: 'monospace', fontSize: '13px' }"
-                                        @filter="(val, update) => update()"
-                                    >
-                                        <template #option="{ itemProps, opt }">
-                                            <q-item v-bind="itemProps">
-                                                <q-item-label style="font-family: monospace; font-size: 13px">
-                                                    {{ opt }}
-                                                </q-item-label>
-                                            </q-item>
-                                        </template>
-                                        <template #no-option>
-                                            <q-item>
-                                                <q-item-section class="text-caption text-grey">
-                                                    Run a query first
-                                                </q-item-section>
-                                            </q-item>
-                                        </template>
-                                    </q-select>
+                                    />
                                 </div>
 
                                 <!-- y -->
                                 <div class="col-6">
-                                    <q-select
+                                    <q-input
                                         v-model="plotSpecs.y"
-                                        :options="columnOptions"
                                         outlined
                                         dense
                                         label="y"
-                                        use-input
-                                        fill-input
-                                        hide-selected
-                                        input-debounce="0"
                                         :input-style="{ fontFamily: 'monospace', fontSize: '13px' }"
-                                        @filter="(val, update) => update()"
-                                    >
-                                        <template #option="{ itemProps, opt }">
-                                            <q-item v-bind="itemProps">
-                                                <q-item-label style="font-family: monospace; font-size: 13px">
-                                                    {{ opt }}
-                                                </q-item-label>
-                                            </q-item>
-                                        </template>
-                                        <template #no-option>
-                                            <q-item>
-                                                <q-item-section class="text-caption text-grey">
-                                                    Run a query first
-                                                </q-item-section>
-                                            </q-item>
-                                        </template>
-                                    </q-select>
+                                    />
                                 </div>
-
-                                <!-- fill -->
-                                <div class="col-6">
-                                    <q-select
-                                        v-model="plotSpecs.fill"
-                                        :options="columnOptions"
-                                        outlined
-                                        dense
-                                        clearable
-                                        label="fill"
-                                        use-input
-                                        fill-input
-                                        hide-selected
-                                        input-debounce="0"
-                                        :input-style="{ fontFamily: 'monospace', fontSize: '13px' }"
-                                        @filter="(val, update) => update()"
-                                    >
-                                        <template #option="{ itemProps, opt }">
-                                            <q-item v-bind="itemProps">
-                                                <q-item-label style="font-family: monospace; font-size: 13px">
-                                                    {{ opt }}
-                                                </q-item-label>
-                                            </q-item>
-                                        </template>
-                                        <template #no-option>
-                                            <q-item>
-                                                <q-item-section class="text-caption text-grey">
-                                                    Run a query first
-                                                </q-item-section>
-                                            </q-item>
-                                        </template>
-                                    </q-select>
-                                </div>
-                            </div>
 
                             <div class="row items-center q-mt-md">
                                 <q-badge color="secondary">
