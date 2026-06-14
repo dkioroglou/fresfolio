@@ -1509,7 +1509,22 @@ const ProjectLayout = defineComponent({
         class="app-page-container-color" 
         :width="searchDrawerWidth()"
     >
-        <plot-renderer />
+        <div class="col q-px-xl">
+            <div class="q-mt-md q-mb-md row items-center justify-between">
+                <div class="row items-center">
+                    <q-btn 
+                        round
+                        color="primary" 
+                        size='sm' 
+                        @click="togglePlotDrawer()" 
+                        icon="close"
+                    />
+                    <h3 class="q-ml-md q-ma-none">Plot viewer</h3>
+                </div>
+            </div>
+                <plot-renderer :projectid="selectedProjectID" />
+            </div>
+        </div>
     </q-drawer>
     <!-- PLOT DRAWER END -->
 

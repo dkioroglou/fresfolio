@@ -828,3 +828,35 @@ def api_get_process_output():
         traceback.print_exc()
         return 'Cannot read log file', 400
     return jsonify({"log":logJSON[stdType]}), 200
+
+@apiroutes.route('/api/get-project-duckdbs', methods=['POST'])
+def api_get_project_duckdkb():
+    try:
+        data = request.get_json()
+        projectID = data['projectID']
+        projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
+        dbs = []
+        for pathdb in Path(projectDirectory).rglob("*.duckdb"):
+            pathdbRelPath = str(pathdb.relative_to(projectDirectory))
+            dbs.append({"label":pathdbRelPath})
+    except Exception:
+        traceback.print_exc()
+        return 'Cannot load project databases', 400
+    return jsonify(dbs), 200
+
+@apiroutes.route("/api/fetch-plot-data", methods=["POST"])
+def api_fetch_plot_data():
+    try:
+        data = request.get_json()
+        projectID = data['projectID']
+        DBpath = data['DBpath']
+        sqlQuery = data['sqlQuery']
+        sqlQuery = sqlQuery.strip()
+
+        if not sqlQuery:
+            return jsonify({"error": "No query provided"}), 400
+
+        df = PUTL.get_data_from_omilayer_for_plotting(projectID, DBpath, sqlQuery)
+    except Exception as e:
+        return "Error executing query", 400
+    return jsonify(df.to_dict(orient="records"))
