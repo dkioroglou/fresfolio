@@ -853,7 +853,6 @@ def api_fetch_plot_data():
         return "pyarrow is not installed"
     try:
         data = request.get_json()
-        print(data)
         projectID = data['projectID']
         DBpath = data['DBpath']
         sqlQuery = data['sqlQuery']
