@@ -75,8 +75,8 @@ const PlotRenderer = defineComponent({
 
                 if (response.ok) {
                     this.plotdata = new Uint8Array(await response.arrayBuffer());
-                    this.refreshCoordinator();
-                    this.insertData();
+                    await this.refreshCoordinator();
+                    await this.insertData();
                     this.$q.notify({
                         message: "Plot data fetched",
                         color: 'green',
@@ -125,26 +125,29 @@ const PlotRenderer = defineComponent({
         },
         async initCoordinator() {
             this._coordinator = vg.coordinator();
-            this._connector = vg.wasmConnector();
-            await this._coordinator.databaseConnector(this._connector);
+            if (!this._connector) {
+                // Only create connector once
+                this._connector = vg.wasmConnector();
+                await this._coordinator.databaseConnector(this._connector);
+            }
             this._coordinatorReady = true;
         },
         async refreshCoordinator() {
             this._coordinatorReady = false;
             this._coordinator.clear();
-            this.initCoordinator();
+            // Don't reinitialize — reuse existing connector and DuckDB instance
+            this._coordinatorReady = true;
         },
         async insertData() {
-            const db = await this._connector.getDuckDB();
             const con = await this._connector.getConnection();
             await this._coordinator.exec(`DROP TABLE IF EXISTS plotdata`);
             await con.insertArrowFromIPCStream(this.plotdata, { name: "plotdata" });
 
         }
     },
-    mounted() {
+    async mounted() {
         this.getDuckdbDatabases();
-        this.initCoordinator();
+        await this.initCoordinator();
     },
     created() {
         // Plain instance properties — not reactive, not proxied by Vue
