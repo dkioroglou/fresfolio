@@ -8,7 +8,7 @@ import json
 from fresfolio.utils import tools
 from fresfolio.utils.classes import ProjectsUtils
 
-if toos.tools.is_module_installed("pyarrow"):
+if tools.is_module_installed("pyarrow"):
     import pyarrow as pa
 
 apiroutes = Blueprint('apiroutes', __name__)
