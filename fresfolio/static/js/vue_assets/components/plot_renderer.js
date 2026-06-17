@@ -6,14 +6,20 @@ const PlotRenderer = defineComponent({
             loading: false,
             error: null,
             plotPointsSize: 5,
-            sqlQuery: "",
+            sqlQuery: {
+                layer: "",
+                cols: "*",
+                condition: ""
+            },
             queryHistory: [],
             queryError: null,
             queryLoading: false,
             databases: [],
             selectedDb: "",
+            showBindDataDialog: false,
             showPlotConfigurationDialog: false,
             isPlotRendering: false,
+            dataBinded: false,
             plotSpecs: {
                 x: null,
                 y: null
@@ -51,6 +57,7 @@ const PlotRenderer = defineComponent({
             }
         },
         async fetchPlotDataBasedOnQuery() {
+            this.dataBinded = false;
             if (!this._coordinatorReady) {
                 this.$q.notify({
                     message: "WASM coordinator is not ready",
@@ -77,6 +84,7 @@ const PlotRenderer = defineComponent({
                     this.plotdata = new Uint8Array(await response.arrayBuffer());
                     await this.refreshCoordinator();
                     await this.insertData();
+                    this.dataBinded = true;
                     this.$q.notify({
                         message: "Plot data fetched",
                         color: 'green',
@@ -97,6 +105,7 @@ const PlotRenderer = defineComponent({
             }
         },
         async renderPlot() {
+            this.plotErrorMessage = "";
             this.$refs.container.innerHTML = "";
             this.showPlotConfigurationDialog = false;
             this.isPlotRendering = true;
@@ -156,12 +165,21 @@ const PlotRenderer = defineComponent({
         this._coordinatorReady = false;
     },
     template: `
-        <div class="row items-center justify-between q-mb-sm">
+        <div class="row items-center q-mb-sm">
             <q-btn 
+                color="primary" 
+                size='sm' 
+                @click="showBindDataDialog = true" 
+                icon='commit'
+                label="Bind data"
+            />
+            <q-btn
+                class="q-ml-md"
                 color="primary" 
                 size='sm' 
                 @click="showPlotConfigurationDialog = true" 
                 icon='settings'
+                :disable="!dataBinded"
                 label="Plot configuration"
             />
         </div>
@@ -181,32 +199,20 @@ const PlotRenderer = defineComponent({
             <div ref="container"></div>
         </div>
 
-
-        <!--PLOT CONFIGURATION DIALOG STARTS-->
-        <q-dialog v-model="showPlotConfigurationDialog">
+        <!--BIND DATA DIALOG STARTS-->
+        <q-dialog v-model="showBindDataDialog">
             <q-card class="app-bg-color-5" style="min-width: 500px; max-width: 90vw;">
                 <q-card-section>
-                    <div class="text-h6">Plot configuration</div>
+                    <div class="text-h6">Bind data</div>
                 </q-card-section>
 
                 <q-card-section>
-                    <!-- DATABASE SELECTOR STARTS -->
                     <q-card flat bordered class="q-mb-md">
                         <q-card-section class="q-pb-sm">
                             <div class="row items-center justify-between q-mb-sm">
                                 <div class="text-caption text-weight-medium" style="color: var(--q-secondary)">
                                     DuckDB database
                                 </div>
-                                <q-btn
-                                    flat
-                                    round
-                                    dense
-                                    size="sm"
-                                    icon="refresh"
-                                    :loading="dbsLoading"
-                                    @click="loadDatabases"
-                                    title="Refresh database list"
-                                />
                             </div>
 
                             <q-select
@@ -246,18 +252,29 @@ const PlotRenderer = defineComponent({
                             <div v-if="selectedDb" class="text-caption q-mt-xs ellipsis" style="color: var(--q-secondary); font-family: monospace">
                                 {{ selectedDb.path }}
                             </div>
-                        </q-card-section>
-                    </q-card>
-                    <!-- DATABASE SELECTOR ENDS -->
 
-                    <!-- SQL QUERY PANEL STARTS -->
-                    <q-card flat bordered class="q-mb-md">
-                        <q-card-section class="q-pb-sm">
-                            <div class="text-caption text-weight-medium q-mb-xs" style="color: var(--q-secondary)">
-                                SQL query — runs against DuckDB via Flask
-                            </div>
                             <q-input
-                                v-model="sqlQuery"
+                                class="q-mt-md"
+                                v-model="sqlQuery.layer"
+                                outlined
+                                dense
+                                label="Layer"
+                                :input-style="{ fontFamily: 'monospace', fontSize: '13px' }"
+                            />
+
+                            <q-input
+                                class="q-mt-md"
+                                v-model="sqlQuery.cols"
+                                outlined
+                                dense
+                                label="Columns"
+                                :input-style="{ fontFamily: 'monospace', fontSize: '13px' }"
+                            />
+
+                            <q-input
+                                class="q-mt-md"
+                                v-model="sqlQuery.condition"
+                                placeholder="Insert condition for query"
                                 type="textarea"
                                 outlined
                                 dense
@@ -269,66 +286,66 @@ const PlotRenderer = defineComponent({
                                 @keydown.ctrl.enter.prevent="runQuery"
                                 @keydown.meta.enter.prevent="runQuery"
                             />
+
                             <div class="row items-center justify-between q-mt-sm">
-                                <span class="text-caption" style="color: var(--q-secondary)">
-                                    Ctrl+Enter to run
-                                </span>
                                 <q-btn
                                     color="primary"
                                     size="sm"
                                     label="Fetch data"
                                     icon="play_arrow"
                                     :loading="queryLoading"
-                                    :disable="!sqlQuery.trim()"
+                                    :disable="!sqlQuery.layer.trim()"
                                     @click="fetchPlotDataBasedOnQuery()"
                                 />
                             </div>
+
                         </q-card-section>
-
-                        <q-separator  />
-
-                        <!-- PLOT SPECS START -->
-                        <q-card-section>
-                            <div class="text-caption text-weight-medium q-mb-sm" style="color: var(--q-secondary)">
-                                Mark options
-                            </div>
-
-                            <div class="row q-col-gutter-sm">
-
-                                <!-- x -->
-                                <div class="col-6">
-                                    <q-input
-                                        v-model="plotSpecs.x"
-                                        outlined
-                                        dense
-                                        label="x"
-                                        :input-style="{ fontFamily: 'monospace', fontSize: '13px' }"
-                                    />
-                                </div>
-
-                                <!-- y -->
-                                <div class="col-6">
-                                    <q-input
-                                        v-model="plotSpecs.y"
-                                        outlined
-                                        dense
-                                        label="y"
-                                        :input-style="{ fontFamily: 'monospace', fontSize: '13px' }"
-                                    />
-                                </div>
-
-                            <div class="row items-center q-mt-md">
-                                <q-badge color="secondary">
-                                    Size: {{ plotPointsSize }}
-                                </q-badge>
-                                <q-slider v-model="plotPointsSize" :min="1" :max="10" :step="1" />
-                            </div>
-                        </q-card-section>
-                        <!-- PLOT SPECS END -->
-
-
                     </q-card>
-                    <!-- SQL QUERY PANEL ENDS -->
+                </q-card-section>
+            </q-card>
+        </q-dialog>
+        <!--BIND DATA DIALOG ENDS-->
+
+        <!--PLOT CONFIGURATION DIALOG STARTS-->
+        <q-dialog v-model="showPlotConfigurationDialog">
+            <q-card class="app-bg-color-5" style="min-width: 500px; max-width: 90vw;">
+                <q-card-section>
+                    <div class="text-h6">Plot configuration</div>
+                </q-card-section>
+                <!-- PLOT SPECS START -->
+                <q-card-section>
+                    <div class="text-caption text-weight-medium q-mb-sm" style="color: var(--q-secondary)">
+                        Mark options
+                    </div>
+
+                    <!-- x -->
+                    <div class="col-6">
+                        <q-input
+                            v-model="plotSpecs.x"
+                            outlined
+                            dense
+                            label="x"
+                            :input-style="{ fontFamily: 'monospace', fontSize: '13px' }"
+                        />
+                    </div>
+
+                    <!-- y -->
+                    <div class="col-6 q-mt-md">
+                        <q-input
+                            v-model="plotSpecs.y"
+                            outlined
+                            dense
+                            label="y"
+                            :input-style="{ fontFamily: 'monospace', fontSize: '13px' }"
+                        />
+                    </div>
+
+                    <div class="row items-center q-mt-md">
+                        <q-badge color="secondary">
+                            Size: {{ plotPointsSize }}
+                        </q-badge>
+                        <q-slider v-model="plotPointsSize" :min="1" :max="10" :step="1" />
+                    </div>
 
                     <div class="row items-center">
                         <q-btn
@@ -337,11 +354,9 @@ const PlotRenderer = defineComponent({
                             label="Make plot"
                             icon="play_arrow"
                             :loading="queryLoading"
-                            :disable="!sqlQuery.trim()"
                             @click="renderPlot()"
                         />
                     </div>
-
                 </q-card-section>
             </q-card>
         </q-dialog>

@@ -850,16 +850,23 @@ def api_get_project_duckdkb():
 @apiroutes.route("/api/fetch-plot-data", methods=["POST"])
 def api_fetch_plot_data():
     if not tools.is_module_installed('pyarrow'):
-        return "pyarrow is not installed"
+        return "pyarrow is not installed", 400
     try:
         data = request.get_json()
         projectID = data['projectID']
         DBpath = data['DBpath']
-        sqlQuery = data['sqlQuery']
-        sqlQuery = sqlQuery.strip()
+        query = data['sqlQuery']
 
-        if not sqlQuery:
-            return jsonify({"error": "No query provided"}), 400
+        layer = query['layer'].strip()
+        layerCols = query['cols'].strip()
+        queryCondition = query['condition'].strip()
+
+        if not PUTL.omilayer_exists(projectID, DBpath, layer):
+            return "Layer does not exist.", 400
+
+        sqlQuery = f"SELECT {layerCols} FROM {layer}"
+        if queryCondition:
+            sqlQuery += f" {queryCondition}"
 
         df = PUTL.get_data_from_omilayer_for_plotting(projectID, DBpath, sqlQuery)
     except Exception as e:
@@ -877,3 +884,4 @@ def api_fetch_plot_data():
         mimetype="application/vnd.apache.arrow.stream",
         headers={"Content-Type": "application/vnd.apache.arrow.stream"}
     )
+

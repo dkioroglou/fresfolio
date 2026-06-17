@@ -26,7 +26,8 @@ def init():
 
 @frescli.command()
 @click.option("--port", "-p", type=int, default=5000, help="Port to be used by fresfolio.")
-def start(port):
+@click.option("--broadcast", "-b", is_flag=True, help="Flag for broadcasting in the local network.")
+def start(port, broadcast):
     """Start fresfolio."""
     if not is_app_initialized():
         exit()
@@ -49,16 +50,10 @@ def start(port):
         tools.set_app_setting("has_set_uuids", 1)
 
     from fresfolio.main import app
-    app.run(port=port, debug=True)
-
-@frescli.command()
-@click.option("--port", "-p", type=int, default=5000, help="Port to be used by fresfolio.")
-def broadcast(port):
-    """Start fresfolio in broadcasting mode."""
-    if not is_app_initialized():
-        exit()
-    from fresfolio.main import app
-    app.run(host="0.0.0.0", port=port)
+    if broadcast:
+        app.run(host="0.0.0.0", port=port, debug=True)
+    else:
+        app.run(port=port, debug=True)
 
 @frescli.command()
 def info():
