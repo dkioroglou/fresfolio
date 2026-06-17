@@ -30,6 +30,12 @@
         <!-- QUASAR JS PRODUCTION -->
         <script type="text/javascript" src="{{url_for('static', filename='js/quasar.umd.prod.js')}}"></script>
 
+        <!-- VGPLOT JS -->
+        <script type="module">
+            import * as vg from "/static/js/vgplot.js";
+            window.vg = vg;
+        </script>
+
         <!-- VUE JS IMPORTS -->
         <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/components/vue_imports.js')}}"></script>
 
@@ -37,6 +43,7 @@
         <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/components/section_content.js')}}"></script>
         <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/components/section_card.js')}}"></script>
         <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/components/todos.js')}}"></script>
+        <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/components/plot_renderer.js')}}"></script>
         <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/compositions/project_layout.js')}}"></script>
 
         <!-- VUE JS PROJECTS-LAYOUT -->

@@ -1,7 +1,8 @@
 const ProjectLayout = defineComponent({
     components: {
         SectionCard,
-        Todos
+        Todos,
+        PlotRenderer
     },
     props:['selectedProjectID', 'selectedProjectName'],
     data () {
@@ -69,7 +70,8 @@ const ProjectLayout = defineComponent({
             isExpanded: false,
             initialCode: "",
             processesList: [],
-            processPollingInterval: null
+            processPollingInterval: null,
+            plotDrawerOpen: false
         }
     },
     methods: {
@@ -89,6 +91,7 @@ const ProjectLayout = defineComponent({
             this.viewDrawerOpen = false;
             this.pinnedDrawerOpen = false;
             this.processesDrawerOpen = false;
+            this.plotDrawerOpen = false;
             this.searchDrawerOpen = !this.searchDrawerOpen;
         },
         toggleViewDrawer() {
@@ -96,6 +99,7 @@ const ProjectLayout = defineComponent({
             this.searchDrawerOpen = false;
             this.pinnedDrawerOpen = false;
             this.processesDrawerOpen = false;
+            this.plotDrawerOpen = false;
             this.viewDrawerOpen = !this.viewDrawerOpen;
         },
         togglePinnedDrawer() {
@@ -103,6 +107,7 @@ const ProjectLayout = defineComponent({
             this.searchDrawerOpen = false;
             this.viewDrawerOpen = false;
             this.processesDrawerOpen = false;
+            this.plotDrawerOpen = false;
             this.pinnedDrawerOpen = !this.pinnedDrawerOpen;
         },
         toggleTodosDrawer() {
@@ -110,6 +115,7 @@ const ProjectLayout = defineComponent({
             this.searchDrawerOpen = false;
             this.viewDrawerOpen = false;
             this.processesDrawerOpen = false;
+            this.plotDrawerOpen = false;
             this.todosDrawerOpen = !this.todosDrawerOpen;
         },
         toggleProcessesDrawer() {
@@ -117,7 +123,16 @@ const ProjectLayout = defineComponent({
             this.searchDrawerOpen = false;
             this.viewDrawerOpen = false;
             this.todosDrawerOpen = false;
+            this.plotDrawerOpen = false;
             this.processesDrawerOpen = !this.processesDrawerOpen;
+        },
+        togglePlotDrawer() {
+            this.pinnedDrawerOpen = false;
+            this.searchDrawerOpen = false;
+            this.viewDrawerOpen = false;
+            this.todosDrawerOpen = false;
+            this.processesDrawerOpen = false;
+            this.plotDrawerOpen = !this.plotDrawerOpen;
         },
         clearSearchSections() {
             this.searchDrawerOpen = false;
@@ -992,6 +1007,7 @@ const ProjectLayout = defineComponent({
             this.todosDrawerOpen = false;
             this.searchDrawerOpen = false;
             this.processesDrawerOpen = false
+            this.plotDrawerOpen = false;
         }
     },
     async mounted () {
@@ -1059,6 +1075,15 @@ const ProjectLayout = defineComponent({
                 size="md"
                 icon="terminal"
                 @click="toggleProcessesDrawer()"
+            />
+
+            <q-btn
+                round
+                class="q-mr-md"
+                color="primary"
+                size="md"
+                icon="bar_chart"
+                @click="togglePlotDrawer()"
             />
 
             <q-btn
@@ -1476,6 +1501,32 @@ const ProjectLayout = defineComponent({
     </q-drawer>
     <!-- PINNED DRAWER END -->
 
+    <!-- PLOT DRAWER START -->
+    <q-drawer 
+        overlay
+        v-model="plotDrawerOpen" 
+        side='right' 
+        class="app-page-container-color" 
+        :width="searchDrawerWidth()"
+    >
+        <div class="col q-px-xl">
+            <div class="q-mt-md q-mb-md row items-center justify-between">
+                <div class="row items-center">
+                    <q-btn 
+                        round
+                        color="primary" 
+                        size='sm' 
+                        @click="togglePlotDrawer()" 
+                        icon="close"
+                    />
+                    <h3 class="q-ml-md q-ma-none">Plot viewer</h3>
+                </div>
+            </div>
+                <plot-renderer :projectid="selectedProjectID" />
+            </div>
+        </div>
+    </q-drawer>
+    <!-- PLOT DRAWER END -->
 
 
     <q-page-container class="app-page-container-color">

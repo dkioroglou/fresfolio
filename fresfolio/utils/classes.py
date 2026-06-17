@@ -944,6 +944,16 @@ class ProjectsUtils:
             traceback.print_exc()
             return ([], [], "Cannot load layer data.")
 
+    def get_data_from_omilayer_for_plotting(self, projectID:str, DBpath:str, query:str) -> pd.DataFrame:
+        try:
+            projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
+            omi = Omilayers(str(Path(projectDirectory).joinpath(DBpath)))
+            df = omi.run(query, fetchdf=True)
+        except Exception:
+            traceback.print_exc()
+            return pd.DataFrame()
+        return df
+
     def get_section_directory_tree(self, projectID:str, sectionID:int) -> list:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         def build_tree(_path):

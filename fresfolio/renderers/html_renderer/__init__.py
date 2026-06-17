@@ -12,7 +12,6 @@ from fresfolio.renderers.multiline_renderers import (HtmlParagraphTag,
                                                     HtmlFiguresTag,
                                                     HtmlFilesTag,
                                                     HtmlOmilayersTableTag,
-                                                    HtmlOmilayersPlotTag,
                                                     HtmlProcessTag,
                                                     PDFParagraphTag,
                                                     PDFCodeTag,
@@ -23,7 +22,6 @@ from fresfolio.renderers.multiline_renderers import (HtmlParagraphTag,
                                                     PDFFiguresTag,
                                                     PDFFilesTag,
                                                     PDFOmilayersTableTag,
-                                                    PDFOmilayersPlotTag,
                                                     PDFProcessTag
                                                     )
 
@@ -59,7 +57,6 @@ class HtmlRenderer:
                 "figures": HtmlFiguresTag,
                 "files": HtmlFilesTag,
                 "omitable": HtmlOmilayersTableTag,
-                "omiplot": HtmlOmilayersPlotTag,
                 "process": HtmlProcessTag
                 }
 
@@ -106,7 +103,7 @@ class HtmlRenderer:
     @property
     def _flush_buffer(self):
         if self.buffer or self.tag_args:
-            customRenderedTags = ['figures', 'table', 'files', 'omitable', 'omiplot', 'process']
+            customRenderedTags = ['figures', 'table', 'files', 'omitable', 'process']
             try:
                 rendererCLS = self.html_tags[self.begin_tag]
             except Exception:
@@ -137,15 +134,6 @@ class HtmlRenderer:
                     self._addNewContentToLastContainer(self.begin_tag)
                     self._lastContainerContent[-1]['has_omilayers'] = int(tools.is_module_installed('omilayers'))
                     if tools.is_module_installed('omilayers'):
-                        renderer = rendererCLS(self.projectName, self.buffer)
-                        filesJSON = renderer.render_lines()
-                        for JSON in filesJSON:
-                            self._addHTMLToLastInsertedContent(JSON)
-                elif self.begin_tag == "omiplot":
-                    self._addNewContentToLastContainer(self.begin_tag)
-                    self._lastContainerContent[-1]['has_omilayers'] = int(tools.is_module_installed('omilayers'))
-                    self._lastContainerContent[-1]['has_bokeh'] = int(tools.is_module_installed('bokeh'))
-                    if tools.is_module_installed('omilayers') and tools.is_module_installed('bokeh'):
                         renderer = rendererCLS(self.projectName, self.buffer)
                         filesJSON = renderer.render_lines()
                         for JSON in filesJSON:
@@ -364,7 +352,6 @@ class PDFRenderer:
                 "figures": PDFFiguresTag,
                 "files": PDFFilesTag,
                 "omitable": PDFOmilayersTableTag,
-                "omiplot": PDFOmilayersPlotTag
                 }
 
         self.syntax_error_message = '#text(fill: rgb("#ff4646"))[Syntax error]'
@@ -405,7 +392,7 @@ class PDFRenderer:
     @property
     def _flush_buffer(self):
         if self.buffer or self.tag_args:
-            customRenderedTags = ['figures', 'table', 'files', 'omitable', 'omiplot']
+            customRenderedTags = ['figures', 'table', 'files', 'omitable']
             try:
                 rendererCLS = self.pdf_tags[self.begin_tag]
             except Exception:
@@ -436,15 +423,6 @@ class PDFRenderer:
                     self._addNewContentToLastContainer(self.begin_tag)
                     self._lastContainerContent[-1]['has_omilayers'] = int(tools.is_module_installed('omilayers'))
                     if tools.is_module_installed('omilayers'):
-                        renderer = rendererCLS(self.projectName, self.buffer)
-                        filesJSON = renderer.render_lines()
-                        for JSON in filesJSON:
-                            self._addTEXTToLastInsertedContent(JSON)
-                elif self.begin_tag == "omiplot":
-                    self._addNewContentToLastContainer(self.begin_tag)
-                    self._lastContainerContent[-1]['has_omilayers'] = int(tools.is_module_installed('omilayers'))
-                    self._lastContainerContent[-1]['has_bokeh'] = int(tools.is_module_installed('bokeh'))
-                    if tools.is_module_installed('omilayers') and tools.is_module_installed('bokeh'):
                         renderer = rendererCLS(self.projectName, self.buffer)
                         filesJSON = renderer.render_lines()
                         for JSON in filesJSON:

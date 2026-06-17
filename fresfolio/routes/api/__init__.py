@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, send_from_directory
+from flask import Blueprint, jsonify, request, send_from_directory, Response
 from pathlib import Path
 import re
 import traceback
@@ -8,8 +8,8 @@ import json
 from fresfolio.utils import tools
 from fresfolio.utils.classes import ProjectsUtils
 
-if tools.is_module_installed("omilayers") and tools.is_module_installed("bokeh"):
-    from fresfolio.plotting import omiplot
+if tools.is_module_installed("pyarrow"):
+    import pyarrow as pa
 
 apiroutes = Blueprint('apiroutes', __name__)
 PUTL = ProjectsUtils()
@@ -490,17 +490,6 @@ def upload_files_to_section():
         return '', 400
     return "", 200
 
-@apiroutes.route('/api/render-plot', methods=['POST'])
-def api_render_plot():
-    try:
-        data = request.get_json()
-        oplt = getattr(omiplot, data['plot-type'])
-        oplt(plot_data=data)
-    except Exception:
-        traceback.print_exc()
-        return "Cannot render plot", 400
-    return "", 200
-
 @apiroutes.route('/api/create-new-omilayer', methods=['POST'])
 def api_create_new_omilayer():
     try:
@@ -715,8 +704,6 @@ def app_api_sections_to_pdf():
                         continue
                     elif contentJSON['type'] == "omitable":
                         continue
-                    elif contentJSON['type'] == "omiplot":
-                        continue
                     else:
                         contentText = contentJSON['text'][0] + "\n"
                     pdf_content.append(contentText)
@@ -844,3 +831,49 @@ def api_get_process_output():
         traceback.print_exc()
         return 'Cannot read log file', 400
     return jsonify({"log":logJSON[stdType]}), 200
+
+@apiroutes.route('/api/get-project-duckdbs', methods=['POST'])
+def api_get_project_duckdkb():
+    try:
+        data = request.get_json()
+        projectID = data['projectID']
+        projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
+        dbs = []
+        for pathdb in Path(projectDirectory).rglob("*.duckdb"):
+            pathdbRelPath = str(pathdb.relative_to(projectDirectory))
+            dbs.append({"label":pathdbRelPath})
+    except Exception:
+        traceback.print_exc()
+        return 'Cannot load project databases', 400
+    return jsonify(dbs), 200
+
+@apiroutes.route("/api/fetch-plot-data", methods=["POST"])
+def api_fetch_plot_data():
+    if not tools.is_module_installed('pyarrow'):
+        return "pyarrow is not installed"
+    try:
+        data = request.get_json()
+        projectID = data['projectID']
+        DBpath = data['DBpath']
+        sqlQuery = data['sqlQuery']
+        sqlQuery = sqlQuery.strip()
+
+        if not sqlQuery:
+            return jsonify({"error": "No query provided"}), 400
+
+        df = PUTL.get_data_from_omilayer_for_plotting(projectID, DBpath, sqlQuery)
+    except Exception as e:
+        return "Error executing query", 400
+
+    table = pa.Table.from_pandas(df, preserve_index=False)
+    sink = pa.BufferOutputStream()
+    writer = pa.ipc.new_stream(sink, table.schema)
+    writer.write_table(table)
+    writer.close()
+    arrow_bytes = sink.getvalue().to_pybytes()
+
+    return Response(
+        arrow_bytes,
+        mimetype="application/vnd.apache.arrow.stream",
+        headers={"Content-Type": "application/vnd.apache.arrow.stream"}
+    )

@@ -495,15 +495,6 @@ const SectionCard = defineComponent({
             )
             edit.focus()
         },
-        insertOmilayersPlotTagToSectionEditor() {
-            const edit = this.$refs.sectionEditorRef
-            edit.caret.restore()
-            edit.runCmd(
-            'insertHTML',
-                '\\begin{omiplot}<br>file:<br>layer:<br>name:<br>save-dir:<br>\\end{omiplot}'
-            )
-            edit.focus()
-        },
         insertArrowToSectionEditor(arrow) {
             const edit = this.$refs.sectionEditorRef
             edit.caret.restore()
@@ -815,7 +806,6 @@ const SectionCard = defineComponent({
                                 'codeblock',
                                 'math',
                                 'omitable',
-                                'omiplot',
                                 'arrows'
                                 ]
                                 ]"
@@ -964,18 +954,6 @@ const SectionCard = defineComponent({
                                         size="sm"
                                         label="Omitable"
                                         @click="insertOmilayersTableTagToSectionEditor"
-                                    />
-                                </template>
-
-                                <template v-slot:omiplot>
-                                    <q-btn
-                                        dense
-                                        unelevated
-                                        color="secondary"
-                                        text-color="white"
-                                        size="sm"
-                                        label="Omiplot"
-                                        @click="insertOmilayersPlotTagToSectionEditor"
                                     />
                                 </template>
 
