@@ -85,6 +85,7 @@ const PlotRenderer = defineComponent({
                     await this.refreshCoordinator();
                     await this.insertData();
                     this.dataBinded = true;
+                    this.showBindDataDialog = false;
                     this.$q.notify({
                         message: "Plot data fetched",
                         color: 'green',
@@ -105,10 +106,10 @@ const PlotRenderer = defineComponent({
             }
         },
         async renderPlot() {
+            this.isPlotRendering = true;
             this.plotErrorMessage = "";
             this.$refs.container.innerHTML = "";
             this.showPlotConfigurationDialog = false;
-            this.isPlotRendering = true;
             try {
                 this.$refs.container.innerHTML = "";
                 const dashboard = vg.plot(
@@ -127,12 +128,17 @@ const PlotRenderer = defineComponent({
 
                 this.$refs.container.appendChild(dashboard);
             } catch (err) {
-                this.plotErrorMessage = err.message;
+                // this.plotErrorMessage = err.message;
+                this.plotErrorMessage = "ERROR";
             } finally {
                 this.isPlotRendering = false;
             }
         },
         async initCoordinator() {
+            // Wait for vgplot to load.
+            while (!window.vg) {
+                await new Promise(resolve => setTimeout(resolve, 50)); // check every 50ms
+            }
             this._coordinator = vg.coordinator();
             if (!this._connector) {
                 // Only create connector once
@@ -193,10 +199,12 @@ const PlotRenderer = defineComponent({
                 />
                 <p class="app-spinner-text text-white">Plot rendering...</p>
             </div>
-            <div v-if="plotErrorMessage !== ''">
-                {{plotErrorMessage}}
+            <div v-else>
+                <div v-if="plotErrorMessage !== ''">
+                    {{plotErrorMessage}}
+                </div>
+                <div v-else ref="container"></div>
             </div>
-            <div ref="container"></div>
         </div>
 
         <!--BIND DATA DIALOG STARTS-->
