@@ -611,4 +611,25 @@ body.body--dark .app-note-green {
 .app-logviewer-container::-webkit-scrollbar-thumb:hover {
     background: #484f58;
 }
+#query {
+                position: absolute;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                right: 30%;
+            }
 
+            #logger {
+                position: absolute;
+                top: 40%;
+                left: 70%;
+                bottom: 0%;
+                right: 0;
+            }
+             #logger2 {
+                position: absolute;
+                top: 0%;
+                left: 70%;
+                bottom: 60%;
+                right: 0;
+            }

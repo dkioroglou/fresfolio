@@ -1,8 +1,17 @@
+const { defineComponent } = Vue;
+
+import SectionCard from '/static/js/vue_assets/components/section_card.js'
+import Todos from '/static/js/vue_assets/components/todos.js'
+import PlotRenderer from '/static/js/vue_assets/components/plot_renderer.js'
+import OmilayersRenderer from '/static/js/vue_assets/components/omilayers_renderer.js';
+
 const ProjectLayout = defineComponent({
     components: {
         SectionCard,
         Todos,
-        PlotRenderer
+        PlotRenderer,
+        OmilayersRenderer
+
     },
     props:['selectedProjectID', 'selectedProjectName'],
     data () {
@@ -71,7 +80,8 @@ const ProjectLayout = defineComponent({
             initialCode: "",
             processesList: [],
             processPollingInterval: null,
-            plotDrawerOpen: false
+            plotDrawerOpen: false,
+            omilayersDrawerOpen: false
         }
     },
     methods: {
@@ -92,6 +102,7 @@ const ProjectLayout = defineComponent({
             this.pinnedDrawerOpen = false;
             this.processesDrawerOpen = false;
             this.plotDrawerOpen = false;
+            this.omilayersDrawerOpen = false;
             this.searchDrawerOpen = !this.searchDrawerOpen;
         },
         toggleViewDrawer() {
@@ -100,6 +111,7 @@ const ProjectLayout = defineComponent({
             this.pinnedDrawerOpen = false;
             this.processesDrawerOpen = false;
             this.plotDrawerOpen = false;
+            this.omilayersDrawerOpen = false;
             this.viewDrawerOpen = !this.viewDrawerOpen;
         },
         togglePinnedDrawer() {
@@ -108,6 +120,7 @@ const ProjectLayout = defineComponent({
             this.viewDrawerOpen = false;
             this.processesDrawerOpen = false;
             this.plotDrawerOpen = false;
+            this.omilayersDrawerOpen = false;
             this.pinnedDrawerOpen = !this.pinnedDrawerOpen;
         },
         toggleTodosDrawer() {
@@ -116,6 +129,7 @@ const ProjectLayout = defineComponent({
             this.viewDrawerOpen = false;
             this.processesDrawerOpen = false;
             this.plotDrawerOpen = false;
+            this.omilayersDrawerOpen = false;
             this.todosDrawerOpen = !this.todosDrawerOpen;
         },
         toggleProcessesDrawer() {
@@ -124,6 +138,7 @@ const ProjectLayout = defineComponent({
             this.viewDrawerOpen = false;
             this.todosDrawerOpen = false;
             this.plotDrawerOpen = false;
+            this.omilayersDrawerOpen = false;
             this.processesDrawerOpen = !this.processesDrawerOpen;
         },
         togglePlotDrawer() {
@@ -132,7 +147,17 @@ const ProjectLayout = defineComponent({
             this.viewDrawerOpen = false;
             this.todosDrawerOpen = false;
             this.processesDrawerOpen = false;
+            this.omilayersDrawerOpen = false;
             this.plotDrawerOpen = !this.plotDrawerOpen;
+        },
+        toggleOmilayersRendererDrawer() {
+            this.pinnedDrawerOpen = false;
+            this.searchDrawerOpen = false;
+            this.viewDrawerOpen = false;
+            this.todosDrawerOpen = false;
+            this.processesDrawerOpen = false;
+            this.plotDrawerOpen = false;
+            this.omilayersDrawerOpen = !this.omilayersDrawerOpen;
         },
         clearSearchSections() {
             this.searchDrawerOpen = false;
@@ -1008,6 +1033,7 @@ const ProjectLayout = defineComponent({
             this.searchDrawerOpen = false;
             this.processesDrawerOpen = false
             this.plotDrawerOpen = false;
+            this.omilayersDrawerOpen = false;
         }
     },
     async mounted () {
@@ -1075,6 +1101,15 @@ const ProjectLayout = defineComponent({
                 size="md"
                 icon="terminal"
                 @click="toggleProcessesDrawer()"
+            />
+
+            <q-btn
+                round
+                class="q-mr-md"
+                color="primary"
+                size="md"
+                icon="table_chart"
+                @click="toggleOmilayersRendererDrawer()"
             />
 
             <q-btn
@@ -1528,6 +1563,33 @@ const ProjectLayout = defineComponent({
     </q-drawer>
     <!-- PLOT DRAWER END -->
 
+    <!-- OMIRENDERER DRAWER START -->
+    <q-drawer 
+        overlay
+        v-model="omilayersDrawerOpen" 
+        side='right' 
+        class="app-page-container-color" 
+        :width="searchDrawerWidth()"
+    >
+        <div class="col q-px-xl">
+            <div class="q-mt-md q-mb-md row items-center justify-between">
+                <div class="row items-center">
+                    <q-btn 
+                        round
+                        color="primary" 
+                        size='sm' 
+                        @click="togglePlotDrawer()" 
+                        icon="close"
+                    />
+                    <h3 class="q-ml-md q-ma-none">Omilayers viewer</h3>
+                </div>
+            </div>
+                <omilayers-renderer :projectid="selectedProjectID" />
+            </div>
+        </div>
+    </q-drawer>
+    <!-- OMIRENDERER DRAWER END -->
+
 
     <q-page-container class="app-page-container-color">
         <q-page class="q-px-xl">
@@ -1914,4 +1976,4 @@ const ProjectLayout = defineComponent({
   `
 });
 
-
+export default ProjectLayout;

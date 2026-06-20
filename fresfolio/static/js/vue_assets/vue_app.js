@@ -1,5 +1,6 @@
-// Create the Vue app and mount it
-//
+const { createApp } = Vue;
+import ProjectsLayout from '/static/js/vue_assets/compositions/projects_layout.js';
+
 const app = createApp({
   components: {
       ProjectsLayout

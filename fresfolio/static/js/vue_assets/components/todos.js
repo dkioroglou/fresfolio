@@ -1,3 +1,5 @@
+const { defineComponent } = Vue;
+
 const Todos = defineComponent({
     props: ['projectid', 'focus'],
     data() {
@@ -445,3 +447,5 @@ const Todos = defineComponent({
 
     `
 })
+
+export default Todos;

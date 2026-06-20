@@ -1,3 +1,6 @@
+const { defineComponent } = Vue;
+
+import ProjectLayout from '/static/js/vue_assets/compositions/project_layout.js';
 const ProjectsLayout = defineComponent({
     components: {
         ProjectLayout
@@ -497,4 +500,4 @@ const ProjectsLayout = defineComponent({
   `
 });
 
-
+export default ProjectsLayout;

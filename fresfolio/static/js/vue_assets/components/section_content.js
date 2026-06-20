@@ -1,3 +1,5 @@
+const { defineComponent } = Vue;
+
 const SectionContent = defineComponent({
     props: ['cJSON', 'cIDX'],
     data() {
@@ -1098,4 +1100,4 @@ const SectionContent = defineComponent({
     `
 });
 
-
+export default SectionContent;

@@ -1,3 +1,6 @@
+import * as vg from "/static/js/vgplot.js";
+const { defineComponent } = Vue;
+
 const PlotRenderer = defineComponent({
     props: ['projectid'],
     data() {
@@ -136,9 +139,9 @@ const PlotRenderer = defineComponent({
         },
         async initCoordinator() {
             // Wait for vgplot to load.
-            while (!window.vg) {
-                await new Promise(resolve => setTimeout(resolve, 50)); // check every 50ms
-            }
+            // while (!window.vg) {
+            //     await new Promise(resolve => setTimeout(resolve, 50)); // check every 50ms
+            // }
             this._coordinator = vg.coordinator();
             if (!this._connector) {
                 // Only create connector once
@@ -373,3 +376,6 @@ const PlotRenderer = defineComponent({
 
 `
 });
+
+
+export default PlotRenderer;

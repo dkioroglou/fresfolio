@@ -1,3 +1,6 @@
+import SectionContent from '/static/js/vue_assets/components/section_content.js'
+const { ref, defineComponent } = Vue;
+
 const SectionCard = defineComponent({
     components: {
         SectionContent
@@ -1151,4 +1154,4 @@ const SectionCard = defineComponent({
     `
 });
 
-
+export default SectionCard;

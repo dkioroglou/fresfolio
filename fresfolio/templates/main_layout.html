@@ -16,6 +16,12 @@
         <link rel="stylesheet" href="{{url_for('static', filename='css/katex.min.css')}}">
         <script src="{{ url_for('static', filename='js/katex.min.js') }}"></script>
 
+        <!-- PERSPECTIVE -->
+        <link href="https://cdn.jsdelivr.net/npm/@perspective-dev/server/dist/wasm/perspective-server.wasm" as="fetch" type="application/wasm" crossorigin="anonymous" />
+        <link href="https://cdn.jsdelivr.net/npm/@perspective-dev/viewer/dist/wasm/perspective-viewer.wasm" as="fetch" type="application/wasm" crossorigin="anonymous" />
+        <link href="https://cdn.jsdelivr.net/npm/superstore-arrow/superstore.lz4.arrow" as="fetch" type="arraybuffer" crossorigin="anonymous" />
+        <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/@perspective-dev/viewer/dist/css/themes.css" />
+
         <title>APP</title>
     </head>
 
@@ -30,27 +36,8 @@
         <!-- QUASAR JS PRODUCTION -->
         <script type="text/javascript" src="{{url_for('static', filename='js/quasar.umd.prod.js')}}"></script>
 
-        <!-- VGPLOT JS -->
-        <script type="module">
-            import * as vg from "/static/js/vgplot.js";
-            window.vg = vg;
-        </script>
-
-        <!-- VUE JS IMPORTS -->
-        <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/components/vue_imports.js')}}"></script>
-
-        <!-- VUE JS PROJECT-LAYOUT -->
-        <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/components/section_content.js')}}"></script>
-        <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/components/section_card.js')}}"></script>
-        <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/components/todos.js')}}"></script>
-        <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/components/plot_renderer.js')}}"></script>
-        <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/compositions/project_layout.js')}}"></script>
-
-        <!-- VUE JS PROJECTS-LAYOUT -->
-        <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/compositions/projects_layout.js')}}"></script>
-
-        <!-- VUE JS EXPOSE-LAYOUTS -->
-        <script type="text/javascript" src="{{url_for('static', filename='js/vue_assets/vue_app.js')}}"></script>
+        <!-- VUE APP JS -->
+        <script type="module" src="{{url_for('static', filename='js/vue_assets/vue_app.js')}}"></script>
         
         <!-- ACE JS -->
         <script src="{{url_for('static', filename='ace_builds/src/ace.js')}}" type="text/javascript" charset="utf-8"></script>
