@@ -9,20 +9,24 @@ const PlotRenderer = defineComponent({
             loading: false,
             error: null,
             plotPointsSize: 5,
-            sqlQuery: {
-                layer: "",
-                cols: "*",
-                condition: ""
-            },
             queryHistory: [],
             queryError: null,
             queryLoading: false,
             databases: [],
-            selectedDb: "",
+            selectedDb: null,
+            selectedLayer: null,
+            availableOmilayers: [],
+            showSelectDBDialog: false,
+            showSelectOmilayerDialog: false,
+            showQueryLayerDialog: false,
+            sqlQuery: {
+                cols: "*",
+                condition: ""
+            },
             showBindDataDialog: false,
             showPlotConfigurationDialog: false,
             isPlotRendering: false,
-            dataBinded: false,
+            layerFetched: false,
             plotSpecs: {
                 x: null,
                 y: null
@@ -59,8 +63,53 @@ const PlotRenderer = defineComponent({
                   console.error(error);
             }
         },
-        async fetchPlotDataBasedOnQuery() {
-            this.dataBinded = false;
+        async getOmilayers(){
+            try {
+                const response = await fetch("/api/get-omilayers", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(
+                        {
+                            "projectID": this.projectid,
+                            "DBpath": this.selectedDb,
+                        }
+                    )
+                });
+
+                if (response.ok) {
+                    this.availableOmilayers = await response.json();
+                    this.showSelectOmilayerDialog = true;
+                } else {
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        },
+        selectDB(dbName){
+            this.selectedDb = dbName;
+            this.selectedLayer = null;
+            this.showSelectDBDialog = false;
+            this.reset_sqlQuery();
+        },
+        selectLayer(layerName){
+            this.selectedLayer = layerName;
+            this.showSelectOmilayerDialog = false;
+            this.reset_sqlQuery();
+        },
+        reset_sqlQuery(){
+            this.sqlQuery = { cols: "*", condition: "" }
+            this.layerFetched = false;
+        },
+        async fetchLayerData() {
+            this.layerFetched = false;
             if (!this._coordinatorReady) {
                 this.$q.notify({
                     message: "WASM coordinator is not ready",
@@ -69,7 +118,7 @@ const PlotRenderer = defineComponent({
                 })
             } else {
                 try {
-                    const response = await fetch("/api/fetch-plot-data", {
+                    const response = await fetch("/api/fetch-layer-data", {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
@@ -77,7 +126,8 @@ const PlotRenderer = defineComponent({
                         body: JSON.stringify(
                             {
                                 "projectID": this.projectid,
-                                "DBpath": this.selectedDb['label'],
+                                "DBpath": this.selectedDb,
+                                "selectedLayer": this.selectedLayer,
                                 "sqlQuery": this.sqlQuery
                             }
                         )
@@ -87,10 +137,9 @@ const PlotRenderer = defineComponent({
                     this.plotdata = new Uint8Array(await response.arrayBuffer());
                     await this.refreshCoordinator();
                     await this.insertData();
-                    this.dataBinded = true;
-                    this.showBindDataDialog = false;
+                    this.layerFetched = true;
                     this.$q.notify({
-                        message: "Plot data fetched",
+                        message: "Layer data fetched",
                         color: 'green',
                         position: "top-right"
                     })
@@ -138,10 +187,6 @@ const PlotRenderer = defineComponent({
             }
         },
         async initCoordinator() {
-            // Wait for vgplot to load.
-            // while (!window.vg) {
-            //     await new Promise(resolve => setTimeout(resolve, 50)); // check every 50ms
-            // }
             this._coordinator = vg.coordinator();
             if (!this._connector) {
                 // Only create connector once
@@ -161,6 +206,26 @@ const PlotRenderer = defineComponent({
             await this._coordinator.exec(`DROP TABLE IF EXISTS plotdata`);
             await con.insertArrowFromIPCStream(this.plotdata, { name: "plotdata" });
 
+        },
+        async dropLayerData() {
+            this._coordinator.clear();
+            await this._coordinator.exec(`DROP TABLE IF EXISTS plotdata`);
+            this.$refs.container.innerHTML = "";
+            this.selectedLayer = null;
+            this.selectedDb = null;
+            this.reset_sqlQuery();
+            this.plotSpecs = { x: null, y: null }
+            this.layerFetched = false
+        }
+    },
+    computed: {
+        filteredOmilayers() {
+            const q = (this.filterQuery || '').toLowerCase().trim();
+            return this.availableOmilayers.filter(layer =>
+                !q ||
+                layer.name?.toLowerCase().includes(q) ||
+                layer.info?.toLowerCase().includes(q)
+            );
         }
     },
     async mounted() {
@@ -174,27 +239,68 @@ const PlotRenderer = defineComponent({
         this._coordinatorReady = false;
     },
     template: `
-        <div class="row items-center q-mb-sm">
-            <q-btn 
-                color="primary" 
-                size='sm' 
-                @click="showBindDataDialog = true" 
-                icon='commit'
-                label="Bind data"
-            />
-            <q-btn
-                class="q-ml-md"
-                color="primary" 
-                size='sm' 
-                @click="showPlotConfigurationDialog = true" 
-                icon='settings'
-                :disable="!dataBinded"
-                label="Plot configuration"
-            />
+        <div class="column">
+            <div class="row items-center q-gutter-x-sm q-mb-sm">
+                <q-btn
+                    color="primary"
+                    outline
+                    label="Select database"
+                    @click="showSelectDBDialog=true"
+                />
+
+                <q-btn
+                    color="primary"
+                    outline
+                    label="Select layer"
+                    :disable="selectedDb === null"
+                    @click="getOmilayers()"
+                />
+
+                <q-btn
+                    color="primary"
+                    outline
+                    label="Query layer"
+                    :disable="selectedLayer === null"
+                    @click="showQueryLayerDialog = true"
+                />
+
+                <q-btn
+                    color="primary"
+                    label="Fetch layer"
+                    :loading="fetchingLayer"
+                    :disable="selectedLayer === null"
+                    @click="fetchLayerData()"
+                />
+
+                <q-btn
+                    class="q-ml-md"
+                    color="primary" 
+                    @click="showPlotConfigurationDialog = true" 
+                    icon='settings'
+                    :disable="!layerFetched"
+                    label="Make plot"
+                />
+
+                <q-btn
+                    class="q-ml-md"
+                    color="primary" 
+                    @click="dropLayerData()" 
+                    icon='settings'
+                    :disable="!layerFetched"
+                    label="Delete plot"
+                />
+
+            </div>
+            <div class="row items-center q-gutter-x-sm q-mb-xs q-ml-xs">
+                Selected database: {{selectedDb}}
+            </div>
+            <div class="row items-center q-gutter-x-sm q-mb-sm q-ml-xs">
+                Selected layer: {{selectedLayer}}
+            </div>
+
         </div>
 
-
-        <div class="col q-px-xl plot-tooltip">
+        <div>
             <div v-if="isPlotRendering" class="app-spinner-container q-mt-xl">
                 <q-spinner
                     color="white"
@@ -210,68 +316,16 @@ const PlotRenderer = defineComponent({
             </div>
         </div>
 
-        <!--BIND DATA DIALOG STARTS-->
-        <q-dialog v-model="showBindDataDialog">
+        <!--QUERY LAYER DIALOG STARTS-->
+        <q-dialog v-model="showQueryLayerDialog">
             <q-card class="app-bg-color-5" style="min-width: 500px; max-width: 90vw;">
                 <q-card-section>
-                    <div class="text-h6">Bind data</div>
+                    <div class="text-h6">Query layers</div>
                 </q-card-section>
 
                 <q-card-section>
                     <q-card flat bordered class="q-mb-md">
                         <q-card-section class="q-pb-sm">
-                            <div class="row items-center justify-between q-mb-sm">
-                                <div class="text-caption text-weight-medium" style="color: var(--q-secondary)">
-                                    DuckDB database
-                                </div>
-                            </div>
-
-                            <q-select
-                                v-model="selectedDb"
-                                :options="databases"
-                                option-label="label"
-                                option-value="path"
-                                outlined
-                                dense
-                                emit-value
-                                map-options
-                                placeholder="Select a database…"
-                                no-options-label="No databases found"
-                            >
-                                <template #option="{ itemProps, opt }">
-                                    <q-item v-bind="itemProps">
-                                        <q-item-section>
-                                            <q-item-label style="font-family: monospace; font-size: 13px">
-                                                {{ opt.label }}
-                                            </q-item-label>
-                                        </q-item-section>
-                                    </q-item>
-                                </template>
-                                <template #selected-item="{ opt }">
-                                    <span style="font-family: monospace; font-size: 13px">{{ opt?.label }}</span>
-                                </template>
-                                <template #no-option>
-                                    <q-item>
-                                        <q-item-section class="text-caption text-grey">
-                                            No .duckdb files found
-                                        </q-item-section>
-                                    </q-item>
-                                </template>
-                            </q-select>
-
-                            <!-- Selected db full path hint -->
-                            <div v-if="selectedDb" class="text-caption q-mt-xs ellipsis" style="color: var(--q-secondary); font-family: monospace">
-                                {{ selectedDb.path }}
-                            </div>
-
-                            <q-input
-                                class="q-mt-md"
-                                v-model="sqlQuery.layer"
-                                outlined
-                                dense
-                                label="Layer"
-                                :input-style="{ fontFamily: 'monospace', fontSize: '13px' }"
-                            />
 
                             <q-input
                                 class="q-mt-md"
@@ -292,30 +346,80 @@ const PlotRenderer = defineComponent({
                                 autogrow
                                 :rows="3"
                                 style="font-family: monospace; font-size: 13px"
-                                :error="!!queryError"
-                                :error-message="queryError"
-                                @keydown.ctrl.enter.prevent="runQuery"
-                                @keydown.meta.enter.prevent="runQuery"
                             />
-
-                            <div class="row items-center justify-between q-mt-sm">
-                                <q-btn
-                                    color="primary"
-                                    size="sm"
-                                    label="Fetch data"
-                                    icon="play_arrow"
-                                    :loading="queryLoading"
-                                    :disable="!sqlQuery.layer.trim()"
-                                    @click="fetchPlotDataBasedOnQuery()"
-                                />
-                            </div>
 
                         </q-card-section>
                     </q-card>
                 </q-card-section>
             </q-card>
         </q-dialog>
-        <!--BIND DATA DIALOG ENDS-->
+        <!--QUERY LAYER DIALOG ENDS-->
+
+        <!-- SHOW SELECT DB DIALOG START -->
+        <q-dialog v-model="showSelectDBDialog">
+            <q-card class="full-width app-bg-color-5">
+                <q-card-section class="full-width">
+                    <q-list dense class="full-width">
+                        <q-item 
+                            v-for="(item, index) in databases" 
+                            :key="index" 
+                            clickable 
+                            @click="selectDB(item.label)"
+                        >
+                            <q-item-section>
+                                <q-item-label>{{ item.label }}</q-item-label>
+                            </q-item-section>
+                        </q-item>
+                    </q-list>
+                </q-card-section>
+            </q-card>
+        </q-dialog>
+        <!-- SHOW SELECT DB DIALOG END -->
+
+        <!-- SHOW OMILAYERS DIALOG START -->
+        <q-dialog v-model="showSelectOmilayerDialog">
+            <q-card class="full-width app-bg-color-5">
+                <q-card-section class="full-width">
+
+                    <q-input
+                        v-model="filterQuery"
+                        placeholder="Filter layers..."
+                        dark
+                        dense
+                        clearable
+                        debounce="200"
+                        class="q-mb-md"
+                    >
+                        <template #prepend>
+                            <q-icon name="search" />
+                        </template>
+                    </q-input>
+
+                    <q-list dense class="full-width">
+                        <template v-for="(JSON, index) in filteredOmilayers" :key="index">
+                            <q-item-section class="full-width">
+                                <div class="q-mb-sm row items-center justify-between">
+                                    <q-item-label><b>{{JSON['name']}}</b></q-item-label>
+                                    <div>
+                                        <q-btn class='q-mr-sm' round color="secondary" size="sm" icon="table_rows" @click="selectLayer(JSON['name'])">
+                                            <q-tooltip>Select</q-tooltip>
+                                        </q-btn>
+                                    </div>
+                                </div>
+                                <div class="full-width">
+                                    <q-item-label caption class="text-subtitle1">{{JSON['info']}}</q-item-label>
+                                    <q-item-label caption class="text-subtitle1">shape: {{JSON['shape']}}</q-item-label>
+                                </div>
+                            </q-item-section>
+
+                        <q-separator spaced inset />
+
+                        </template>
+                    </q-list>
+                </q-card-section>
+            </q-card>
+        </q-dialog>
+        <!-- SHOW OMILAYERS DIALOG END -->
 
         <!--PLOT CONFIGURATION DIALOG STARTS-->
         <q-dialog v-model="showPlotConfigurationDialog">

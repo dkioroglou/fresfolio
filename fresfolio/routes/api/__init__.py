@@ -847,19 +847,19 @@ def api_get_project_duckdkb():
         return 'Cannot load project databases', 400
     return jsonify(dbs), 200
 
-@apiroutes.route("/api/fetch-plot-data", methods=["POST"])
-def api_fetch_plot_data():
+@apiroutes.route("/api/fetch-layer-data", methods=["POST"])
+def api_fetch_layer_data():
     if not tools.is_module_installed('pyarrow'):
         return "pyarrow is not installed", 400
     try:
         data = request.get_json()
         projectID = data['projectID']
         DBpath = data['DBpath']
+        layer = data['selectedLayer']
         query = data['sqlQuery']
 
-        layer = query['layer'].strip()
-        layerCols = query['cols'].strip()
-        queryCondition = query['condition'].strip()
+        layerCols = query['cols'].strip().replace("--", "_")
+        queryCondition = query['condition'].strip().replace("--", "_")
 
         if not PUTL.omilayer_exists(projectID, DBpath, layer):
             return "Layer does not exist.", 400
@@ -871,6 +871,9 @@ def api_fetch_plot_data():
         df = PUTL.get_data_from_omilayer_for_plotting(projectID, DBpath, sqlQuery)
     except Exception as e:
         return "Error executing query", 400
+
+    # Perspective does not like "_"
+    df.columns = [x.replace("_", "--") for x in df.columns]
 
     table = pa.Table.from_pandas(df, preserve_index=False)
     sink = pa.BufferOutputStream()

@@ -10,21 +10,24 @@ const OmilayersRenderer = {
     props: ['projectid'],
     data() {
         return {
-            showBindDataDialog: false,
+            showQueryLayerDialog: false,
             databases: [],
             selectedDb: null,
-            dataBinded: false,
+            availableOmilayers: [],
+            showSelectDBDialog: false,
+            showSelectOmilayerDialog: false,
+            selectedLayer: null,
+            filterQuery: "",
+            fetchingLayer: false,
             sqlQuery: {
-                layer: "",
                 cols: "*",
                 condition: ""
             },
+            dbInitialized: false,
             _db: null,
             _server: null,
             _client: null,
-            _workerUrl: null,
-            _viewerReady: false,
-            _dbReady: false,
+            viewer: null
 
         }
     },
@@ -57,31 +60,146 @@ const OmilayersRenderer = {
                   console.error(error);
             }
         },
-        async bindTable() {
-            if (!this.$refs.query) return;
-            if (!this._client) return;
+        async getOmilayers(){
+            try {
+                const response = await fetch("/api/get-omilayers", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(
+                        {
+                            "projectID": this.projectid,
+                            "DBpath": this.selectedDb,
+                        }
+                    )
+                });
 
-            await this.$refs.query.restore({
+                if (response.ok) {
+                    this.availableOmilayers = await response.json();
+                    this.showSelectOmilayerDialog = true;
+                } else {
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        },
+        selectDB(dbName){
+            this.selectedDb = dbName;
+            this.selectedLayer = null;
+            this.showSelectDBDialog = false;
+            this.reset_sqlQuery();
+        },
+        selectLayer(layerName){
+            this.selectedLayer = layerName;
+            this.showSelectOmilayerDialog = false;
+            this.reset_sqlQuery();
+        },
+        reset_sqlQuery(){
+            this.sqlQuery = { cols: "*", condition: "" }
+        },
+        deleteSelectedLayer(layerName) {
+            this.$q.dialog({
+                title: 'Delete layer?',
+                message: 'Are you sure you want to delete '+ layerName  + '? This action cannot be undone.',
+                cancel: true,
+            }).onOk(() => {
+                this.submitDeleteSelectedLayer(layerName);
+            })
+        },
+        async submitDeleteSelectedLayer(layerName) {
+            try {
+                const response = await fetch("/api/delete-omilayer", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(
+                        {
+                            "projectID": this.projectid,
+                            "dbPath": this.selectedDb,
+                            "layerName": layerName
+                        }
+                    )
+                });
+
+                if (response.ok) {
+                    this.$q.notify({
+                        message: "Layer deleted successfully",
+                        color: 'green',
+                        position: "top-right"
+                    })
+                    this.availableOmilayers = this.availableOmilayers.filter(item => item.name !== fileJSON['layer'])
+                    this.cJSON['html'][fJSONIDX]['layer'] = "";
+                    this.cJSON['html'][fJSONIDX]['nLayers'] = this.cJSON['html'][fJSONIDX]['nLayers'] -1;
+                    this.cJSON['html'][fJSONIDX]['layer_exists'] = 0;
+                    this.cJSON['html'][fJSONIDX]['layerInfo'] = "";
+                } else {
+                    const responseText = await response.text();
+                    this.showSetSelectedOmilayerDescriptionDialog = false;
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+                this.showSetSelectedOmilayerDescriptionDialog = false;
+            }
+
+        },
+        async bindTable() {
+            await this.viewer.restore({
                 table: "memory.table_data",
                 group_by: [],
                 columns: [],
                 plugin: "Datagrid",
                 theme: "Pro Dark",
-                settings: true,
+                settings: true
             });
         },
-        async fetchDataBasedOnQuery() {
-            this.dataBinded = false;
+        async fetchLayerData() {
+            if (!this.dbInitialized) {
+                this._db = await this.initializeDuckDB();
+                this._server = perspective.createMessageHandler(new DuckDBHandler(this._db));
+                this._client = await perspective.worker(this._server);
+                this.dbInitialized = true
+            } else {
+                this.viewer.removeAttribute("columns");
+                this.viewer.removeAttribute("group-by");
+                this.viewer.removeAttribute("split-by");
+                this.viewer.removeAttribute("filter");
+                this.viewer.removeAttribute("sort");
+                await this.viewer.reset();
+
+                this._server = null;
+                this._client = null;
+
+                this._server = perspective.createMessageHandler(new DuckDBHandler(this._db));
+                this._client = await perspective.worker(this._server);
+
+                await this._db.query("DROP TABLE IF EXISTS table_data;");
+            }
+
+            this.fetchingLayer = true;
 
             try {
-                const response = await fetch("/api/fetch-plot-data", {
+                const response = await fetch("/api/fetch-layer-data", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
                         projectID: this.projectid,
-                        DBpath: this.selectedDb.label,
+                        DBpath: this.selectedDb,
+                        selectedLayer: this.selectedLayer,
                         sqlQuery: this.sqlQuery
                     })
                 });
@@ -98,28 +216,20 @@ const OmilayersRenderer = {
 
                 const tabledata = new Uint8Array(await response.arrayBuffer());
 
-                if (!this._db) {
-                    await this.createDB();
-                    await this.initViewer();
-                }
-
                 // IMPORTANT: ensure table exists in DuckDB BEFORE binding
                 await this._db.insertArrowFromIPCStream(tabledata, {
                     name: "table_data",
                     create: true
                 });
 
+                if (this.viewer === null) {
+                    await this.initViewer();
+                } else {
+                    await this.viewer.load(this._client);
+                }
+
                 await this.bindTable();
-
-                this.dataBinded = true;
-                this.showBindDataDialog = false;
-
-                this.$q.notify({
-                    message: "Plot data fetched",
-                    color: "green",
-                    position: "top-right"
-                });
-
+                this.fetchingLayer = false;
             } catch (err) {
                 console.error(err);
             }
@@ -128,161 +238,118 @@ const OmilayersRenderer = {
             const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
             const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
 
-            this._workerUrl = URL.createObjectURL(
+            const workerUrl = URL.createObjectURL(
                 new Blob([`importScripts("${bundle.mainWorker}");`], {
                     type: "text/javascript",
                 })
             );
 
-            const duckdbWorker = new Worker(this._workerUrl);
-            const db = new duckdb.AsyncDuckDB(this._logger, duckdbWorker);
+            const duckdbWorker = new Worker(workerUrl);
+            const logger = new duckdb.VoidLogger();
+            const db = new duckdb.AsyncDuckDB(logger, duckdbWorker);
             await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
 
-            URL.revokeObjectURL(this._workerUrl);
-            this._workerUrl = null;
+            URL.revokeObjectURL(workerUrl);
 
             const conn = await db.connect();
             return conn;
         },
-        async destroyDB() {
+        async initViewer() {
+            this.viewer = this.$refs.query;
+            this.viewer.load(this._client);
+        },
+        async closeDB() {
             try {
-                await this.$refs.query?.reset?.(); // important for Perspective UI state
-                await this._table2?.delete?.();
-                await this._db?.close?.();
-                this._duckdbWorker?.terminate?.();
-
-                if (this._workerUrl) {
-                    URL.revokeObjectURL(this._workerUrl);
+                // 1. Safely terminate the client worker thread since the component is closing
+                if (this._client) {
+                    await this._client.terminate();
                 }
 
+                // 2. Terminate the DuckDB WebAssembly worker instance completely
+                if (this._db) {
+                    await this._db.close();
+                }
                 this._db = null;
-                this._database = null;
-                this._duckdbWorker = null;
-                this._workerUrl = null;
-                this._table2 = null;
-
+                this._server = null;
+                this._client = null;
             } catch (e) {
                 console.error("cleanup failed:", e);
             }
-        },
-        async createDB() {
-            if (this._dbReady) return;
-            this._logger = {
-                log: () => {}
-            };
-            this._db = await this.initializeDuckDB();
-            this._server = perspective.createMessageHandler(
-                new DuckDBHandler(this._db)
+        }
+    },
+    computed: {
+        filteredOmilayers() {
+            const q = (this.filterQuery || '').toLowerCase().trim();
+            return this.availableOmilayers.filter(layer =>
+                !q ||
+                layer.name?.toLowerCase().includes(q) ||
+                layer.info?.toLowerCase().includes(q)
             );
-            this._client = await perspective.worker(this._server);
-            this._dbReady = true;
-        },
-        async initViewer() {
-            if (!this._viewerReady || !this._client) return;
-            const viewer = this.$refs.query;
-            await viewer.load(this._client);
         }
     },
     async mounted() {
         await this.getDuckdbDatabases();
-        await this.$nextTick();
-        this._viewerReady = !!this.$refs.query;
-        await this.createDB();
-        await this.initViewer();
     },
     async beforeUnmount() {
-        try {
-            await this.$refs.query?.reset?.();
-
-            await this._db?.close?.();
-
-            this._db = null;
-            this._server = null;
-            this._client = null;
-            this._workerUrl = null;
-
-        } catch (e) {
-            console.error("cleanup failed:", e);
-        }
+        await this.closeDB();
     },
     template: `
-        <div class="column" style="height: 100vh;">
-            <div class="row items-center q-mb-sm">
-                <q-btn 
-                    color="primary" 
-                    size="sm" 
-                    @click="showBindDataDialog = true" 
-                    icon="commit"
-                    label="Bind data"
+        <div class="column" style="height: 85vh;">
+            <div class="row items-center q-gutter-x-sm q-mb-sm">
+                <q-btn
+                    color="primary"
+                    outline
+                    label="Select database"
+                    @click="showSelectDBDialog=true"
                 />
+
+                <q-btn
+                    color="primary"
+                    outline
+                    label="Select layer"
+                    :disable="selectedDb === null"
+                    @click="getOmilayers()"
+                />
+
+                <q-btn
+                    color="primary"
+                    outline
+                    label="Query layer"
+                    :disable="selectedLayer === null"
+                    @click="showQueryLayerDialog = true"
+                />
+
+                <q-btn
+                    color="primary"
+                    label="Fetch layer"
+                    :loading="fetchingLayer"
+                    :disable="selectedLayer === null"
+                    @click="fetchLayerData()"
+                />
+
             </div>
+            <div class="row items-center q-gutter-x-sm q-mb-xs q-ml-xs">
+                Selected database: {{selectedDb}}
+            </div>
+            <div class="row items-center q-gutter-x-sm q-mb-sm q-ml-xs">
+                Selected layer: {{selectedLayer}}
+            </div>
+
             <div class="col" style="position: relative;">
                 <perspective-viewer ref="query" id="query" style="position: absolute; inset: 0; width: 100%; height: 100%;"></perspective-viewer>
             </div>
         </div>
 
-        <!--BIND DATA DIALOG STARTS-->
-        <q-dialog v-model="showBindDataDialog">
+        <!--QUERY LAYER DIALOG STARTS-->
+        <q-dialog v-model="showQueryLayerDialog">
             <q-card class="app-bg-color-5" style="min-width: 500px; max-width: 90vw;">
                 <q-card-section>
-                    <div class="text-h6">Bind data</div>
+                    <div class="text-h6">Query layers</div>
                 </q-card-section>
 
                 <q-card-section>
                     <q-card flat bordered class="q-mb-md">
                         <q-card-section class="q-pb-sm">
-                            <div class="row items-center justify-between q-mb-sm">
-                                <div class="text-caption text-weight-medium" style="color: var(--q-secondary)">
-                                    DuckDB database
-                                </div>
-                            </div>
-
-                            <q-select
-                                v-model="selectedDb"
-                                :options="databases"
-                                option-label="label"
-                                option-value="path"
-                                outlined
-                                dense
-                                emit-value
-                                map-options
-                                placeholder="Select a database…"
-                                no-options-label="No databases found"
-                            >
-                                <template #option="{ itemProps, opt }">
-                                    <q-item v-bind="itemProps">
-                                        <q-item-section>
-                                            <q-item-label style="font-family: monospace; font-size: 13px">
-                                                {{ opt.label }}
-                                            </q-item-label>
-                                        </q-item-section>
-                                    </q-item>
-                                </template>
-                                <template #selected-item="{ opt }">
-                                    <span style="font-family: monospace; font-size: 13px">{{ opt?.label }}</span>
-                                </template>
-                                <template #no-option>
-                                    <q-item>
-                                        <q-item-section class="text-caption text-grey">
-                                            No .duckdb files found
-                                        </q-item-section>
-                                    </q-item>
-                                </template>
-                            </q-select>
-
-                            <!-- Selected db full path hint -->
-                            <div v-if="selectedDb" class="text-caption q-mt-xs ellipsis" style="color: var(--q-secondary); font-family: monospace">
-                                {{ selectedDb.path }}
-                            </div>
-
-                            <q-input
-                                class="q-mt-md"
-                                v-model="sqlQuery.layer"
-                                outlined
-                                dense
-                                label="Layer"
-                                :input-style="{ fontFamily: 'monospace', fontSize: '13px' }"
-                            />
 
                             <q-input
                                 class="q-mt-md"
@@ -303,30 +370,86 @@ const OmilayersRenderer = {
                                 autogrow
                                 :rows="3"
                                 style="font-family: monospace; font-size: 13px"
-                                :error="!!queryError"
-                                :error-message="queryError"
-                                @keydown.ctrl.enter.prevent="runQuery"
-                                @keydown.meta.enter.prevent="runQuery"
                             />
-
-                            <div class="row items-center justify-between q-mt-sm">
-                                <q-btn
-                                    color="primary"
-                                    size="sm"
-                                    label="Fetch data"
-                                    icon="play_arrow"
-                                    :loading="queryLoading"
-                                    :disable="!sqlQuery.layer.trim()"
-                                    @click="fetchDataBasedOnQuery()"
-                                />
-                            </div>
 
                         </q-card-section>
                     </q-card>
                 </q-card-section>
             </q-card>
         </q-dialog>
-        <!--BIND DATA DIALOG ENDS-->
+        <!--QUERY LAYER DIALOG ENDS-->
+
+        <!-- SHOW SELECT DB DIALOG START -->
+        <q-dialog v-model="showSelectDBDialog">
+            <q-card class="full-width app-bg-color-5">
+                <q-card-section class="full-width">
+                    <q-list dense class="full-width">
+                        <q-item 
+                            v-for="(item, index) in databases" 
+                            :key="index" 
+                            clickable 
+                            @click="selectDB(item.label)"
+                        >
+                            <q-item-section>
+                                <q-item-label>{{ item.label }}</q-item-label>
+                            </q-item-section>
+                        </q-item>
+                    </q-list>
+                </q-card-section>
+            </q-card>
+        </q-dialog>
+        <!-- SHOW SELECT DB DIALOG END -->
+
+        <!-- SHOW OMILAYERS DIALOG START -->
+        <q-dialog v-model="showSelectOmilayerDialog">
+            <q-card class="full-width app-bg-color-5">
+                <q-card-section class="full-width">
+
+                    <q-input
+                        v-model="filterQuery"
+                        placeholder="Filter layers..."
+                        dark
+                        dense
+                        clearable
+                        debounce="200"
+                        class="q-mb-md"
+                    >
+                        <template #prepend>
+                            <q-icon name="search" />
+                        </template>
+                    </q-input>
+
+                    <q-list dense class="full-width">
+                        <template v-for="(JSON, index) in filteredOmilayers" :key="index">
+                            <q-item-section class="full-width">
+                                <div class="q-mb-sm row items-center justify-between">
+                                    <q-item-label><b>{{JSON['name']}}</b></q-item-label>
+                                    <div>
+                                        <q-btn class='q-mr-sm' round color="secondary" size="sm" icon="table_rows" @click="selectLayer(JSON['name'])">
+                                            <q-tooltip>Select</q-tooltip>
+                                        </q-btn>
+
+                                        <q-btn round color="negative" size="sm" icon="delete" 
+                                            @click="() => { selectedOmilayersJSON['layer'] = JSON['name']; deleteSelectedLayer(selectedOmilayersJSON, selectedOmilayersIDX); }">
+                                            <q-tooltip>Delete layer</q-tooltip>
+                                        </q-btn>
+
+                                    </div>
+                                </div>
+                                <div class="full-width">
+                                    <q-item-label caption class="text-subtitle1">{{JSON['info']}}</q-item-label>
+                                    <q-item-label caption class="text-subtitle1">shape: {{JSON['shape']}}</q-item-label>
+                                </div>
+                            </q-item-section>
+
+                        <q-separator spaced inset />
+
+                        </template>
+                    </q-list>
+                </q-card-section>
+            </q-card>
+        </q-dialog>
+        <!-- SHOW OMILAYERS DIALOG END -->
 
 
 
