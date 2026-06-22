@@ -437,7 +437,7 @@ const SectionContent = defineComponent({
                 });
 
                 if (response.ok) {
-                    data = await response.json();
+                    const data = await response.json();
                     this.logViewerContent = data['log'];
                     this.showLogViewer = true;
                 } else {
