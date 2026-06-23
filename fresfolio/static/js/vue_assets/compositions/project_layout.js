@@ -1830,7 +1830,7 @@ const ProjectLayout = defineComponent({
 
             <!--REARRANGE CHAPTER SECTIONS DIALOG START-->
             <q-dialog v-model="showRearrangeChapterSectionsDialog" persistent>
-                <q-card class="app-bg-color-5" style="min-width: 500px; max-width: 90vw;">
+                <q-card class="app-bg-color-5" style="min-width: 700px; max-width: 90vw;">
                     <q-card-section>
                         <div class="text-h6">Edit Chapter Sections</div>
                     </q-card-section>
