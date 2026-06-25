@@ -1578,7 +1578,7 @@ const ProjectLayout = defineComponent({
                         round
                         color="primary" 
                         size='sm' 
-                        @click="togglePlotDrawer()" 
+                        @click="toggleOmilayersRendererDrawer()" 
                         icon="close"
                     />
                     <h3 class="q-ml-md q-ma-none">Omilayers viewer</h3>
