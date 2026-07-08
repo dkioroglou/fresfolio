@@ -77,6 +77,16 @@ def set_app_setting(setting:str, value:str) -> None:
                 c.execute(query, (setting, value))
                 conn.commit()
 
+def get_all_app_settings() -> Union[None, tuple]:
+    with contextlib.closing(sqlite3.connect(APPDB)) as conn:
+        with contextlib.closing(conn.cursor()) as c:
+            query = "SELECT key,value FROM settings"
+            c.execute(query)
+            rows = c.fetchall()
+    if not rows:
+        return None
+    return rows
+
 def get_app_setting(setting:str) -> Union[str, None]:
     with contextlib.closing(sqlite3.connect(APPDB)) as conn:
         with contextlib.closing(conn.cursor()) as c:

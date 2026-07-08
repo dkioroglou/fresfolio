@@ -25,6 +25,45 @@ def init():
     AppINIT()
 
 @frescli.command()
+def settings():
+    """Get all fresfolio settings."""
+    if not is_app_initialized():
+        exit()
+
+    projectsDir = Path(tools.get_app_setting("projectsDir")).expanduser()
+    all_settings = tools.get_all_app_settings()
+
+    # Collect every label so we can compute the max width for alignment
+    labels = ["app directory", "app database", "projects directory"]
+    if all_settings is not None:
+        labels += [key for key, _ in all_settings]
+
+    width = max(len(label) for label in labels)
+
+    print("fresfolio information:")
+    print("=====================")
+    print(f"{'app directory':<{width}} : {APPDIR}")
+    print(f"{'app database':<{width}} : {APPDB}")
+    print()
+    print("fresfolio settings:")
+    print("=====================")
+    print(f"{'projects directory':<{width}} : {projectsDir}")
+    if all_settings is not None:
+        for key, value in all_settings:
+            print(f"{key:<{width}} : {value}")
+
+@frescli.command()
+def set_ai_api_key():
+    """Add or update API key for AI."""
+    api_key = input("api-key: ")
+    try:
+        tools.set_app_setting(setting='ai_api_key', value=api_key)
+    except Exception:
+        traceback.print_exc()
+        exit("Could not add API key.")
+    print("API key was added successfully.")
+
+@frescli.command()
 @click.option("--port", "-p", type=int, default=5000, help="Port to be used by fresfolio.")
 @click.option("--broadcast", "-b", is_flag=True, help="Flag for broadcasting in the local network.")
 def start(port, broadcast):
@@ -55,17 +94,6 @@ def start(port, broadcast):
     else:
         app.run(port=port, debug=True)
 
-@frescli.command()
-def info():
-    """Get information related to fresfolio."""
-    if not is_app_initialized():
-        exit()
-    print("Fresfolio information:")
-    print("=====================")
-    print(f"     app directory: {APPDIR}")
-    print(f"      app database: {APPDB}")
-    projectsDir = Path(tools.get_app_setting("projectsDir")).expanduser()
-    print(f"projects directory: {projectsDir}")
 
 @frescli.command()
 @click.argument("directory")

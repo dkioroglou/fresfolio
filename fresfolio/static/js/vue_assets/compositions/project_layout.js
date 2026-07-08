@@ -18,11 +18,16 @@ const ProjectLayout = defineComponent({
         return {
             leftDrawerOpen: true,
             leftDrawerWidth: 400,
-            searchDrawerOpen: false,
-            viewDrawerOpen: false,
-            pinnedDrawerOpen: false,
-            todosDrawerOpen: false,
-            processesDrawerOpen: false,
+            drawers: {
+                search: false,
+                view: false,
+                pinned: false,
+                chat: false,
+                todos: false,
+                processes: false,
+                plot: false,
+                omilayers: false,
+            },
             notebooksDrawerOpen: true,
             notebooksFetched: false,
             chaptersBTNCollapseIcon: "chevron_left",
@@ -79,96 +84,27 @@ const ProjectLayout = defineComponent({
             isExpanded: false,
             initialCode: "",
             processesList: [],
-            processPollingInterval: null,
-            plotDrawerOpen: false,
-            omilayersDrawerOpen: false
+            processPollingInterval: null
         }
     },
     methods: {
-        toggleNotebookDrawer() {
-            if (this.notebooksDrawerOpen) {
-                this.notebooksDrawerOpen = false;
-                this.leftDrawerWidth = 200;
-                this.chaptersBTNCollapseIcon = "chevron_right";
-            } else {
-                this.notebooksDrawerOpen = true;
-                this.leftDrawerWidth = 400;
-                this.chaptersBTNCollapseIcon = "chevron_left";
-            }
-        },
-        toggleSearchDrawer() {
-            this.todosDrawerOpen = false;
-            this.viewDrawerOpen = false;
-            this.pinnedDrawerOpen = false;
-            this.processesDrawerOpen = false;
-            this.plotDrawerOpen = false;
-            this.omilayersDrawerOpen = false;
-            this.searchDrawerOpen = !this.searchDrawerOpen;
-        },
-        toggleViewDrawer() {
-            this.todosDrawerOpen = false;
-            this.searchDrawerOpen = false;
-            this.pinnedDrawerOpen = false;
-            this.processesDrawerOpen = false;
-            this.plotDrawerOpen = false;
-            this.omilayersDrawerOpen = false;
-            this.viewDrawerOpen = !this.viewDrawerOpen;
-        },
-        togglePinnedDrawer() {
-            this.todosDrawerOpen = false;
-            this.searchDrawerOpen = false;
-            this.viewDrawerOpen = false;
-            this.processesDrawerOpen = false;
-            this.plotDrawerOpen = false;
-            this.omilayersDrawerOpen = false;
-            this.pinnedDrawerOpen = !this.pinnedDrawerOpen;
-        },
-        toggleTodosDrawer() {
-            this.pinnedDrawerOpen = false;
-            this.searchDrawerOpen = false;
-            this.viewDrawerOpen = false;
-            this.processesDrawerOpen = false;
-            this.plotDrawerOpen = false;
-            this.omilayersDrawerOpen = false;
-            this.todosDrawerOpen = !this.todosDrawerOpen;
-        },
-        toggleProcessesDrawer() {
-            this.pinnedDrawerOpen = false;
-            this.searchDrawerOpen = false;
-            this.viewDrawerOpen = false;
-            this.todosDrawerOpen = false;
-            this.plotDrawerOpen = false;
-            this.omilayersDrawerOpen = false;
-            this.processesDrawerOpen = !this.processesDrawerOpen;
-        },
-        togglePlotDrawer() {
-            this.pinnedDrawerOpen = false;
-            this.searchDrawerOpen = false;
-            this.viewDrawerOpen = false;
-            this.todosDrawerOpen = false;
-            this.processesDrawerOpen = false;
-            this.omilayersDrawerOpen = false;
-            this.plotDrawerOpen = !this.plotDrawerOpen;
-        },
-        toggleOmilayersRendererDrawer() {
-            this.pinnedDrawerOpen = false;
-            this.searchDrawerOpen = false;
-            this.viewDrawerOpen = false;
-            this.todosDrawerOpen = false;
-            this.processesDrawerOpen = false;
-            this.plotDrawerOpen = false;
-            this.omilayersDrawerOpen = !this.omilayersDrawerOpen;
+        toggleDrawer(name) {
+            const wasOpen = this.drawers[name];
+            Object.keys(this.drawers).forEach(key => {
+                this.drawers[key] = false;
+            });
+            this.drawers[name] = !wasOpen;
         },
         clearSearchSections() {
-            this.searchDrawerOpen = false;
+            this.toggleDrawer("search")
             this.searchSections = [];
         },
         clearViewSections() {
-            this.viewDrawerOpen = false;
+            this.toggleDrawer("view");
             this.viewSections = [];
         },
         clearPinnedSections() {
-            this.pinnedDrawerOpen = false;
+            this.toggleDrawer("pinned");
             this.pinnedSections = [];
         },
         searchDrawerWidth() {
@@ -464,9 +400,9 @@ const ProjectLayout = defineComponent({
                     this.searchSections = await response.json();
                     this.searchText = '';
                     if (this.searchSections.length !== 0){
-                        this.viewDrawerOpen = false;
-                        this.pinnedDrawerOpen = false;
-                        this.searchDrawerOpen = true;
+                        if (!this.drawers.seach) {
+                            this.toggleDrawer('search');
+                        }
                     }
                 } else {
                     const responseText = await response.text(); 
@@ -520,9 +456,9 @@ const ProjectLayout = defineComponent({
                 if (response.ok) {
                     this.viewSections = await response.json();
                     if (this.viewSections.length) {
-                        this.searchDrawerOpen = false;
-                        this.pinnedDrawerOpen = false;
-                        this.viewDrawerOpen = true;
+                        if (!this.drawers.view){
+                            this.toggleDrawer('view');
+                        }
                     }
                 } else {
                     const responseText = await response.text()
@@ -1027,13 +963,9 @@ const ProjectLayout = defineComponent({
             this.processPollingInterval = null;
         },
         closeAllDrawers() {
-            this.todosDrawerOpen = false;
-            this.viewDrawerOpen = false;
-            this.todosDrawerOpen = false;
-            this.searchDrawerOpen = false;
-            this.processesDrawerOpen = false
-            this.plotDrawerOpen = false;
-            this.omilayersDrawerOpen = false;
+            this.drawers = Object.fromEntries(
+                Object.keys(this.drawers).map(key => [key, false])
+            );
         }
     },
     async mounted () {
@@ -1070,7 +1002,7 @@ const ProjectLayout = defineComponent({
                 size="md"
                 v-if="viewSections.length"
                 icon="visibility"
-                @click="toggleViewDrawer()"
+                @click="toggleDrawer('view')"
             />
 
             <q-btn
@@ -1080,7 +1012,7 @@ const ProjectLayout = defineComponent({
                 size="md"
                 v-if="pinnedSections.length"
                 icon="push_pin"
-                @click="togglePinnedDrawer()"
+                @click="toggleDrawer('pinned')"
             />
 
             <q-btn
@@ -1090,7 +1022,7 @@ const ProjectLayout = defineComponent({
                 size="md"
                 v-if="searchSections.length"
                 icon="search"
-                @click="toggleSearchDrawer()"
+                @click="toggleDrawer('search')"
             />
 
             <q-btn
@@ -1100,7 +1032,7 @@ const ProjectLayout = defineComponent({
                 color="primary"
                 size="md"
                 icon="terminal"
-                @click="toggleProcessesDrawer()"
+                @click="toggleDrawer('processes')"
             />
 
             <q-btn
@@ -1109,7 +1041,7 @@ const ProjectLayout = defineComponent({
                 color="primary"
                 size="md"
                 icon="table_chart"
-                @click="toggleOmilayersRendererDrawer()"
+                @click="toggleDrawer('omilayers')"
             />
 
             <q-btn
@@ -1118,7 +1050,7 @@ const ProjectLayout = defineComponent({
                 color="primary"
                 size="md"
                 icon="bar_chart"
-                @click="togglePlotDrawer()"
+                @click="toggleDrawer('plot')"
             />
 
             <q-btn
@@ -1127,7 +1059,7 @@ const ProjectLayout = defineComponent({
                 color="primary"
                 size="md"
                 icon="assignment_turned_in"
-                @click="toggleTodosDrawer()"
+                @click="toggleDrawer('todos')"
             />
 
             <!-- SEARCH BAR START -->
@@ -1322,7 +1254,7 @@ const ProjectLayout = defineComponent({
     <!-- TODOS DRAWER START -->
     <q-drawer 
         overlay
-        v-model="todosDrawerOpen" 
+        v-model="drawers.todos" 
         side='right' 
         class="app-page-container-color" 
         :width="searchDrawerWidth()"
@@ -1335,14 +1267,14 @@ const ProjectLayout = defineComponent({
                         round
                         color="primary" 
                         size='sm' 
-                        @click="toggleTodosDrawer()" 
+                        @click="toggleDrawer('todos')" 
                         icon="close"
                     />
                     <h3 class="q-ml-md q-ma-none">Todos</h3>
                 </div>
             </div>
 
-            <todos :projectid="selectedProjectID" :focus="todosDrawerOpen" />
+            <todos :projectid="selectedProjectID" :focus="drawers.todos" />
         </div>
     </q-drawer>
     <!-- TODOS DRAWER END -->
@@ -1350,7 +1282,7 @@ const ProjectLayout = defineComponent({
     <!-- PROCESSES DRAWER START -->
     <q-drawer 
         overlay
-        v-model="processesDrawerOpen" 
+        v-model="drawers.processes" 
         side='right' 
         class="app-page-container-color" 
         :width="searchDrawerWidth()"
@@ -1363,7 +1295,7 @@ const ProjectLayout = defineComponent({
                         round
                         color="primary" 
                         size='sm' 
-                        @click="toggleProcessesDrawer()" 
+                        @click="toggleDrawer('processes')" 
                         icon="close"
                     />
                     <q-btn 
@@ -1399,7 +1331,7 @@ const ProjectLayout = defineComponent({
     <!-- SEARCH DRAWER START -->
     <q-drawer 
         overlay
-        v-model="searchDrawerOpen" 
+        v-model="drawers.search" 
         side='right' 
         class="app-page-container-color" 
         :width="searchDrawerWidth()"
@@ -1412,7 +1344,7 @@ const ProjectLayout = defineComponent({
                         round
                         color="primary" 
                         size='sm' 
-                        @click="toggleSearchDrawer()" 
+                        @click="toggleDrawer('search')" 
                         icon="close"
                     />
                     <h3 class="q-ml-md q-ma-none">Search results</h3>
@@ -1446,7 +1378,7 @@ const ProjectLayout = defineComponent({
     <!-- VIEW DRAWER START -->
     <q-drawer 
         overlay
-        v-model="viewDrawerOpen" 
+        v-model="drawers.view" 
         side='right' 
         class="app-page-container-color" 
         :width="searchDrawerWidth()"
@@ -1459,7 +1391,7 @@ const ProjectLayout = defineComponent({
                         round
                         color="primary" 
                         size='sm' 
-                        @click="toggleViewDrawer()" 
+                        @click="toggleDrawer('view')" 
                         icon="close"
                     />
                     <h3 class="q-ml-md q-ma-none">Sections view</h3>
@@ -1493,7 +1425,7 @@ const ProjectLayout = defineComponent({
     <!-- PINNED DRAWER START -->
     <q-drawer 
         overlay
-        v-model="pinnedDrawerOpen" 
+        v-model="drawers.pinned" 
         side='right' 
         class="app-page-container-color" 
         :width="searchDrawerWidth()"
@@ -1506,7 +1438,7 @@ const ProjectLayout = defineComponent({
                         round
                         color="primary" 
                         size='sm' 
-                        @click="togglePinnedDrawer()" 
+                        @click="toggleDrawer('pinned')" 
                         icon="close"
                     />
                     <h3 class="q-ml-md q-ma-none">Pinned sections</h3>
@@ -1539,7 +1471,7 @@ const ProjectLayout = defineComponent({
     <!-- PLOT DRAWER START -->
     <q-drawer 
         overlay
-        v-model="plotDrawerOpen" 
+        v-model="drawers.plot" 
         side='right' 
         class="app-page-container-color" 
         :width="searchDrawerWidth()"
@@ -1551,7 +1483,7 @@ const ProjectLayout = defineComponent({
                         round
                         color="primary" 
                         size='sm' 
-                        @click="togglePlotDrawer()" 
+                        @click="toggleDrawer('plot')" 
                         icon="close"
                     />
                     <h3 class="q-ml-md q-ma-none">Plot viewer</h3>
@@ -1566,7 +1498,7 @@ const ProjectLayout = defineComponent({
     <!-- OMIRENDERER DRAWER START -->
     <q-drawer 
         overlay
-        v-model="omilayersDrawerOpen" 
+        v-model="drawers.omilayers" 
         side='right' 
         class="app-page-container-color" 
         :width="searchDrawerWidth()"
@@ -1578,7 +1510,7 @@ const ProjectLayout = defineComponent({
                         round
                         color="primary" 
                         size='sm' 
-                        @click="toggleOmilayersRendererDrawer()" 
+                        @click="toggleDrawer('omilayers')" 
                         icon="close"
                     />
                     <h3 class="q-ml-md q-ma-none">Omilayers viewer</h3>
