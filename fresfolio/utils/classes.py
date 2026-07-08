@@ -25,122 +25,113 @@ if tools.is_module_installed("omilayers"):
 class AppINIT:
 
     def __init__(self) -> None:
-        if not APPDIR.exists():
-            print(">>> Initializing Fresfolio app...")
-            if not self.__app_directory_initialized:
-                print("[ERROR] Cannot initialize Fresfolio app directory.")
-                print(">>> Fresfolio was not initialized successfully.")
-                exit()
-
-            print("[OK] Fresfolio app directory created.")
-
-            if not self.__app_db_initialized:
-                if APPDIR.exists():
-                    shutil.rmtree(APPDIR)
-                print("[ERROR] Cannot initialize Fresfolio app database.")
-                print(">>> Fresfolio was not initialized successfully.")
-                exit()
-            print("[OK] Fresfolio app database created.")
-
-            self.projectsDir = tools.get_app_setting("projectsDir")
-            if self.projectsDir is None:
-                if APPDIR.exists():
-                    shutil.rmtree(APPDIR)
-                print("[ERROR] Fresfolio projects directory was not registered in app database.")
-                print(">>> Fresfolio was not initialized successfully.")
-                exit()
-
-            try:
-                self.projectsDir = Path(self.projectsDir).expanduser()
-                self.projectsDir.mkdir(exist_ok=False)
-            except Exception:
-                if APPDIR.exists():
-                    shutil.rmtree(APPDIR)
-                traceback.print_exc()
-                print("[ERROR] Cannot create Fresfolio projects directory.")
-                print(">>> Fresfolio was not initialized successfully.")
-                exit()
-            print("[OK] Fresfolio app projects directory created.")
-            print(">>> Fresfolio initialized successfully.")
-        else:
-            print(">>> Evaluating Fresfolio initialization...")
-            print("[OK] Fresfolio app directory exists.")
-            if not APPDB.exists():
-                print("[ERROR] Fresfolio app database does not exist.")
-                print(">>> Fresfolio was not initialized successfully.")
-                exit()
-            else:
-                print("[OK] Fresfolio app database exists.")
-
-            self.projectsDir = tools.get_app_setting("projectsDir")
-            if self.projectsDir is None:
-                print("[ERROR] Fresfolio projects directory was not registered in app database.")
-                print(">>> Fresfolio was not initialized successfully.")
-                exit()
-            print("[OK] Fresfolio projects directory was registered in app database.")
-
-            self.projectsDir = Path(self.projectsDir).expanduser()
-            if not self.projectsDir.exists():
-                print("[ERROR] Fresfolio projects directory does not exist.")
-                print(">>> Fresfolio was not initialized successfully.")
-                exit()
-            print("[OK] Fresfolio projects directory exists.")
-
-            print(">>> Fresfolio was initialized successfully.")
-
+        print(">>> Initializing fresfolio app...")
+        if not self.__check_init_conditions_passed:
+            exit(">>> Fresfolio was not initialized successfully.")
+        print(">>> fresfolio initialized successfully.")
+        self.projectsDir = Path(tools.get_app_setting("projectsDir")).expanduser()
 
     @property
-    def __app_directory_initialized(self) -> bool:
-        try:
-            APPDIR.mkdir(exist_ok=True)
-        except Exception:
-            traceback.print_exc()
+    def __check_init_conditions_passed(self) -> bool:
+        conds = [
+            self.__app_dir_initialized,
+            self.__app_db_initialized,
+            self.__projects_dir_initialized
+        ]
+
+        if sum(conds) != len(conds):
             return False
         return True
+
+    @property
+    def __app_dir_initialized(self) -> bool:
+        if not APPDIR.exists():
+            try:
+                APPDIR.mkdir(exist_ok=False)
+            except Exception:
+                print("[ERROR] Cannot initialize Fresfolio app directory.")
+                traceback.print_exc()
+                return False
+            print("[OK] app directory created.")
+            return True
+        else:
+            print("[OK] app directory exists.")
+            return True
 
     @property
     def __app_db_initialized(self) -> bool:
+        if not APPDB.exists():
+            try:
+                with contextlib.closing(sqlite3.connect(APPDB)) as conn:
+                    with contextlib.closing(conn.cursor()) as c:
+                        query = """
+                        CREATE TABLE settings(
+                        key TEXT,
+                        value TEXT
+                        )
+                        """
+                        c.execute(query)
+
+                        query = """
+                        CREATE TABLE projects(
+                        id INTEGER PRIMARY KEY,
+                        uuid TEXT,
+                        name TEXT,
+                        path TEXT,
+                        description TEXT,
+                        started TEXT,
+                        finished TEXT
+                        )
+                        """
+                        c.execute(query)
+                        conn.commit()
+
+                        query = """
+                        INSERT INTO settings 
+                        (key,value) 
+                        VALUES (?,?)
+                        """
+                        c.execute(query, ("projectsDir", str(APPDIR.joinpath("projects"))))
+                        c.execute(query, ("secret_key", secrets.token_urlsafe(32)))
+                        c.execute(query, ("has_set_uuids", 1))
+
+                        conn.commit()
+            except Exception:
+                print("[ERROR] Cannot initialize app database.")
+                traceback.print_exc()
+                return False
+            print("[OK] app database created.")
+            return True
+        else:
+            print("[OK] app database exists.")
+            return True
+
+    @property
+    def __projects_dir_initialized(self) -> bool:
         try:
-            with contextlib.closing(sqlite3.connect(APPDB)) as conn:
-                with contextlib.closing(conn.cursor()) as c:
-                    query = """
-                    CREATE TABLE settings(
-                    key TEXT,
-                    value TEXT
-                    )
-                    """
-                    c.execute(query)
-
-                    query = """
-                    CREATE TABLE projects(
-                    id INTEGER PRIMARY KEY,
-                    uuid TEXT,
-                    name TEXT,
-                    path TEXT,
-                    description TEXT,
-                    started TEXT,
-                    finished TEXT
-                    )
-                    """
-                    c.execute(query)
-                    conn.commit()
-
-                    query = """
-                    INSERT INTO settings 
-                    (key,value) 
-                    VALUES (?,?)
-                    """
-                    c.execute(query, ("projectsDir", str(APPDIR.joinpath("projects"))))
-                    c.execute(query, ("secret_key", secrets.token_urlsafe(32)))
-                    c.execute(query, ("has_set_uuids", 1))
-
-                    conn.commit()
+            projectsDir = tools.get_app_setting("projectsDir")
         except Exception:
+            print("[ERROR] Cannot get setting for projects directory.")
             traceback.print_exc()
             return False
-        return True
 
+        if projectsDir is None:
+            print("[ERROR] projects directory is None.")
+            return False
 
+        projectsDir = Path(projectsDir).expanduser()
+        if not projectsDir.exists():
+            try:
+                projectsDir.mkdir(exist_ok=False)
+            except Exception:
+                print("[ERROR] Cannot create projects directory.")
+                traceback.print_exc()
+                return False
+            print("[OK] projects directory created.")
+            return True
+        else:
+            print("[OK] projects directory exists.")
+            return True
 
 class ProjectsUtils:
 
