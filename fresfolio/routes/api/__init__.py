@@ -7,6 +7,7 @@ import subprocess
 import json
 from fresfolio.utils import tools
 from fresfolio.utils.classes import ProjectsUtils
+from time import sleep
 
 if tools.is_module_installed("pyarrow"):
     import pyarrow as pa
@@ -120,6 +121,17 @@ def app_api_get_chapter_sections():
         projectID = data['projectID']
         chapterID = data['chapterID']
         sections = PUTL.get_chapter_sections(projectID, chapterID)
+        return jsonify(sections)
+    except Exception:
+        traceback.print_exc()
+        return "Something went wrong", 400
+
+@apiroutes.route('/api/get-chat-sections', methods=['POST'])
+def app_api_get_chat_sections():
+    try:
+        data = request.get_json()
+        projectID = data['projectID']
+        sections = PUTL.get_chat_sections(projectID)
         return jsonify(sections)
     except Exception:
         traceback.print_exc()
@@ -888,3 +900,57 @@ def api_fetch_layer_data():
         headers={"Content-Type": "application/vnd.apache.arrow.stream"}
     )
 
+@apiroutes.route('/api/submit-prompt-to-ai', methods=['POST'])
+def api_submit_prompt_to_ai():
+    try:
+        data = request.get_json()
+        projectID = data['projectID']
+        new_user_prompt = data['prompt']
+        ai_model = data['model']
+
+        projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
+        chatSections = PUTL.get_chat_sections_content(projectID)
+
+        conversation_history = []
+        if chatSections:
+            for section in chatSections:
+                user_prompt, ai_response = section.split("## Response")
+                conversation_history.extend([
+                    {
+                        "role": "user",
+                        "parts": [{"text": user_prompt}]
+                    },
+                    {
+                        "role": "model",
+                        "parts": [{"text": ai_response}]
+                    },
+
+                ])
+        conversation_history.append(
+            {
+                "role": "user",
+                "parts": [{"text": new_user_prompt}]
+            }
+        )
+        response = tools.get_ai_response(ai_model, conversation_history)
+    except Exception:
+        traceback.print_exc()
+        return 'Failed to make response', 400
+
+    if response['status_code'] != 200:
+        return "Model could not respond", 400
+
+    new_section_content = f"{new_user_prompt}\n\n## Response\n\n{response['text']}"
+    tags = ['ai-chat']
+
+    try:
+        sectionID =  PUTL.insert_section_in_db(projectID, new_section_content, tags)
+    except Exception:
+        return "Could store model response", 400
+
+    section = {}
+    try:
+        section = PUTL.get_section_content_rendered(projectID, sectionID)
+    except Exception:
+        return "Could not render model response", 400
+    return jsonify({"sectionData": section}), 200

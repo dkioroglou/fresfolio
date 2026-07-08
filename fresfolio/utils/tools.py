@@ -8,7 +8,7 @@ import shutil
 import uuid
 import subprocess
 import threading
-import os
+import requests
 from datetime import datetime
 import json
 if importlib.util.find_spec("omilayers") is not None:
@@ -309,4 +309,39 @@ def run_and_log(
     t = threading.Thread(target=_collect_and_log, daemon=True)
     t.start()
     return proc, t
+    
+def get_ai_response(ai_model:str, conversation_history:list) -> dict:
+    api_key = get_app_setting('ai_api_key')
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{ai_model}:generateContent?key={api_key}"
+    headers = {"Content-Type": "application/json"}
+    modelInstructions = r"""
+    Instructions: 
+    1. In all your responses, include tables between the markers \begin{table} and \end{table}.
+    2. Separate all columns with a comma.
+    3. Do not include any commas inside the column values themselves.
+    """
+    payload = {
+        "systemInstruction": {
+                "parts": [
+                    {"text": modelInstructions}
+                ]
+            },
+        "contents": conversation_history
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        response_status_code = response.status_code
+        data = response.json()
+        if response_status_code  == 200:
+            text_response = data['candidates'][0]['content']['parts'][0]['text']
+        else:
+            print(data)
+            text_response = ""
+    except requests.exceptions.RequestException as e:
+        print(f"\nAn error occurred: {e}")
+        return {'status_code': "400", 'text':""}
+    return {'status_code': response_status_code, 'text':text_response}
+
+
 

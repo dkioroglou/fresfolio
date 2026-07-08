@@ -45,7 +45,9 @@ const ProjectLayout = defineComponent({
             showRearrangeChapterSectionsDialog: false,
             showFileUploaderDialog: false,
             fetchedSectionsToRender: true,
+            fetchingChatSectionsToRender: false,
             renderedSections: [],
+            chatSections: [],
             searchSections: [],
             viewSections: [],
             pinnedSections: [],
@@ -84,7 +86,9 @@ const ProjectLayout = defineComponent({
             isExpanded: false,
             initialCode: "",
             processesList: [],
-            processPollingInterval: null
+            processPollingInterval: null,
+            chatPrompt: "",
+            isSubmittingPrompt: false
         }
     },
     methods: {
@@ -94,6 +98,12 @@ const ProjectLayout = defineComponent({
                 this.drawers[key] = false;
             });
             this.drawers[name] = !wasOpen;
+        },
+        toggleChatDrawer() {
+            if (this.chatSections.length === 0){
+                this.getChatSections();
+            }
+            this.toggleDrawer('chat');
         },
         clearSearchSections() {
             this.toggleDrawer("search")
@@ -159,6 +169,37 @@ const ProjectLayout = defineComponent({
                 } else {
                     const responseText = await response.text();
                     this.fetchedSectionsToRender = true;
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        },
+        async getChatSections() {
+            this.fetchingChatSectionsToRender = true;
+            try {
+                const response = await fetch("/api/get-chat-sections", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(
+                        {
+                            "projectID": this.selectedProjectID
+                        }
+                    )
+                });
+
+                if (response.ok) {
+                    this.chatSections = await response.json();
+                    this.fetchingChatSectionsToRender = false;
+                } else {
+                    const responseText = await response.text();
+                    this.fetchingChatSectionsToRender = false;
                     this.$q.notify({
                         message: responseText,
                         color: 'negative',
@@ -966,6 +1007,50 @@ const ProjectLayout = defineComponent({
             this.drawers = Object.fromEntries(
                 Object.keys(this.drawers).map(key => [key, false])
             );
+        },
+        handleChatKeydown(e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                this.submitChatPrompt();
+            }
+            },
+        async submitChatPrompt() {
+            this.isSubmittingPrompt = true;
+            try {
+                const response = await fetch("/api/submit-prompt-to-ai", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(
+                        {
+                            "projectID": this.selectedProjectID,
+                            "prompt": this.chatPrompt,
+                            "model": "gemini-3.1-flash-lite"
+                        }
+                    )
+                });
+
+                if (response.ok) {
+                    this.fetchingChatSectionsToRender = true;
+                    const data = await response.json();
+                    localStorage.setItem(data['sectionData']['ID'], 'true')
+                    this.chatSections.unshift(data['sectionData']);
+                    this.isSubmittingPrompt = false;
+                    this.chatPrompt = "";
+                    this.fetchingChatSectionsToRender = false;
+                } else {
+                    const responseText = await response.text();
+                    this.isSubmittingPrompt = false;
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
         }
     },
     async mounted () {
@@ -1033,6 +1118,15 @@ const ProjectLayout = defineComponent({
                 size="md"
                 icon="terminal"
                 @click="toggleDrawer('processes')"
+            />
+
+            <q-btn
+                round
+                class="q-mr-md"
+                color="primary"
+                size="md"
+                icon="chat"
+                @click="toggleChatDrawer"
             />
 
             <q-btn
@@ -1367,7 +1461,7 @@ const ProjectLayout = defineComponent({
                     @get-view="getView"
                     @open-with-ace-editor="openWithAceEditor"
                     @start-process="startProcess"
-                >
+                />
             </template>
 
         </div>
@@ -1414,7 +1508,7 @@ const ProjectLayout = defineComponent({
                     @get-view="getView"
                     @open-with-ace-editor="openWithAceEditor"
                     @start-process="startProcess"
-                >
+                />
             </template>
 
         </div>
@@ -1461,12 +1555,101 @@ const ProjectLayout = defineComponent({
                     @get-view="getView"
                     @open-with-ace-editor="openWithAceEditor"
                     @start-process="startProcess"
-                >
+                />
             </template>
 
         </div>
     </q-drawer>
     <!-- PINNED DRAWER END -->
+
+    <!-- CHAT DRAWER START -->
+    <q-drawer 
+        overlay
+        v-model="drawers.chat" 
+        side='right' 
+        class="app-page-container-color" 
+        :width="searchDrawerWidth()"
+    >
+        <div class="col q-px-xl">
+
+            <div class="q-mt-md q-mb-md row items-center justify-between">
+                <div class="row items-center">
+                    <q-btn 
+                        round
+                        color="primary" 
+                        size='sm' 
+                        @click="toggleDrawer('chat')" 
+                        icon="close"
+                    />
+                    <h3 class="q-ml-md q-ma-none">AI chat</h3>
+                </div>
+            </div>
+
+            <div class="prompt-box q-pa-sm q-mb-md">
+                <q-input
+                    v-model="chatPrompt"
+                    type="textarea"
+                    autogrow
+                    dense
+                    dark
+                    borderless
+                    placeholder="Ask anything..."
+                    class="prompt-input"
+                    :input-style="{ maxHeight: '200px', overflowY: 'auto' }"
+                    :disable="isSubmittingPrompt"
+                    @keydown="handleChatKeydown"
+                >
+                    <template v-slot:after>
+                        <q-btn
+                            round
+                            dense
+                            flat
+                            :disable="!chatPrompt.trim() || isSubmittingPrompt"
+                            :loading="isSubmittingPrompt"
+                            :color="chatPrompt.trim() ? 'primary' : 'grey-5'"
+                            icon="send"
+                            @click="submitChatPrompt"
+                        >
+                            <template v-slot:loading>
+                                <q-spinner-dots color="primary" />
+                            </template>
+                        </q-btn>
+                    </template>
+                </q-input>
+            </div>
+
+            <Transition name="fade">
+                <div v-if="fetchingChatSectionsToRender" key="loading" class="app-spinner-container q-mt-xl">
+                    <q-spinner
+                        color="primary"
+                        size="2em"
+                    />
+                    <p class="app-main-text-color">Loading chat, please wait...</p>
+                </div>
+
+                <div v-else key="content">
+                    <template v-if="chatSections.length">
+                        <section-card 
+                            v-for="(sectionJSON, index) in chatSections" :key="index" 
+                            :section-data="chatSections[index]" 
+                            :expand-section="expandAll"
+                            @delete-section="deleteRenderedSection"
+                            @pin-section="pinSection"
+                            @get-view="getView"
+                            @open-with-ace-editor="openWithAceEditor"
+                            @start-process="startProcess"
+                        />
+                    </template>
+                    <div v-else>
+                        <p class="app-main-text-color">Chat is empty</p>
+                    </div>
+                </div>
+            </Transition>
+
+        </div>
+    </q-drawer>
+    <!-- CHAT DRAWER END -->
+
 
     <!-- PLOT DRAWER START -->
     <q-drawer 

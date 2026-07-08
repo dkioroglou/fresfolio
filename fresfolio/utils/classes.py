@@ -545,6 +545,78 @@ class ProjectsUtils:
             traceback.print_exc()
             return []
 
+    def get_sections_based_on_tag(self, projectID:str, tag:str, descending=False) -> list:
+        projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
+        sections = [] 
+        try:
+            cols = ['id', 'section', 'tags', 'content', 'date']
+            with contextlib.closing(sqlite3.connect(projectDB)) as conn:
+                with contextlib.closing(conn.cursor()) as c:
+                    if descending:
+                        query = """
+                        SELECT {0} FROM sections 
+                        WHERE tags LIKE "%{1}%" 
+                        ORDER BY id DESC
+                        """.format(','.join(cols), tag)
+                    else:
+                        query = """
+                        SELECT {0} FROM sections 
+                        WHERE tags LIKE "%{1}%" 
+                        ORDER BY id
+                        """.format(','.join(cols), tag)
+                    c.execute(query)
+                    sections = c.fetchall()
+        except Exception:
+            traceback.print_exc()
+            return sections
+        return sections
+
+    def get_chat_sections_content(self, projectID:str) -> list:
+        projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
+        sections = [] 
+        try:
+            with contextlib.closing(sqlite3.connect(projectDB)) as conn:
+                with contextlib.closing(conn.cursor()) as c:
+                    query = """
+                    SELECT content FROM sections 
+                    WHERE tags LIKE "%ai-chat%" 
+                    ORDER BY id
+                    """
+                    c.execute(query)
+                    sections = c.fetchall()
+        except Exception:
+            traceback.print_exc()
+            return sections
+        return [s[0] for s in sections]
+
+    def get_chat_sections(self, projectID:str) -> list:
+        try:
+            projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
+            sectionsResults = self.get_sections_based_on_tag(projectID, "ai-chat", descending=True)
+            sections = []
+            if sectionsResults:
+                colsMapper = {
+                            "id":"ID",
+                            "section":"title",
+                            "tags":"tags",
+                            "content":"content",
+                            "date":"sectionDate"
+                                }
+                cols = ['id', 'section', 'tags', 'content', 'date']
+                for result in sectionsResults:
+                    kwargs = {colsMapper[col]:value for col,value in zip(cols,result)}
+                    if not kwargs['content'].strip("\n"):
+                        kwargs['content'] = "Section content is emtpy."
+                    kwargs['projectID'] = projectID
+                    kwargs['projectName'] = tools.get_project_name_based_on_id(projectID)
+                    kwargs['section_dir_exists'] = int(Path(projectDirectory).joinpath(f"sections/{kwargs['ID']}").exists())
+                    section = SectionUtils(**kwargs)
+                    sections.append(section.render_content_to_html())
+            return sections
+        except Exception:
+            traceback.print_exc()
+            return []
+
     def get_section_content_rendered(self, projectID:str, sectionID:int, render_type:str='html') -> list:
         """Render section content to HTML"""
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
@@ -614,6 +686,27 @@ class ProjectsUtils:
                 """
                 c.execute(query, (chapterID, sectionID))
                 conn.commit()
+        return sectionID
+
+    def insert_section_in_db(self, projectID:str, content:str, tags:list) -> int:
+        today = datetime.today().strftime('%Y-%m-%d')
+        title = f"AI response on {today}"
+        projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
+        sectionID = None
+        try:
+            with contextlib.closing(sqlite3.connect(projectDB)) as conn:
+                with contextlib.closing(conn.cursor()) as c:
+                    query = """
+                    INSERT INTO sections 
+                    (section, tags, content, date)
+                    VALUES (?,?,?,?)
+                    """
+                    c.execute(query, (title, json.dumps(tags), content, today))
+                    sectionID = c.lastrowid
+                    conn.commit()
+        except Exception:
+            traceback.print_exc()
+            return sectionID
         return sectionID
 
     def section_title_is_set(self, projectID:str, sectionID:int, newSectionTitle:str) -> bool:
