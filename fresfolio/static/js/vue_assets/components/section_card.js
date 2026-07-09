@@ -471,6 +471,15 @@ const SectionCard = defineComponent({
             )
             edit.focus()
         },
+        insertAiFoldTagToSectionEditor() {
+            const edit = this.$refs.sectionEditorRef
+            edit.caret.restore()
+            edit.runCmd(
+            'insertHTML',
+                '\\ais<br><br>\\aie'
+            )
+            edit.focus()
+        },
         insertCodeTagToSectionEditor() {
             const edit = this.$refs.sectionEditorRef
             edit.caret.restore()
@@ -809,6 +818,7 @@ const SectionCard = defineComponent({
                                 'codeblock',
                                 'math',
                                 'omitable',
+                                'aifold',
                                 'arrows'
                                 ]
                                 ]"
@@ -957,6 +967,18 @@ const SectionCard = defineComponent({
                                         size="sm"
                                         label="Omitable"
                                         @click="insertOmilayersTableTagToSectionEditor"
+                                    />
+                                </template>
+
+                                <template v-slot:aifold>
+                                    <q-btn
+                                        dense
+                                        unelevated
+                                        color="secondary"
+                                        text-color="white"
+                                        size="sm"
+                                        label="AiS/E"
+                                        @click="insertAiFoldTagToSectionEditor"
                                     />
                                 </template>
 

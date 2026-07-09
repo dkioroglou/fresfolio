@@ -3,9 +3,7 @@ from fresfolio.renderers.inline_renderers import InlineRenderers, PDFInlineRende
 from fresfolio.utils import tools
 import traceback
 import json
-
-if tools.is_module_installed("omilayers"):
-    from omilayers import Omilayers
+from omilayers import Omilayers
 
 inline_renderers = InlineRenderers()
 inline_renderers_methods = [method for method in dir(inline_renderers) if callable(getattr(inline_renderers, method)) and not method.startswith("__")]

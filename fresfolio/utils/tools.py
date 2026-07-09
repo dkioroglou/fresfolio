@@ -11,8 +11,8 @@ import threading
 import requests
 from datetime import datetime
 import json
-if importlib.util.find_spec("omilayers") is not None:
-    from omilayers import Omilayers
+import mimetypes
+from omilayers import Omilayers
 
 APPDIR = Path("~/fresfolio").expanduser()
 APPDB = APPDIR.joinpath("fresfolio.db")
@@ -319,6 +319,8 @@ def get_ai_response(ai_model:str, conversation_history:list) -> dict:
     1. In all your responses, include tables between the markers \begin{table} and \end{table}.
     2. Separate all columns with a comma.
     3. Do not include any commas inside the column values themselves.
+    4. For programming code, use the standard markdown way but don't specify programming languge.
+    5. For math, use sinlge '$' for inline math. For equations, put them between double '$$' but each '$$' should be in separate line.
     """
     payload = {
         "systemInstruction": {
@@ -343,5 +345,13 @@ def get_ai_response(ai_model:str, conversation_history:list) -> dict:
         return {'status_code': "400", 'text':""}
     return {'status_code': response_status_code, 'text':text_response}
 
+
+def is_flat_file(file_full_path:Path) -> bool:
+    mime_type, _ = mimetypes.guess_type(str(file_full_path))
+    if mime_type:
+        return mime_type.startswith("text/") or mime_type in {
+            "application/json", "application/xml", "application/javascript",
+        }
+    return False
 
 

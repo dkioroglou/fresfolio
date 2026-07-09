@@ -88,7 +88,14 @@ const ProjectLayout = defineComponent({
             processesList: [],
             processPollingInterval: null,
             chatPrompt: "",
-            isSubmittingPrompt: false
+            isSubmittingPrompt: false,
+            ai_api_key_found: false,
+            ai_models: [
+                "gemini-3.1-flash-lite",
+                "gemini-3.5-flash",
+                "gemini-3.1-pro-preview"
+            ],
+            selectedModel: "gemini-3.1-flash-lite"
         }
     },
     methods: {
@@ -462,6 +469,7 @@ const ProjectLayout = defineComponent({
             this.renderedSections = this.renderedSections.filter(section => section.ID !== sectionID);
             this.searchSections = this.searchSections.filter(section => section.ID !== sectionID);
             this.pinnedSections = this.pinnedSections.filter(section => section.ID !== sectionID);
+            this.chatSections = this.chatSections.filter(section => section.ID !== sectionID);
         },
         pinSection(projectID, sectionID) {
             const sectionPinned = this.pinnedSections.find(section => section.ID === sectionID && section.projectID === projectID);
@@ -1026,7 +1034,7 @@ const ProjectLayout = defineComponent({
                         {
                             "projectID": this.selectedProjectID,
                             "prompt": this.chatPrompt,
-                            "model": "gemini-3.1-flash-lite"
+                            "model": this.selectedModel
                         }
                     )
                 });
@@ -1051,11 +1059,45 @@ const ProjectLayout = defineComponent({
             } catch (error) {
                 console.error(error);
             }
+        },
+        async checkAiAPIKeyExists() {
+            try {
+                const response = await fetch("/api/check-app-setting-is-set", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(
+                        {
+                            "setting": "ai_api_key"
+                        }
+                    )
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    this.ai_api_key_found = data.is_setting_set;
+                } else {
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
+
+        },
+        refreshChatSections() {
+            this.getChatSections()
         }
     },
     async mounted () {
         this.get_notebooks();
         this.getProcesses();
+        this.checkAiAPIKeyExists();
         window.addEventListener('keydown', this.handleShortcut)
     },
     beforeUnmount() {
@@ -1121,11 +1163,12 @@ const ProjectLayout = defineComponent({
             />
 
             <q-btn
+                v-if="ai_api_key_found"
                 round
                 class="q-mr-md"
                 color="primary"
                 size="md"
-                icon="chat"
+                icon="forum"
                 @click="toggleChatDrawer"
             />
 
@@ -1243,7 +1286,7 @@ const ProjectLayout = defineComponent({
                                         </div>
 
                                         <q-tooltip :delay="1000" :offset="[10, 10]">
-                                            {{ notebook.notebookName }}
+                                            [{{ notebook.notebookID }}]  {{ notebook.notebookName }}
                                         </q-tooltip>
                                     </q-item-section>
                                 </q-item>
@@ -1316,7 +1359,7 @@ const ProjectLayout = defineComponent({
                                     </div>
 
                                     <q-tooltip :delay="1000" :offset="[10, 10]">
-                                        {{ chapter.chapterName }}
+                                        [{{ chapter.chapterID }}] {{ chapter.chapterName }}
                                     </q-tooltip>
                                 </q-item-section>
                             </q-item>
@@ -1583,6 +1626,29 @@ const ProjectLayout = defineComponent({
                     />
                     <h3 class="q-ml-md q-ma-none">AI chat</h3>
                 </div>
+
+                <div class="row">
+                    <q-btn
+                        round
+                        class="q-mr-md"
+                        icon="refresh"
+                        color="primary"
+                        @click="refreshChatSections"
+                    >
+                        
+                        <q-tooltip class="bg-primary" :offset="[10, 10]">
+                            Refresh chat
+                        </q-tooltip>
+                    </q-btn>
+                    <q-select
+                        v-model="selectedModel"
+                        :options="ai_models"
+                        label="Select model"
+                        dense
+                        outlined
+                        style="min-width: 200px"
+                    />
+                </div>
             </div>
 
             <div class="prompt-box q-pa-sm q-mb-md">
@@ -1593,7 +1659,7 @@ const ProjectLayout = defineComponent({
                     dense
                     dark
                     borderless
-                    placeholder="Ask anything..."
+                    placeholder="User prompt..."
                     class="prompt-input"
                     :input-style="{ maxHeight: '200px', overflowY: 'auto' }"
                     :disable="isSubmittingPrompt"

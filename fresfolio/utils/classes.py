@@ -8,19 +8,20 @@ from collections import defaultdict
 import re
 import traceback
 import secrets
+from omilayers import Omilayers
+import duckdb
+import pandas as pd
+from docx import Document
+import pymupdf4llm
 from fresfolio.utils import tools
+
+pymupdf4llm.use_layout(False)
 
 APPDIR = Path("~/fresfolio").expanduser()
 APPDB = APPDIR.joinpath("fresfolio.db")
 
 if APPDIR.exists():
     from fresfolio.renderers.html_renderer import HtmlRenderer, PDFRenderer
-
-if tools.is_module_installed("omilayers"):
-    from omilayers import Omilayers
-    import duckdb
-    import pandas as pd
-
 
 class AppINIT:
 
@@ -281,6 +282,18 @@ class ProjectsUtils:
                 c.execute(query, (notebookID,))
                 chapters = c.fetchall()
         return chapters
+
+    @staticmethod
+    def get_chapters_ids_for_notebook(projectID:str, notebookID:int) -> list:
+        projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
+        with contextlib.closing(sqlite3.connect(projectDB)) as conn:
+            with contextlib.closing(conn.cursor()) as c:
+                query = "SELECT id FROM chapters WHERE notebookID=(?)"
+                c.execute(query, (notebookID,))
+                chapters = c.fetchall()
+        if not chapters:
+            return []
+        return [c[0] for c in chapters]
 
     def get_notebooks_and_chapters_for_project(self, projectID:str) -> dict: 
         notebooks = self.get_notebooks_for_project(projectID)
@@ -589,33 +602,6 @@ class ProjectsUtils:
             return sections
         return [s[0] for s in sections]
 
-    def get_chat_sections(self, projectID:str) -> list:
-        try:
-            projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
-            sectionsResults = self.get_sections_based_on_tag(projectID, "ai-chat", descending=True)
-            sections = []
-            if sectionsResults:
-                colsMapper = {
-                            "id":"ID",
-                            "section":"title",
-                            "tags":"tags",
-                            "content":"content",
-                            "date":"sectionDate"
-                                }
-                cols = ['id', 'section', 'tags', 'content', 'date']
-                for result in sectionsResults:
-                    kwargs = {colsMapper[col]:value for col,value in zip(cols,result)}
-                    if not kwargs['content'].strip("\n"):
-                        kwargs['content'] = "Section content is emtpy."
-                    kwargs['projectID'] = projectID
-                    kwargs['projectName'] = tools.get_project_name_based_on_id(projectID)
-                    kwargs['section_dir_exists'] = int(Path(projectDirectory).joinpath(f"sections/{kwargs['ID']}").exists())
-                    section = SectionUtils(**kwargs)
-                    sections.append(section.render_content_to_html())
-            return sections
-        except Exception:
-            traceback.print_exc()
-            return []
 
     def get_section_content_rendered(self, projectID:str, sectionID:int, render_type:str='html') -> list:
         """Render section content to HTML"""
@@ -664,6 +650,20 @@ class ProjectsUtils:
             return result[0]
         return ""
 
+    def get_section_title(self, projectID:str, sectionID:int) -> list:
+        projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
+        with contextlib.closing(sqlite3.connect(projectDB)) as conn:
+            with contextlib.closing(conn.cursor()) as c:
+                query = """
+                SELECT section FROM sections 
+                WHERE id=(?)
+                """
+                c.execute(query, (sectionID,))
+                result = c.fetchone()
+        if result:
+            return result[0]
+        return ""
+
     def create_section_in_db(self, projectID:str, chapterID:int) -> int:
         today = datetime.today().strftime('%Y-%m-%d')
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
@@ -688,9 +688,8 @@ class ProjectsUtils:
                 conn.commit()
         return sectionID
 
-    def insert_section_in_db(self, projectID:str, content:str, tags:list) -> int:
+    def insert_section_in_db(self, projectID:str, title:str, content:str, tags:list) -> int:
         today = datetime.today().strftime('%Y-%m-%d')
-        title = f"AI response on {today}"
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         sectionID = None
         try:
@@ -1204,4 +1203,145 @@ class SectionUtils:
                 "section_dir_exists": self.section_dir_exists
                 }
 
+
+class AiUtils(ProjectsUtils):
+
+    def get_chat_sections(self, projectID:str) -> list:
+        try:
+            projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
+            sectionsResults = self.get_sections_based_on_tag(projectID, "ai-chat", descending=True)
+            sections = []
+            if sectionsResults:
+                colsMapper = {
+                            "id":"ID",
+                            "section":"title",
+                            "tags":"tags",
+                            "content":"content",
+                            "date":"sectionDate"
+                                }
+                cols = ['id', 'section', 'tags', 'content', 'date']
+                for result in sectionsResults:
+                    kwargs = {colsMapper[col]:value for col,value in zip(cols,result)}
+                    if not kwargs['content'].strip("\n"):
+                        kwargs['content'] = "Section content is emtpy."
+                    kwargs['projectID'] = projectID
+                    kwargs['projectName'] = tools.get_project_name_based_on_id(projectID)
+                    kwargs['section_dir_exists'] = int(Path(projectDirectory).joinpath(f"sections/{kwargs['ID']}").exists())
+                    section = SectionUtils(**kwargs)
+                    sections.append(section.render_content_to_html())
+            return sections
+        except Exception:
+            traceback.print_exc()
+            return []
+
+    def _has_ai_markers(self, text:str, start_marker:str = "\\ais", end_marker:str = "\\aie") -> bool:
+        has_start = start_marker in text
+        has_end = end_marker in text
+
+        if has_start and not has_end:
+            raise SyntaxError
+        elif has_end and not has_start:
+            raise SyntaxError
+
+        elif has_start and has_end:
+            return True
+        else:
+            return False
+
+    def _append_section_content(self, projectID:str, section_id:int, expanded_prompt:list, is_strict:bool):
+        section_content = self.get_section_raw_content(projectID, section_id)
+
+        # Omit section if it doesn't have both markers and we are not in strict mode
+        if not is_strict and not self._has_ai_markers(section_content):
+            return
+
+        section_title = self.get_section_title(projectID, section_id)
+        match = re.search(r'\\ais\n(.*?)\\aie', section_content, re.DOTALL)
+
+        if match:
+            expanded_prompt.append(f"# {section_title}")
+            expanded_prompt.append(match.group(1))
+        else:
+            raise SyntaxError
+
+    def _get_file_content(self, file_path:Path) -> str:
+        file_extension = file_path.suffix
+        file_content = None
+        if file_extension == '.pdf':
+            file_content = pymupdf4llm.to_markdown(file_path)
+        elif file_extension == '.docx' or file_extension == '.doc':
+            doc = Document(file_path)
+            full_text = []
+            for para in doc.paragraphs:
+                full_text.append(para.text)
+            file_content = "\n".join(full_text)
+        elif tools.is_flat_file(file_path):
+            with open(file_path, 'r') as inf:
+                file_content = inf.read() 
+        return file_content
+
+    def expand_user_prompt(self, projectID:str, user_prompt:str) -> str:
+        prompt_lines = user_prompt.split("\n")
+        expanded_prompt = []
+        for line in prompt_lines:
+            line = line.strip()
+            if line.startswith("@section"):
+                section_id = int(line.split(":", 1)[1].strip())
+                self._append_section_content(projectID, section_id, expanded_prompt, is_strict=True)
+            elif line.startswith("@chapter"):
+                chapter_id = int(line.split(":", 1)[1].strip())
+                sections_ids = self.get_sections_IDs_for_chapter(projectID, chapter_id)
+                for section_id in sections_ids:
+                    self._append_section_content(projectID, section_id, expanded_prompt, is_strict=False)
+            elif line.startswith("@notebook"):
+                notebook_id = int(line.split(":", 1)[1].strip())
+                chapters_ids = self.get_chapters_ids_for_notebook(projectID, notebook_id)
+                for chapter_id in chapters_ids:
+                    sections_ids = self.get_sections_IDs_for_chapter(projectID, chapter_id)
+                    for section_id in sections_ids:
+                        self._append_section_content(projectID, section_id, expanded_prompt, is_strict=False)
+            elif line.startswith("@file"):
+                file_relative_path = line.split(":", 1)[1].strip()
+                projectDir, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
+                file_full_path = Path(projectDir).joinpath(file_relative_path)
+
+                if not file_full_path.exists():
+                    raise ValueError
+
+                file_content = self._get_file_content(file_full_path)
+                if file_content is None:
+                    raise ValueError
+
+                expanded_prompt.append(file_content)
+            else:
+                expanded_prompt.append(line)
+        return "\n".join(expanded_prompt)
+
+    def create_chat_history(self, projectID:str, new_prompt:str, chatSections:list) -> list:
+        chat_history = []
+        if chatSections:
+            for section in chatSections:
+                previous_user_prompt, ai_response = section.split("## Response")
+
+                user_prompt = self.expand_user_prompt(projectID, previous_user_prompt)
+
+                chat_history.extend([
+                    {
+                        "role": "user",
+                        "parts": [{"text": user_prompt}]
+                    },
+                    {
+                        "role": "model",
+                        "parts": [{"text": ai_response}]
+                    },
+
+                ])
+        new_prompt = self.expand_user_prompt(projectID, new_prompt)
+        chat_history.append(
+            {
+                "role": "user",
+                "parts": [{"text": new_prompt}]
+            }
+        )
+        return chat_history
 

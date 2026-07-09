@@ -61,6 +61,24 @@ class InlineRenderers:
             text = "<hr>"
         return text
 
+    def render_markdown_ai_markups(self, text: str) -> str:
+        """Converts markdown ai markups to html tags."""
+        if text.startswith('\\ais'):
+            text = ('<div class="ai-section-divider">'
+                    '<span class="ai-section-divider-marker"></span>'
+                    '<span class="ai-section-divider-label">ais</span>'
+                    '<span class="ai-section-divider-line"></span>'
+                    '<span class="ai-section-divider-marker"></span>'
+                    '</div>')
+        elif text.startswith('\\aie'):
+            text = ('<div class="ai-section-divider">'
+                    '<span class="ai-section-divider-marker"></span>'
+                    '<span class="ai-section-divider-label">aie</span>'
+                    '<span class="ai-section-divider-line"></span>'
+                    '<span class="ai-section-divider-marker"></span>'
+                    '</div>')
+        return text
+
     def render_markup_link_markups(self, text:str) -> str:
         """Converts markdown link markups to html <a> tag."""
         def render_markup(match):

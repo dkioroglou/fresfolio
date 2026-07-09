@@ -650,3 +650,34 @@ body.body--dark .app-note-green {
   padding-right: 8px;
   line-height: 1.5;
 }
+
+.ai-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-section-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--q-primary);
+  opacity: 0.25;
+}
+
+.ai-section-divider-marker {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--q-primary);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.ai-section-divider-label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--q-primary);
+  opacity: 0.6;
+  white-space: nowrap;
+}

@@ -5,17 +5,31 @@ import traceback
 from platform import system
 import subprocess
 import json
+from datetime import datetime
 from fresfolio.utils import tools
-from fresfolio.utils.classes import ProjectsUtils
-from time import sleep
+from fresfolio.utils.classes import ProjectsUtils, AiUtils
+import pyarrow as pa
 
-if tools.is_module_installed("pyarrow"):
-    import pyarrow as pa
 
 apiroutes = Blueprint('apiroutes', __name__)
 PUTL = ProjectsUtils()
+AIUTL = AiUtils()
 OSname = system().lower()
 
+
+# APP RELATED ROUTES
+#========================
+@apiroutes.route('/api/check-app-setting-is-set', methods=['POST'])
+def app_api_check_app_setting_is_set():
+    try:
+        data = request.get_json()
+        setting = data['setting']
+        if tools.get_app_setting(setting) is None:
+            return jsonify({"is_setting_set": False})
+        return jsonify({"is_setting_set": True})
+    except Exception:
+        traceback.print_exc()
+        return "Something went wrong", 400
 
 # PROJECTS RELATED ROUTES
 #========================
@@ -131,7 +145,7 @@ def app_api_get_chat_sections():
     try:
         data = request.get_json()
         projectID = data['projectID']
-        sections = PUTL.get_chat_sections(projectID)
+        sections = AIUTL.get_chat_sections(projectID)
         return jsonify(sections)
     except Exception:
         traceback.print_exc()
@@ -907,50 +921,48 @@ def api_submit_prompt_to_ai():
         projectID = data['projectID']
         new_user_prompt = data['prompt']
         ai_model = data['model']
+    except Exception:
+        return "Failed to parse request data", 400
 
+    try:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
-        chatSections = PUTL.get_chat_sections_content(projectID)
-
-        conversation_history = []
-        if chatSections:
-            for section in chatSections:
-                user_prompt, ai_response = section.split("## Response")
-                conversation_history.extend([
-                    {
-                        "role": "user",
-                        "parts": [{"text": user_prompt}]
-                    },
-                    {
-                        "role": "model",
-                        "parts": [{"text": ai_response}]
-                    },
-
-                ])
-        conversation_history.append(
-            {
-                "role": "user",
-                "parts": [{"text": new_user_prompt}]
-            }
-        )
-        response = tools.get_ai_response(ai_model, conversation_history)
+        chatSections = AIUTL.get_chat_sections_content(projectID)
     except Exception:
         traceback.print_exc()
-        return 'Failed to make response', 400
+        return 'Failed to get chat sections', 400
+
+    try:
+        chat_history = AIUTL.create_chat_history(projectID, new_user_prompt, chatSections)
+    except ValueError:
+        return "Wrong ID or path in prompt", 400
+    except SyntaxError :
+        return "A section content is missing ais or aie", 400
+    except Exception:
+        traceback.print_exc()
+        return 'Failed to parse user prompt', 400
+
+    try:
+        response = tools.get_ai_response(ai_model, chat_history)
+    except Exception:
+        traceback.print_exc()
+        return 'Failed to get ai response', 400
 
     if response['status_code'] != 200:
         return "Model could not respond", 400
 
+    today = datetime.today().strftime('%Y-%m-%d')
+    new_section_title = f"{ai_model} response on {today}"
     new_section_content = f"{new_user_prompt}\n\n## Response\n\n{response['text']}"
     tags = ['ai-chat']
 
     try:
-        sectionID =  PUTL.insert_section_in_db(projectID, new_section_content, tags)
+        new_section_id =  PUTL.insert_section_in_db(projectID, new_section_title, new_section_content, tags)
     except Exception:
-        return "Could store model response", 400
+        return "Failed to store model response", 400
 
     section = {}
     try:
-        section = PUTL.get_section_content_rendered(projectID, sectionID)
+        section = PUTL.get_section_content_rendered(projectID, new_section_id)
     except Exception:
-        return "Could not render model response", 400
+        return "Failed to render model response", 400
     return jsonify({"sectionData": section}), 200

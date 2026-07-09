@@ -55,6 +55,8 @@ def settings():
 @frescli.command()
 def set_ai_api_key():
     """Add or update API key for AI."""
+    if not is_app_initialized():
+        exit()
     api_key = input("api-key: ")
     try:
         tools.set_app_setting(setting='ai_api_key', value=api_key)
@@ -186,31 +188,6 @@ def import_project(directory):
         print(f"Cannot import project {projectName}.")
         exit()
     print("Project has been imported.")
-
-@frescli.command()
-@click.argument("project")
-def export_project(project):
-    "Export fresfolio project as files."
-    if not is_app_initialized():
-        exit()
-    from fresfolio.utils.classes import ProjectsUtils
-    PUTL = ProjectsUtils()
-    if not PUTL.project_exists(project):
-        exit(f"Project '{project}' does not exist.")
-    projectDir = Path.cwd().joinpath(project)
-    projectUUID = tools.get_project_ID_based_on_name(project)
-    notebooks = PUTL.get_notebooks_and_chapters_for_project(projectUUID)
-    print(notebooks)
-    # for notebookJSON in notebooks:
-    #     notebookName = notebookJSON['notebookName'].replace(" ", "_")
-    #     chapters = notebookJSON['chapters']
-    #     for chapterJSON in chapters:
-    #         chapterName = chapterJSON['chapterName'].replace(" ", "_")
-    #         chapterID = chapterJSON['chapterID']
-    #         sectionsIDs = PUTL.get_sections_IDs_for_chapter(projectUUID, chapterID)
-    #         print(sectionsIDs)
-
-
 
 if __name__ == '__main__':
     frescli()
