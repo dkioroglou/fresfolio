@@ -1206,6 +1206,8 @@ class SectionUtils:
 
 class AiUtils(ProjectsUtils):
 
+    ai_models_fpath = APPDIR.joinpath("ai_models.json")
+
     def get_chat_sections(self, projectID:str) -> list:
         try:
             projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)

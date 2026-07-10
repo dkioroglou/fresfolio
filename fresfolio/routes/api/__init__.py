@@ -966,3 +966,12 @@ def api_submit_prompt_to_ai():
     except Exception:
         return "Failed to render model response", 400
     return jsonify({"sectionData": section}), 200
+
+
+@apiroutes.route('/api/get-ai-models', methods=['POST'])
+def api_get_ai_models():
+    ai_models = []
+    if AIUTL.ai_models_fpath.exists():
+        with open(AIUTL.ai_models_fpath, 'r') as inf:
+            ai_models = json.load(inf)
+    return jsonify({"ai_models":ai_models}), 200

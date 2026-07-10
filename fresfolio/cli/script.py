@@ -1,6 +1,7 @@
 import click
 from pathlib import Path
 from fresfolio.utils import tools
+import json
 import traceback
 
 APPDIR = Path("~/fresfolio").expanduser()
@@ -58,12 +59,23 @@ def set_ai_api_key():
     if not is_app_initialized():
         exit()
     api_key = input("api-key: ")
+
+    try:
+        file_path = APPDIR.joinpath("ai_models.json")
+        with open(file_path, 'w') as outf:
+            print(json.dumps([]), file=outf)
+    except Exception:
+        traceback.print_exc()
+        exit("Could not create ai_models.json.")
+
     try:
         tools.set_app_setting(setting='ai_api_key', value=api_key)
     except Exception:
         traceback.print_exc()
         exit("Could not add API key.")
+
     print("API key was added successfully.")
+    print(f"Add AI models to file: {file_path}")
 
 @frescli.command()
 @click.option("--port", "-p", type=int, default=5000, help="Port to be used by fresfolio.")

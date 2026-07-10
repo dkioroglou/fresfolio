@@ -90,19 +90,17 @@ const ProjectLayout = defineComponent({
             chatPrompt: "",
             isSubmittingPrompt: false,
             ai_api_key_found: false,
-            ai_models: [
-                "gemini-3.1-flash-lite",
-                "gemini-3.5-flash",
-                "gemini-3.1-pro-preview"
-            ],
-            selectedModel: "gemini-3.1-flash-lite"
+            ai_models: [],
+            selectedModel: ""
         }
     },
     methods: {
         toggleDrawer(name) {
             const wasOpen = this.drawers[name];
             Object.keys(this.drawers).forEach(key => {
-                this.drawers[key] = false;
+                if (key !== name) {
+                    this.drawers[key] = false;
+                }
             });
             this.drawers[name] = !wasOpen;
         },
@@ -448,7 +446,7 @@ const ProjectLayout = defineComponent({
                     this.searchSections = await response.json();
                     this.searchText = '';
                     if (this.searchSections.length !== 0){
-                        if (!this.drawers.seach) {
+                        if (!this.drawers.search) {
                             this.toggleDrawer('search');
                         }
                     }
@@ -1060,6 +1058,34 @@ const ProjectLayout = defineComponent({
                 console.error(error);
             }
         },
+        async get_ai_models() {
+            try {
+                const response = await fetch("/api/get-ai-models", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify()
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    this.ai_models = data['ai_models'];
+                    if (this.ai_models.length !== 0) {
+                        this.selectedModel = data['ai_models'][0]
+                    }
+                } else {
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        },
         async checkAiAPIKeyExists() {
             try {
                 const response = await fetch("/api/check-app-setting-is-set", {
@@ -1077,6 +1103,9 @@ const ProjectLayout = defineComponent({
                 if (response.ok) {
                     const data = await response.json();
                     this.ai_api_key_found = data.is_setting_set;
+                    if (this.ai_api_key_found) {
+                        this.get_ai_models()
+                    }
                 } else {
                     const responseText = await response.text();
                     this.$q.notify({
@@ -1163,7 +1192,7 @@ const ProjectLayout = defineComponent({
             />
 
             <q-btn
-                v-if="ai_api_key_found"
+                v-if="ai_api_key_found && ai_models.length > 0"
                 round
                 class="q-mr-md"
                 color="primary"
