@@ -28,6 +28,10 @@ setup(
     long_description=long_description,
     keywords=["flask", "notebook", "research", "reporting"],
     install_requires=read_file("requirements.txt"),
+    extras_require={
+        "extra": read_file("extra_requirements.txt")
+        "full": read_file("full_requirements.txt")
+    },
     packages=find_packages(),
     classifiers=[
         "Development Status :: 1 - Planning",

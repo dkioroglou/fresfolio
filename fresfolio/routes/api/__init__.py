@@ -8,8 +8,10 @@ import json
 from datetime import datetime
 from fresfolio.utils import tools
 from fresfolio.utils.classes import ProjectsUtils, AiUtils
-import pyarrow as pa
 
+extras_installed = tools.has_extras()
+if extras_installed:
+    import pyarrow as pa
 
 apiroutes = Blueprint('apiroutes', __name__)
 PUTL = ProjectsUtils()
@@ -975,3 +977,7 @@ def api_get_ai_models():
         with open(AIUTL.ai_models_fpath, 'r') as inf:
             ai_models = json.load(inf)
     return jsonify({"ai_models":ai_models}), 200
+
+@apiroutes.route('/api/check-extras-installed', methods=['POST'])
+def api_check_extras_installed():
+    return jsonify({'extras_installed': tools.has_extras()}), 200

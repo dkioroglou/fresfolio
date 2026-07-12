@@ -12,16 +12,30 @@ import requests
 from datetime import datetime
 import json
 import mimetypes
-from omilayers import Omilayers
+
+if importlib.util.find_spec("omilayers") is not None:
+    from omilayers import Omilayers
 
 APPDIR = Path("~/fresfolio").expanduser()
 APPDB = APPDIR.joinpath("fresfolio.db")
 
+def is_module_installed(module_name):
+    return importlib.util.find_spec(module_name) is not None
+
 def generate_uuid() -> str:
     return uuid.uuid4().hex
 
-def is_module_installed(module_name):
-    return importlib.util.find_spec(module_name) is not None
+def has_extras():
+    extra_modules = [
+            "pyarrow",
+            "omilayers",
+            "docx",
+            "pymupdf4llm"
+    ]
+    modules_installed = [is_module_installed(name) for name in extra_modules]
+    if sum(modules_installed) != len(extra_modules):
+        return False
+    return True
 
 def table_has_column(db:str, table:str, colname:str) -> bool:
     with contextlib.closing(sqlite3.connect(db)) as conn:
@@ -230,16 +244,16 @@ def convert_tag_args_to_json(tag_args:str) -> dict:
     return JSON
 
 def get_omilayers(projectID:str, DBpath:str) -> list:
-        try:
-            projectDirectory, projectDB = get_paths_for_project_dir_and_db(projectID)
-            omi = Omilayers(str(Path(projectDirectory).joinpath(DBpath)))
-            df = omi._dbutils._get_tables_info()
-        except Exception:
-            traceback.print_exc()
-            return []
-        if df.shape[0] != 0:
-            return df[['name', 'info', 'shape']].to_dict(orient='records')
+    try:
+        projectDirectory, projectDB = get_paths_for_project_dir_and_db(projectID)
+        omi = Omilayers(str(Path(projectDirectory).joinpath(DBpath)))
+        df = omi._dbutils._get_tables_info()
+    except Exception:
+        traceback.print_exc()
         return []
+    if df.shape[0] != 0:
+        return df[['name', 'info', 'shape']].to_dict(orient='records')
+    return []
 
 def get_sections_IDs_for_chapter(projectID:str, chapterID:int) -> list:
     projectDirectory, projectDB = get_paths_for_project_dir_and_db(projectID)

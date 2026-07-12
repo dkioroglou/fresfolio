@@ -3,3 +3,7 @@ requests
 pandas
 openpyxl
 xlrd
+pyarrow
+omilayers == 0.2.3
+python-docx
+pymupdf4llm

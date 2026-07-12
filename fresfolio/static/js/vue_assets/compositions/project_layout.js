@@ -91,7 +91,8 @@ const ProjectLayout = defineComponent({
             isSubmittingPrompt: false,
             ai_api_key_found: false,
             ai_models: [],
-            selectedModel: ""
+            selectedModel: "",
+            extras_installed: false
         }
     },
     methods: {
@@ -1121,11 +1122,38 @@ const ProjectLayout = defineComponent({
         },
         refreshChatSections() {
             this.getChatSections()
+        },
+        async checkExtrasInstalled() {
+            try {
+                const response = await fetch("/api/check-extras-installed", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify()
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    this.extras_installed = data['extras_installed']
+                } else {
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
+
         }
     },
     async mounted () {
         this.get_notebooks();
         this.getProcesses();
+        this.checkExtrasInstalled();
         this.checkAiAPIKeyExists();
         window.addEventListener('keydown', this.handleShortcut)
     },
@@ -1202,6 +1230,7 @@ const ProjectLayout = defineComponent({
             />
 
             <q-btn
+                v-if="extras_installed"
                 round
                 class="q-mr-md"
                 color="primary"
@@ -1211,6 +1240,7 @@ const ProjectLayout = defineComponent({
             />
 
             <q-btn
+                v-if="extras_installed"
                 round
                 class="q-mr-md"
                 color="primary"

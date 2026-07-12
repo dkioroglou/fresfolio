@@ -8,14 +8,16 @@ from collections import defaultdict
 import re
 import traceback
 import secrets
-from omilayers import Omilayers
-import duckdb
 import pandas as pd
-from docx import Document
-import pymupdf4llm
 from fresfolio.utils import tools
 
-pymupdf4llm.use_layout(False)
+extras_installed = tools.has_extras()
+if extras_installed:
+    from omilayers import Omilayers
+    import duckdb
+    from docx import Document
+    import pymupdf4llm
+    pymupdf4llm.use_layout(False)
 
 APPDIR = Path("~/fresfolio").expanduser()
 APPDB = APPDIR.joinpath("fresfolio.db")
@@ -1270,13 +1272,19 @@ class AiUtils(ProjectsUtils):
         file_extension = file_path.suffix
         file_content = None
         if file_extension == '.pdf':
-            file_content = pymupdf4llm.to_markdown(file_path)
+            if extras_installed:
+                file_content = pymupdf4llm.to_markdown(file_path)
+            else:
+                raise ValueError("extras are not installed")
         elif file_extension == '.docx' or file_extension == '.doc':
-            doc = Document(file_path)
-            full_text = []
-            for para in doc.paragraphs:
-                full_text.append(para.text)
-            file_content = "\n".join(full_text)
+            if extras_installed:
+                doc = Document(file_path)
+                full_text = []
+                for para in doc.paragraphs:
+                    full_text.append(para.text)
+                file_content = "\n".join(full_text)
+            else:
+                raise ValueError("extras are not installed")
         elif tools.is_flat_file(file_path):
             with open(file_path, 'r') as inf:
                 file_content = inf.read() 
