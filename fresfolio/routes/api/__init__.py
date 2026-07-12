@@ -935,8 +935,10 @@ def api_submit_prompt_to_ai():
     try:
         chat_history = AIUTL.create_chat_history(projectID, new_user_prompt, chatSections)
     except ValueError:
+        tools.log_traceback()
         return "Wrong ID or path in prompt", 400
     except SyntaxError :
+        tools.log_traceback()
         return "A section content is missing ais or aie", 400
     except Exception:
         tools.log_traceback()
@@ -959,12 +961,14 @@ def api_submit_prompt_to_ai():
     try:
         new_section_id =  PUTL.insert_section_in_db(projectID, new_section_title, new_section_content, tags)
     except Exception:
+        tools.log_traceback()
         return "Failed to store model response", 400
 
     section = {}
     try:
         section = PUTL.get_section_content_rendered(projectID, new_section_id)
     except Exception:
+        tools.log_traceback()
         return "Failed to render model response", 400
     return jsonify({"sectionData": section}), 200
 

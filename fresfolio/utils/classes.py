@@ -1237,34 +1237,24 @@ class AiUtils(ProjectsUtils):
             tools.log_traceback()
             return []
 
-    def _has_ai_markers(self, text:str, start_marker:str = "\\ais", end_marker:str = "\\aie") -> bool:
-        has_start = start_marker in text
-        has_end = end_marker in text
+    def _clean_section_content(self, text):
+        # Remove \begin and \end blocks along with any curly bracket tags
+        text = re.sub(r'\\begin(?:\{[^}]*\})?.*?\\end(?:\{[^}]*\})?', '', text, flags=re.DOTALL)
+        # Remove \ais and \aie blocks
+        text = re.sub(r'\\ais.*?\\aie', '', text, flags=re.DOTALL)
+        # Replace 3 or more consecutive newlines with exactly 2 newlines
+        text = re.sub(r'\n{3,}', '\n\n', text)
+        # Optional: strip leading and trailing whitespace from the whole text
+        return text.strip()
 
-        if has_start and not has_end:
-            raise SyntaxError
-        elif has_end and not has_start:
-            raise SyntaxError
-
-        elif has_start and has_end:
-            return True
-        else:
-            return False
-
-    def _append_section_content(self, projectID:str, section_id:int, expanded_prompt:list, is_strict:bool):
-        section_content = self.get_section_raw_content(projectID, section_id)
-
-        # Omit section if it doesn't have both markers and we are not in strict mode
-        if not is_strict and not self._has_ai_markers(section_content):
-            return
-
-        section_title = self.get_section_title(projectID, section_id)
-        match = re.search(r'\\ais\n(.*?)\\aie', section_content, re.DOTALL)
-
-        if match:
+    def _append_section_content(self, projectID:str, section_id:int, expanded_prompt:list):
+        try:
+            section_content = self.get_section_raw_content(projectID, section_id)
+            section_title = self.get_section_title(projectID, section_id)
+            section_content = self._clean_section_content(section_content)
             expanded_prompt.append(f"# {section_title}")
-            expanded_prompt.append(match.group(1))
-        else:
+            expanded_prompt.append(section_content)
+        except Exception:
             raise SyntaxError
 
     def _get_file_content(self, file_path:Path) -> str:

@@ -356,9 +356,9 @@ def get_ai_response(ai_model:str, conversation_history:list) -> dict:
         if response_status_code  == 200:
             text_response = data['candidates'][0]['content']['parts'][0]['text']
         else:
-            print(data)
             text_response = ""
     except requests.exceptions.RequestException as e:
+        log_traceback()
         print(f"\nAn error occurred: {e}")
         return {'status_code': "400", 'text':""}
     return {'status_code': response_status_code, 'text':text_response}
