@@ -14,7 +14,6 @@ def is_app_initialized() -> bool:
         return False
     return True
 
-
 @click.group()
 def frescli():
     pass
@@ -84,6 +83,11 @@ def start(port, broadcast):
     """Start fresfolio."""
     if not is_app_initialized():
         exit()
+
+    # Clear fresfolio log file.
+    with open(APPDIR.joinpath("fresfolio.log"), 'w'):
+        pass
+
     # Solving lack of UUIDs in previous versions.
     if tools.get_app_setting("has_set_uuids") is None:
         print("NOTE: this version of fresfolio needs to gerenate UUIDs for projects.")

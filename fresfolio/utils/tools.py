@@ -19,6 +19,10 @@ if importlib.util.find_spec("omilayers") is not None:
 APPDIR = Path("~/fresfolio").expanduser()
 APPDB = APPDIR.joinpath("fresfolio.db")
 
+def log_traceback():
+    with open(APPDIR.joinpath("fresfolio.log"), 'w') as outf:
+        traceback.print_exc(file=outf)
+
 def is_module_installed(module_name):
     return importlib.util.find_spec(module_name) is not None
 
@@ -61,7 +65,7 @@ def uuid_column_added_to_table(db:str, table:str) -> bool:
                     )
                 conn.commit()
     except Exception:
-        traceback.print_exc()
+        log_traceback()
         return False
     return True
 
@@ -239,7 +243,7 @@ def convert_tag_args_to_json(tag_args:str) -> dict:
             key,value = arg.split(":")
             JSON[key.strip()] = value.strip()
     except Exception:
-        traceback.print_exc()
+        log_traceback()
         return {}
     return JSON
 
@@ -249,7 +253,7 @@ def get_omilayers(projectID:str, DBpath:str) -> list:
         omi = Omilayers(str(Path(projectDirectory).joinpath(DBpath)))
         df = omi._dbutils._get_tables_info()
     except Exception:
-        traceback.print_exc()
+        log_traceback()
         return []
     if df.shape[0] != 0:
         return df[['name', 'info', 'shape']].to_dict(orient='records')
@@ -267,7 +271,7 @@ def get_sections_IDs_for_chapter(projectID:str, chapterID:int) -> list:
             return [s[0] for s in sectionsIDs]
         return []
     except Exception:
-        traceback.print_exc()
+        log_traceback()
         return []
 
 def run_and_log(

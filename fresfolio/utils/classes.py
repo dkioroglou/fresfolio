@@ -6,7 +6,6 @@ import json
 import shutil
 from collections import defaultdict
 import re
-import traceback
 import secrets
 import pandas as pd
 from fresfolio.utils import tools
@@ -53,7 +52,7 @@ class AppINIT:
                 APPDIR.mkdir(exist_ok=False)
             except Exception:
                 print("[ERROR] Cannot initialize Fresfolio app directory.")
-                traceback.print_exc()
+                tools.log_traceback()
                 return False
             print("[OK] app directory created.")
             return True
@@ -101,7 +100,7 @@ class AppINIT:
                         conn.commit()
             except Exception:
                 print("[ERROR] Cannot initialize app database.")
-                traceback.print_exc()
+                tools.log_traceback()
                 return False
             print("[OK] app database created.")
             return True
@@ -115,7 +114,7 @@ class AppINIT:
             projectsDir = tools.get_app_setting("projectsDir")
         except Exception:
             print("[ERROR] Cannot get setting for projects directory.")
-            traceback.print_exc()
+            tools.log_traceback()
             return False
 
         if projectsDir is None:
@@ -128,7 +127,7 @@ class AppINIT:
                 projectsDir.mkdir(exist_ok=False)
             except Exception:
                 print("[ERROR] Cannot create projects directory.")
-                traceback.print_exc()
+                tools.log_traceback()
                 return False
             print("[OK] projects directory created.")
             return True
@@ -169,7 +168,7 @@ class ProjectsUtils:
             projectDirectory.mkdir(exist_ok=False)
             projectDirectory.joinpath("sections").mkdir(exist_ok=False)
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
 
         projectDB = str(projectDirectory.joinpath("project.db"))
@@ -216,7 +215,7 @@ class ProjectsUtils:
                     c.execute(query)
                     conn.commit()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             if projectDirectory.exists():
                 shutil.rmtree(projectDirectory)
             return False
@@ -231,7 +230,7 @@ class ProjectsUtils:
                     c.execute(query, (tools.generate_uuid(), projectName, str(projectDirectory), projectDescription, today))
                     conn.commit()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             if projectDirectory.exists():
                 shutil.rmtree(projectDirectory)
             return False
@@ -250,7 +249,7 @@ class ProjectsUtils:
                     c.execute(query, (tools.generate_uuid(), projectName, projectPath, projectDescription, today))
                     conn.commit()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -262,7 +261,7 @@ class ProjectsUtils:
                     c.execute(query, (str(projectPath), projectName))
                     conn.commit()
         except Exception: 
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -344,7 +343,7 @@ class ProjectsUtils:
                     c.execute(query, (notebookName, today))
                     conn.commit()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -361,7 +360,7 @@ class ProjectsUtils:
                     c.execute(query, (newNotebookName,notebookID))
                     conn.commit()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -377,7 +376,7 @@ class ProjectsUtils:
                     c.execute(query, (newProjectDescription, projectID))
                     conn.commit()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -403,7 +402,7 @@ class ProjectsUtils:
                     c.execute(query, (newProjectName, str(newProjectDirectory), projectID))
                     conn.commit()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -412,7 +411,7 @@ class ProjectsUtils:
         try:
             Path(projectDirectory).joinpath(f"sections/{sectionID}").mkdir(exist_ok=False)
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -440,7 +439,7 @@ class ProjectsUtils:
             sectionDirPath = Path(projectDirectory).joinpath(f"sections/{sectionID}")
             shutil.rmtree(str(sectionDirPath))
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -456,7 +455,7 @@ class ProjectsUtils:
                     c.execute(query, (sectionID,))
                     conn.commit()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -484,7 +483,7 @@ class ProjectsUtils:
                     c.execute(query, (chapterName, notebookID, today))
                     conn.commit()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -501,7 +500,7 @@ class ProjectsUtils:
                     c.execute(query, (newChapterName, chapterID))
                     conn.commit()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -517,7 +516,7 @@ class ProjectsUtils:
                 return [s[0] for s in sectionsIDs]
             return []
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return []
 
     def get_chapter_sections(self, projectID:str, chapterID:int) -> list:
@@ -557,7 +556,7 @@ class ProjectsUtils:
                 sections = [sectionsJSON[ID] for ID in sectionsIDs]
             return sections
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return []
 
     def get_sections_based_on_tag(self, projectID:str, tag:str, descending=False) -> list:
@@ -582,7 +581,7 @@ class ProjectsUtils:
                     c.execute(query)
                     sections = c.fetchall()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return sections
         return sections
 
@@ -600,7 +599,7 @@ class ProjectsUtils:
                     c.execute(query)
                     sections = c.fetchall()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return sections
         return [s[0] for s in sections]
 
@@ -706,7 +705,7 @@ class ProjectsUtils:
                     sectionID = c.lastrowid
                     conn.commit()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return sectionID
         return sectionID
 
@@ -719,7 +718,7 @@ class ProjectsUtils:
                     c.execute(query, (newSectionTitle, sectionID))
                     conn.commit()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -732,7 +731,7 @@ class ProjectsUtils:
                     c.execute(query, (newSectionContent, sectionID))
                     conn.commit()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -745,7 +744,7 @@ class ProjectsUtils:
                     c.execute(query, (json.dumps(sectionTags), sectionID))
                     conn.commit()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -762,7 +761,7 @@ class ProjectsUtils:
                 tags = json.loads(result[0])
             return tags
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return []
 
     def check_which_section_IDs_exist_in_db(self, projectID:str, sectionsIDs:list) -> list:
@@ -785,7 +784,7 @@ class ProjectsUtils:
         try:
             sectionDirectoryPath.mkdir(exist_ok=False)
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return ("Cannot create section directory", False)
         return ("", True)
 
@@ -801,7 +800,7 @@ class ProjectsUtils:
                 else:
                     IDs = [int(IDs.strip(" "))]
             except Exception:
-                traceback.print_exc()
+                tools.log_traceback()
                 IDs = []
             projects[projectID] = IDs
         else:
@@ -847,7 +846,7 @@ class ProjectsUtils:
                             _projectDirectory, _projectDB = tools.get_paths_for_project_dir_and_db(_projectID)
                             _projects.append((_projectID, _projectDB))
                     except Exception:
-                        traceback.print_exc()
+                        tools.log_traceback()
                         return []
             else:
                 _projects.append((projectID, projectDB))
@@ -936,7 +935,7 @@ class ProjectsUtils:
                     conn.commit()
             return True
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
 
     def chapter_is_deleted(self, projectID:str, chapterID:int, keep_sections:bool) -> bool:
@@ -960,7 +959,7 @@ class ProjectsUtils:
                     conn.commit()
             return True
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
 
     def chapter_links_are_deleted(self, projectID:str, chapterID:int) -> bool:
@@ -972,7 +971,7 @@ class ProjectsUtils:
                     c.execute(query, (chapterID,))
                     conn.commit()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -988,7 +987,7 @@ class ProjectsUtils:
                     c.execute(query, (projectID, ))
                     conn.commit()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -1002,7 +1001,7 @@ class ProjectsUtils:
                     c.executemany(query, entries)
                     conn.commit()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -1026,7 +1025,7 @@ class ProjectsUtils:
                 jsonRows.append({f"col{idx}":val for idx,val in enumerate(row, start=1)})
             return (jsonCols, jsonRows, layerInfo)
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return ([], [], "Cannot load layer data.")
 
     def get_data_from_omilayer_for_plotting(self, projectID:str, DBpath:str, query:str) -> pd.DataFrame:
@@ -1035,7 +1034,7 @@ class ProjectsUtils:
             omi = Omilayers(str(Path(projectDirectory).joinpath(DBpath)))
             df = omi.run(query, fetchdf=True)
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return pd.DataFrame()
         return df
 
@@ -1056,7 +1055,7 @@ class ProjectsUtils:
             else:
                 sectionPathTree = []
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return []
         return sectionPathTree
 
@@ -1088,7 +1087,7 @@ class ProjectsUtils:
                 else:
                     con.execute(query, ["No available description.", layerName])
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -1101,7 +1100,7 @@ class ProjectsUtils:
                 query = f"DESCRIBE {layerName}"
                 cols = con.execute(query).fetchdf()
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return {}
         return [{"name":record['column_name'], "dtype":dtypesMapper[record['column_type']], "value":""} for record in cols.to_dict(orient='records')]
 
@@ -1119,7 +1118,7 @@ class ProjectsUtils:
             omi = Omilayers(str(dbFullPath))
             omi.layers[layerName].insert(df)
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -1137,7 +1136,7 @@ class ProjectsUtils:
             omi = Omilayers(str(dbFullPath))
             omi.layers[layerName].insert(df)
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -1148,7 +1147,7 @@ class ProjectsUtils:
             omi = Omilayers(str(dbFullPath))
             omi.layers[layerName].set_info(layerInfo)
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -1159,7 +1158,7 @@ class ProjectsUtils:
             omi = Omilayers(str(dbFullPath))
             omi.layers.drop([layerName])
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return False
         return True
 
@@ -1235,7 +1234,7 @@ class AiUtils(ProjectsUtils):
                     sections.append(section.render_content_to_html())
             return sections
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return []
 
     def _has_ai_markers(self, text:str, start_marker:str = "\\ais", end_marker:str = "\\aie") -> bool:

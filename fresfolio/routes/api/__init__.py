@@ -1,7 +1,6 @@
 from flask import Blueprint, jsonify, request, send_from_directory, Response
 from pathlib import Path
 import re
-import traceback
 from platform import system
 import subprocess
 import json
@@ -30,7 +29,7 @@ def app_api_check_app_setting_is_set():
             return jsonify({"is_setting_set": False})
         return jsonify({"is_setting_set": True})
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 # PROJECTS RELATED ROUTES
@@ -47,7 +46,7 @@ def app_api_create_project():
             return "Error creating project.", 400
         return "", 200
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/get-projects', methods=['POST'])
@@ -62,7 +61,7 @@ def app_api_get_notebooks():
     try:
         projectNotebooks = PUTL.get_notebooks_and_chapters_for_project(projectID)
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "", 400
     return jsonify(projectNotebooks)
 
@@ -78,7 +77,7 @@ def app_api_create_notebook():
             return "Cannot create notebook", 400
         return "", 200
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/create-chapter', methods=['POST'])
@@ -94,7 +93,7 @@ def app_api_create_chapter():
             return "Cannot create chapter", 400
         return "", 200
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/set-notebook-name', methods=['POST'])
@@ -110,7 +109,7 @@ def app_api_set_notebook_name():
             return "", 200
         return "Cannot change notebook name", 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/set-chapter-name', methods=['POST'])
@@ -127,7 +126,7 @@ def app_api_set_chapter_name():
             return "", 200
         return "Cannot change chapter name", 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/get-chapter-sections', methods=['POST'])
@@ -139,7 +138,7 @@ def app_api_get_chapter_sections():
         sections = PUTL.get_chapter_sections(projectID, chapterID)
         return jsonify(sections)
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/get-chat-sections', methods=['POST'])
@@ -150,7 +149,7 @@ def app_api_get_chat_sections():
         sections = AIUTL.get_chat_sections(projectID)
         return jsonify(sections)
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/create-section', methods=['POST'])
@@ -162,12 +161,12 @@ def app_api_create_section():
         try:
             newSectionID = PUTL.create_section_in_db(projectID, chapterID)
         except Exception:
-            traceback.print_exc()
+            tools.log_traceback()
             return 'Cannot create section', 400
         data = PUTL.get_section_content_rendered(projectID, newSectionID) 
         return jsonify({"sectionData": data}), 200
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/set-section-title', methods=['POST'])
@@ -181,7 +180,7 @@ def app_api_set_section_title():
             return "", 200
         return "Cannot change section title", 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/get-section-raw-content', methods=['POST'])
@@ -196,7 +195,7 @@ def app_api_get_section_raw_content():
                 return jsonify({"sectionRawContent":sectionRawContent}), 200
         return jsonify({"sectionRawContent":sectionRawContent.replace("\n", "<br>")}), 200
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/set-section-content', methods=['POST'])
@@ -213,7 +212,7 @@ def app_api_set_section_content():
             return jsonify({"sectionData": data}), 200
         return "Error setting section content"
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/update-section-content', methods=['POST'])
@@ -226,7 +225,7 @@ def app_api_update_section_content():
         print(data)
         return jsonify({"sectionData": data}), 200
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/create-section-directory', methods=['POST'])
@@ -240,7 +239,7 @@ def app_api_create_section_directory():
             return "", 200
         return message, 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/get-sections-for-search', methods=['POST'])
@@ -261,7 +260,7 @@ def app_api_get_sections_for_search():
             return jsonify(sectionsRendered), 200
         return "Search query matched no sections.", 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/delete-section', methods=['POST'])
@@ -288,7 +287,7 @@ def app_api_delete_section():
             return "", 200
         return "Cannot delete section.", 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/delete-notebook', methods=['POST'])
@@ -302,7 +301,7 @@ def app_api_delete_notebook():
             return "", 200
         return "Cannot delete notebook.", 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/delete-chapter', methods=['POST'])
@@ -316,7 +315,7 @@ def app_api_delete_chapter():
             return "", 200
         return "Cannot delete notebook.", 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/set-project-description', methods=['POST'])
@@ -329,7 +328,7 @@ def app_api_set_project_description():
             return "", 200
         return "Cannot change project description.", 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/set-project-name', methods=['POST'])
@@ -344,7 +343,7 @@ def app_api_set_project_name():
             return "", 200
         return "Cannot change project name.", 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/delete-project', methods=['POST'])
@@ -356,7 +355,7 @@ def app_api_delete_project():
             return "", 200
         return "Cannot delete project.", 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/set-sections-tags', methods=['POST'])
@@ -370,7 +369,7 @@ def app_api_set_section_tags():
             return "", 200
         return "Cannot change section tags.", 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/set-chapter-sections-order', methods=['POST'])
@@ -405,7 +404,7 @@ def app_api_set_chapter_sections_order():
         else:
             return "Cannot rearrange sections", 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
 
 @apiroutes.route('/api/get-omilayers', methods=['POST'])
@@ -416,7 +415,7 @@ def app_api_get_omilayers():
         DBpath = data['DBpath']
         layers = tools.get_omilayers(projectID, DBpath)
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
     return jsonify(layers)
 
@@ -430,7 +429,7 @@ def app_api_get_data_for_omilayer():
         nrows = data['nrows']
         columns, rows, layerInfo = PUTL.get_data_for_omilayer(projectID, DBpath, layerName, nrows)
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
     return jsonify({"columns":columns, "rows":rows, "layerInfo":layerInfo})
 
@@ -442,7 +441,7 @@ def app_api_get_section_directory_tree():
         sectionID = data['sectionID']
         sectionDirectoryTree = PUTL.get_section_directory_tree(projectID, sectionID)
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
     return jsonify(sectionDirectoryTree)
 
@@ -514,7 +513,7 @@ def upload_files_to_section():
             f = request.files[k]
             f.save(sectionDir.joinpath(f.filename))
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return '', 400
     return "", 200
 
@@ -534,7 +533,7 @@ def api_create_new_omilayer():
         if not PUTL.new_omilayer_is_created(projectID, dbPath, layerName, layerDescription, columns):
             return "Cannot create omilayer.", 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Cannot create omilayer.", 400
     return "", 200
 
@@ -549,7 +548,7 @@ def api_get_omilayer_column_names_and_dtypes():
         if len(layerColumns) > 10:
             return "Layer has more than 10 columns", 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
     return jsonify(layerColumns)
 
@@ -564,7 +563,7 @@ def api_insert_data_to_omilayer():
         if not PUTL.data_are_inserted_to_omilayer(projectID, dbPath, layerName, layerData):
             return "Cannot insert data to omilayer", 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Something went wrong", 400
     return "", 200
 
@@ -587,7 +586,7 @@ def upload_file_to_omilayer():
         if not PUTL.file_is_inserted_to_omilayer(projectID, dbPath, layerName, uploaded_file, file_extension):
             return "Cannot insert file to omilayer", 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return 'Cannot insert file to omilayer.', 400
     return "", 200
 
@@ -602,7 +601,7 @@ def api_set_omilayer_description():
         if not PUTL.omilayer_description_is_set(projectID, dbPath, layerName, layerInfo):
             return "Cannot set omilayer description.", 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return 'Cannot set omilayer description.', 400
     return "", 200
 
@@ -616,7 +615,7 @@ def api_delete_omilayer():
         if not PUTL.omilayer_is_deleted(projectID, dbPath, layerName):
             return 'Cannot delete layer', 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return 'Cannot delete layer', 400
     return "", 200
 
@@ -628,13 +627,13 @@ def app_api_get_view_sections():
     try:
         projectID = tools.get_project_ID_based_on_name(projectName.strip())
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return 'Project does not exist', 400
 
     try:
         sectionsIDs = [int(x.strip()) for x in sectionsIDs]
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return 'Section IDs are not integers', 400
 
     try:
@@ -645,7 +644,7 @@ def app_api_get_view_sections():
                 return 'One or more section IDs not found.', 400
             renderedSections.append(renderedSection)
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return 'One or more section IDs not found.', 400
     
     return jsonify(renderedSections), 200
@@ -769,7 +768,7 @@ def app_api_sections_to_pdf():
                 print(pdf_content, file=outf)
 
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return 'Error creating PDF', 400
     return "", 200
 
@@ -786,7 +785,7 @@ def api_store_ace_editor_content():
         with open(filePath, 'w') as outf:
             print(file_content, file=outf)
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return 'Cannot store file content.', 400
     return "", 200
 
@@ -819,7 +818,7 @@ def api_start_process():
                 )
 
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return 'Cannot start process', 400
     return "", 200
 
@@ -839,7 +838,7 @@ def api_get_processes():
             if pJSON['status'] == 'running':
                 processesLogs.append(pJSON['processName'])
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return 'Cannot load processes logs', 400
     return jsonify(processesLogs), 200
 
@@ -856,7 +855,7 @@ def api_get_process_output():
         if stdType not in logJSON:
             return "Output type not found in log file", 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return 'Cannot read log file', 400
     return jsonify({"log":logJSON[stdType]}), 200
 
@@ -871,7 +870,7 @@ def api_get_project_duckdkb():
             pathdbRelPath = str(pathdb.relative_to(projectDirectory))
             dbs.append({"label":pathdbRelPath})
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return 'Cannot load project databases', 400
     return jsonify(dbs), 200
 
@@ -930,7 +929,7 @@ def api_submit_prompt_to_ai():
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         chatSections = AIUTL.get_chat_sections_content(projectID)
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return 'Failed to get chat sections', 400
 
     try:
@@ -940,13 +939,13 @@ def api_submit_prompt_to_ai():
     except SyntaxError :
         return "A section content is missing ais or aie", 400
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return 'Failed to parse user prompt', 400
 
     try:
         response = tools.get_ai_response(ai_model, chat_history)
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return 'Failed to get ai response', 400
 
     if response['status_code'] != 200:
@@ -969,7 +968,6 @@ def api_submit_prompt_to_ai():
         return "Failed to render model response", 400
     return jsonify({"sectionData": section}), 200
 
-
 @apiroutes.route('/api/get-ai-models', methods=['POST'])
 def api_get_ai_models():
     ai_models = []
@@ -981,3 +979,13 @@ def api_get_ai_models():
 @apiroutes.route('/api/check-extras-installed', methods=['POST'])
 def api_check_extras_installed():
     return jsonify({'extras_installed': tools.has_extras()}), 200
+
+@apiroutes.route('/api/get-fresfolio-log', methods=['POST'])
+def api_get_frefolio_log():
+    logFile = tools.APPDIR.joinpath("fresfolio.log")
+    logContent = ""
+    if logFile.exists():
+        with open(logFile, 'r') as inf:
+            logContent = inf.read() 
+    return jsonify({"log":logContent}), 200
+

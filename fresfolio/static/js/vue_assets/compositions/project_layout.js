@@ -92,10 +92,23 @@ const ProjectLayout = defineComponent({
             ai_api_key_found: false,
             ai_models: [],
             selectedModel: "",
-            extras_installed: false
+            extras_installed: false,
+            logViewerContent: "",
+            showLogViewer: false
         }
     },
     methods: {
+        toggleNotebookDrawer() {
+            if (this.notebooksDrawerOpen) {
+                this.notebooksDrawerOpen = false;
+                this.leftDrawerWidth = 200;
+                this.chaptersBTNCollapseIcon = "chevron_right";
+            } else {
+                this.notebooksDrawerOpen = true;
+                this.leftDrawerWidth = 400;
+                this.chaptersBTNCollapseIcon = "chevron_left";
+            }
+        },
         toggleDrawer(name) {
             const wasOpen = this.drawers[name];
             Object.keys(this.drawers).forEach(key => {
@@ -1148,6 +1161,32 @@ const ProjectLayout = defineComponent({
                 console.error(error);
             }
 
+        },
+        async getFresfolioLog() {
+            try {
+                const response = await fetch("/api/get-fresfolio-log", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify()
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    this.logViewerContent = data['log'];
+                    this.showLogViewer = true;
+                } else {
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
         }
     },
     async mounted () {
@@ -1283,10 +1322,14 @@ const ProjectLayout = defineComponent({
                     transition-hide="jump-up"
                     :style="{ backgroundColor: 'var(--q-primary)', color: 'white'}"
                 >
-                    <q-list dense style="min-width: 100px">
+                    <q-list dense style="min-width: 200px">
 
                         <q-item clickable v-close-popup @click="changeProject">
                             <q-item-section>Select project</q-item-section>
+                        </q-item>
+
+                        <q-item clickable v-close-popup @click="getFresfolioLog">
+                            <q-item-section>View log</q-item-section>
                         </q-item>
 
                     </q-list>
@@ -2197,6 +2240,25 @@ const ProjectLayout = defineComponent({
                 </Transition>
             </Teleport>
             <!-- ACE EDITOR  DIALOG END -->
+
+            <!-- FRESFOLIO LOG VIEWER DIALOG START -->
+            <q-dialog v-model="showLogViewer">
+                <q-card style="width: 1200px; max-width: 80vw; max-height: 80vh;">
+                    <q-card-section class="row items-center q-pb-none">
+                        <div class="text-h6">Fresfolio log viewer</div>
+                            <q-space />
+                            <q-btn icon="close" flat round dense v-close-popup />
+                            </q-card-section>
+
+                            <q-card-section>
+                            <div class="app-logviewer-container" style="overflow: auto; max-height: 60vh;">
+                                <pre><code>{{ logViewerContent }}</code></pre>
+                            </div>
+                    </q-card-section>
+                </q-card>
+            </q-dialog>
+            <!-- FRESFOLIO LOG VIEWER DIALOG END -->
+
 
             <!-- PAGE FLOATING BUTTONS -->
             <div v-if="renderedNotebookIDX !== '' && renderedChapterIDX !== ''">

@@ -1,5 +1,4 @@
 from flask import Blueprint, render_template, request, jsonify
-import traceback
 from fresfolio.utils import tools
 from fresfolio.routes.todos_app.appclass import AppClass
 
@@ -14,7 +13,7 @@ def todos_get_todos():
         appCLS = AppClass(project_dir)
         todos = appCLS.get_todos()
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "", 400
     return jsonify(todos)
 
@@ -28,7 +27,7 @@ def todos_create_todo():
         appCLS = AppClass(project_dir)
         appCLS.create_todo(todo)
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "", 400
     return "", 200
 
@@ -42,7 +41,7 @@ def todos_create_set_todo_done():
         appCLS = AppClass(project_dir)
         appCLS.set_todo_done(todoID)
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Cannot set todo done", 400
     return "", 200
 
@@ -56,7 +55,7 @@ def todos_create_set_todo_not_done():
         appCLS = AppClass(project_dir)
         appCLS.set_todo_not_done(todoID)
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Cannot set todo not done", 400
     return "", 200
 
@@ -70,7 +69,7 @@ def todos_delete_todo():
         appCLS = AppClass(project_dir)
         appCLS.delete_todo(todoID)
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Cannot delete todo.", 400
     return "", 200
 
@@ -85,7 +84,7 @@ def todos_set_todo():
         appCLS = AppClass(project_dir)
         appCLS.set_todo(todoID, newTodoText)
     except Exception:
-        traceback.print_exc()
+        tools.log_traceback()
         return "Cannot rename todo.", 400
     return "", 200
 
