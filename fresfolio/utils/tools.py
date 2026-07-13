@@ -334,8 +334,11 @@ def get_ai_response(ai_model:str, conversation_history:list) -> dict:
     headers = {"Content-Type": "application/json"}
     modelInstructions = r"""
     Instructions: 
-    1. If you need to include tables in your responses, include them between the markers \begin{table} and \end{table}. 
-    2. Use the following format when you include tables:
+    1. If you need to include tables in your responses, use the following format:
+    \begin{table}
+    [YOUR TABLE]
+    \end{table} 
+    2. Also for tables consider the following:
         2.a. separate all columns with a comma.
         2.b. do not include any commas inside the column values themselves.
     3. If you need to include programming code in your responses, use the standard markdown way but don't specify programming language.
@@ -343,6 +346,9 @@ def get_ai_response(ai_model:str, conversation_history:list) -> dict:
     $$
     [YOU EQUATION]
     $$
+    5. Keep markdown headers till level 3.
+    6. If you need to style text in italics, use the following format:
+    __[YOUR TEXT]__
     """
     payload = {
         "systemInstruction": {
