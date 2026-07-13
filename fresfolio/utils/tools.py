@@ -339,7 +339,10 @@ def get_ai_response(ai_model:str, conversation_history:list) -> dict:
         2.a. separate all columns with a comma.
         2.b. do not include any commas inside the column values themselves.
     3. If you need to include programming code in your responses, use the standard markdown way but don't specify programming language.
-    4. If you need to include math in your responses, use sinlge '$' for inline math. For equations, put them between double '$$' but each '$$' should be in separate line.
+    4. If you need to include math in your responses, use sinlge '$' for inline math. For equations, put them between double '$$' as following:
+    $$
+    [YOU EQUATION]
+    $$
     """
     payload = {
         "systemInstruction": {
