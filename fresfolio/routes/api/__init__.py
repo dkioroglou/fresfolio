@@ -208,11 +208,12 @@ def app_api_set_section_content():
         newSectionContent = data['newSectionContent']
         # This is a fix for the extra newline Quasar editor sometimes adds.
         newSectionContent = re.sub(r'\n{3,}', '\n\n', newSectionContent)
-        threading.Thread(
-            target=AIUTL.is_section_embedding_stored,
-            args=(projectID, sectionID, newSectionContent),
-            daemon=True
-        ).start()
+        if extras_installed and tools.VECTORDB.exists():
+            threading.Thread(
+                target=AIUTL.store_section_embedding,
+                args=(projectID, sectionID, newSectionContent),
+                daemon=True
+            ).start()
         if PUTL.section_content_is_set(projectID, sectionID, newSectionContent):
             data = PUTL.get_section_content_rendered(projectID, sectionID) 
             return jsonify({"sectionData": data}), 200
@@ -228,7 +229,6 @@ def app_api_update_section_content():
         projectID = data['projectID']
         sectionID = data['sectionID']
         data = PUTL.get_section_content_rendered(projectID, sectionID) 
-        print(data)
         return jsonify({"sectionData": data}), 200
     except Exception:
         tools.log_traceback()
@@ -254,7 +254,24 @@ def app_api_get_sections_for_search():
         data = request.get_json()
         projectID = data['projectID']
         query = data['query']
-        sectionsIDsPerProject = PUTL.get_sections_IDs_based_on_search_bar_query(projectID, query)
+
+        if query.startswith("@rag"):
+            if extras_installed:
+                rag_term, query_text = query.split(":", 1)
+                query_text = query_text.strip()
+                similarity_thres = 0.7
+                if "-" in rag_term:
+                    try:
+                        _, thres = rag_term.split("-")
+                        similarity_thres = float(thres.strip())
+                    except Exception:
+                        tools.log_traceback()
+                        return "Could no parse similarity threshold", 400
+                sectionsIDsPerProject = tools.fetch_k_section_neighbors_of_query(query_text, similarity_thres)
+            else:
+                return "Extras not installed", 400
+        else:
+            sectionsIDsPerProject = PUTL.get_sections_IDs_based_on_search_bar_query(projectID, query)
         if not sectionsIDsPerProject:
             return "Search query matched no sections.", 400
         sectionsRendered = []
@@ -290,6 +307,12 @@ def app_api_delete_section():
             sectionInDBDeleted = PUTL.section_in_db_is_deleted(projectID, sectionID)
         
         if sectionDirDeleted and sectionInDBDeleted:
+            if extras_installed and tools.VECTORDB.exists():
+                threading.Thread(
+                    target=AIUTL.delete_section_embedding,
+                    args=(projectID, sectionID),
+                    daemon=True
+                ).start()
             return "", 200
         return "Cannot delete section.", 400
     except Exception:
@@ -999,3 +1022,21 @@ def api_get_frefolio_log():
             logContent = inf.read() 
     return jsonify({"log":logContent}), 200
 
+@apiroutes.route('/api/create-rag-for-project', methods=['POST'])
+def api_create_rag_for_project():
+    data = request.get_json()
+    project_id = data['projectID']
+    try:
+        sections = PUTL.get_sections_ids_titles_and_contents_for_project(project_id)
+    except Exception:
+        tools.log_traceback()
+        return "Failed to get project sections", 400
+
+    try:
+        all_stored = AIUTL.store_sections_embeddings(sections)
+    except Exception:
+        tools.log_traceback()
+        return "Failed to create project RAG", 400
+    if not all_stored:
+        return "Some sections could not be stored", 400
+    return "", 200

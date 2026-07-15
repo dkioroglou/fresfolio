@@ -541,6 +541,21 @@ class ProjectsUtils:
             return False
         return True
 
+    def get_sections_ids_titles_and_contents_for_project(self, project_id:str) -> list:
+        project_dir, project_db = tools.get_paths_for_project_dir_and_db(project_id)
+        try:
+            with contextlib.closing(sqlite3.connect(project_db)) as conn:
+                with contextlib.closing(conn.cursor()) as c:
+                    query = "SELECT id, section, content FROM sections"
+                    c.execute(query)
+                    sections = c.fetchall()
+            if sections:
+                return [[project_id, s[0], s[1], s[2]] for s in sections]
+            return []
+        except Exception:
+            tools.log_traceback()
+            return []
+
     def get_sections_IDs_for_chapter(self, projectID:str, chapterID:int) -> list:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         try:
@@ -825,7 +840,7 @@ class ProjectsUtils:
             return ("Cannot create section directory", False)
         return ("", True)
 
-    def get_sections_IDs_based_on_search_bar_query(self, projectID:str, queryTerms:str) -> list:
+    def get_sections_IDs_based_on_search_bar_query(self, projectID:str, queryTerms:str) -> dict:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         projects = {}
         query = "SELECT id FROM sections WHERE"
@@ -884,7 +899,7 @@ class ProjectsUtils:
                             _projects.append((_projectID, _projectDB))
                     except Exception:
                         tools.log_traceback()
-                        return []
+                        return {}
             else:
                 _projects.append((projectID, projectDB))
 
@@ -1381,7 +1396,7 @@ class AiUtils(ProjectsUtils):
         )
         return chat_history
 
-    def is_section_embedding_stored(self, project_id:str, section_id:int, section_content:str) -> bool:
+    def store_section_embedding(self, project_id:str, section_id:int, section_content:str) -> bool:
         try:
             section_title = self. get_section_title(project_id, section_id)
             section_content_clean = self._clean_section_content(section_content)
@@ -1392,10 +1407,83 @@ class AiUtils(ProjectsUtils):
         
         try:
             with duckdb.connect(VECTORDB) as con:
-                query = "INSERT INTO sections (project_id, section_id, embedding) VALUES (?,?,?)"
-                con.execute(query, [project_id, section_id, section_embedding])
+                exists = con.execute(
+                    "SELECT 1 FROM sections WHERE project_id = ? AND section_id = ? LIMIT 1",
+                    [project_id, section_id]
+                ).fetchone()
+                if exists:
+                    con.execute(
+                        "UPDATE sections SET embedding = ? WHERE project_id = ? AND section_id = ?",
+                        [section_embedding, project_id, section_id]
+                    )
+                else:
+                    con.execute(
+                        "INSERT INTO sections (project_id, section_id, embedding) VALUES (?,?,?)",
+                        [project_id, section_id, section_embedding]
+                    )
         except Exception:
             tools.log_traceback()
             return False
         return True
 
+    def delete_section_embedding(self, project_id:str, section_id:int) -> bool:
+        try:
+            with duckdb.connect(VECTORDB) as con:
+                con.execute(
+                    "DELETE FROM sections WHERE project_id = ? AND section_id = ?",
+                    [project_id, section_id]
+                )
+        except Exception:
+            tools.log_traceback()
+            return False
+        return True
+
+
+    def store_sections_embeddings(self, sections: list[list]) -> bool:
+        """
+        sections: list of [project_id, section_id, section_title, section_content]
+        Returns True only if all sections were stored successfully.
+        """
+        all_ok = True
+
+        try:
+            with duckdb.connect(VECTORDB) as con:
+                for entry in sections:
+                    try:
+                        project_id, section_id, section_title, section_content = entry
+
+                        section_content_clean = self._clean_section_content(section_content)
+                        full_content = f"# {section_title}\n\n{section_content_clean}"
+                        section_embedding = tools.create_section_embedding(full_content)
+
+                        if len(section_embedding) == 0:
+                            tools.log_traceback()
+                            all_ok = False
+                            continue
+
+                        exists = con.execute(
+                            "SELECT 1 FROM sections WHERE project_id = ? AND section_id = ? LIMIT 1",
+                            [project_id, section_id]
+                        ).fetchone()
+
+                        if exists:
+                            con.execute(
+                                "UPDATE sections SET embedding = ? WHERE project_id = ? AND section_id = ?",
+                                [section_embedding, project_id, section_id]
+                            )
+                        else:
+                            con.execute(
+                                "INSERT INTO sections (project_id, section_id, embedding) VALUES (?, ?, ?)",
+                                [project_id, section_id, section_embedding]
+                            )
+
+                    except Exception:
+                        tools.log_traceback()
+                        all_ok = False
+                        continue
+
+        except Exception:
+            tools.log_traceback()
+            return False
+
+        return all_ok

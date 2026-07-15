@@ -94,7 +94,8 @@ const ProjectLayout = defineComponent({
             selectedModel: "",
             extras_installed: false,
             logViewerContent: "",
-            showLogViewer: false
+            showLogViewer: false,
+            creatingRag: false
         }
     },
     methods: {
@@ -1187,6 +1188,40 @@ const ProjectLayout = defineComponent({
             } catch (error) {
                 console.error(error);
             }
+        },
+        async createProjectRag() {
+            this.creatingRag = true;
+            try {
+                const response = await fetch("/api/create-rag-for-project", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        "projectID": this.selectedProjectID, 
+                    })
+                });
+
+                if (response.ok) {
+                    this.creatingRag = false;
+                    this.$q.notify({
+                        message: 'RAG created',
+                        color: 'green',
+                        position: "top-right"
+                    })
+                } else {
+                    this.creatingRag = false;
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                this.creatingRag = false;
+                console.error(error);
+            }
         }
     },
     async mounted () {
@@ -1330,6 +1365,18 @@ const ProjectLayout = defineComponent({
 
                         <q-item clickable v-close-popup @click="getFresfolioLog">
                             <q-item-section>View log</q-item-section>
+                        </q-item>
+
+                        <q-item 
+                            v-if="extras_installed" 
+                            clickable 
+                            :disable="creatingRag"
+                            @click="createProjectRag"
+                        >
+                            <q-item-section side v-if="creatingRag">
+                                <q-spinner color="white" size="20px" />
+                            </q-item-section>
+                            <q-item-section>Create RAG</q-item-section>
                         </q-item>
 
                     </q-list>

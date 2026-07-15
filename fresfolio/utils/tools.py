@@ -12,16 +12,17 @@ import requests
 from datetime import datetime
 import json
 import mimetypes
-import numpy as np
 
 if importlib.util.find_spec("omilayers") is not None:
     from omilayers import Omilayers
+    import duckdb
 
 if importlib.util.find_spec("fastembed") is not None:
     from fastembed import TextEmbedding
 
 APPDIR = Path("~/fresfolio").expanduser()
 APPDB = APPDIR.joinpath("fresfolio.db")
+VECTORDB = APPDIR.joinpath("fresfolio_vector.duckdb")
 
 def log_traceback():
     with open(APPDIR.joinpath("fresfolio.log"), 'w') as outf:
@@ -38,7 +39,8 @@ def has_extras():
             "pyarrow",
             "omilayers",
             "docx",
-            "pymupdf4llm"
+            "pymupdf4llm",
+            "fastembed"
     ]
     modules_installed = [is_module_installed(name) for name in extra_modules]
     if sum(modules_installed) != len(extra_modules):
@@ -386,12 +388,42 @@ def is_flat_file(file_full_path:Path) -> bool:
         }
     return False
 
-def create_section_embedding(section: str) -> np.ndarray:
+def create_section_embedding(section: str) -> list:
     try:
         embedding_model = TextEmbedding()
         section_embedding = next(embedding_model.embed(section))
     except Exception:
         log_traceback()
-        return np.array([])
-    return section_embedding
+        return []
+    return section_embedding.tolist()
+
+def fetch_k_section_neighbors_of_query(query: str, similarity_threshold: float = 0.7) -> dict: 
+    query_embedding = create_section_embedding(query)
+    try:
+        with duckdb.connect(VECTORDB) as con:
+            con.execute("LOAD vss")
+            query = """
+                SELECT
+                    project_id,
+                    section_id,
+                    array_cosine_similarity(embedding, ?::FLOAT[384]) AS similarity
+                FROM sections
+                WHERE array_cosine_similarity(embedding, ?::FLOAT[384]) >= ?
+                ORDER BY similarity DESC
+            """
+            rows = con.execute(
+                query,
+                [query_embedding, query_embedding, similarity_threshold]
+            ).fetchall()
+
+    except Exception:
+        log_traceback()
+        return {}
+    projects: dict[str, list[int]] = {}
+    if rows:
+        for row in rows:
+            project_id, section_id, similarity = row
+            projects.setdefault(project_id, []).append(section_id)
+    return projects
+
 
