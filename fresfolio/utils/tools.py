@@ -12,9 +12,13 @@ import requests
 from datetime import datetime
 import json
 import mimetypes
+import numpy as np
 
 if importlib.util.find_spec("omilayers") is not None:
     from omilayers import Omilayers
+
+if importlib.util.find_spec("fastembed") is not None:
+    from fastembed import TextEmbedding
 
 APPDIR = Path("~/fresfolio").expanduser()
 APPDB = APPDIR.joinpath("fresfolio.db")
@@ -382,4 +386,12 @@ def is_flat_file(file_full_path:Path) -> bool:
         }
     return False
 
+def create_section_embedding(section: str) -> np.ndarray:
+    try:
+        embedding_model = TextEmbedding()
+        section_embedding = next(embedding_model.embed(section))
+    except Exception:
+        log_traceback()
+        return np.array([])
+    return section_embedding
 

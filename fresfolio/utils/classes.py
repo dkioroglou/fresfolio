@@ -20,6 +20,7 @@ if extras_installed:
 
 APPDIR = Path("~/fresfolio").expanduser()
 APPDB = APPDIR.joinpath("fresfolio.db")
+VECTORDB = APPDIR.joinpath("fresfolio_vector.duckdb")
 
 if APPDIR.exists():
     from fresfolio.renderers.html_renderer import HtmlRenderer, PDFRenderer
@@ -35,15 +36,24 @@ class AppINIT:
 
     @property
     def __check_init_conditions_passed(self) -> bool:
-        conds = [
+        core_conds = [
             self.__app_dir_initialized,
             self.__app_db_initialized,
             self.__projects_dir_initialized
         ]
 
-        if sum(conds) != len(conds):
+        extra_conds = [
+            self.__vector_db_initialized
+        ]
+
+        if tools.has_extras():
+            if sum(core_conds) == len(core_conds) and sum(extra_conds) == len(extra_conds):
+                return True
             return False
-        return True
+        else:
+            if sum(core_conds) == len(core_conds):
+                return True
+            return False
 
     @property
     def __app_dir_initialized(self) -> bool:
@@ -106,6 +116,33 @@ class AppINIT:
             return True
         else:
             print("[OK] app database exists.")
+            return True
+
+    @property
+    def __vector_db_initialized(self) -> bool:
+        if not VECTORDB.exists():
+            try:
+                with duckdb.connect(VECTORDB) as con:
+                    con.execute("INSTALL vss;")
+            except Exception:
+                print("[ERROR] Cannot install vss to vector database.")
+                tools.log_traceback()
+
+            # NOTE: 384 are the embedding dimensions of the default model "bge-small-en-v1.5" that fastembed downloads.
+            # NOTE: to use another model the EMBEDDING_DIMS should be changed.
+            EMBEDDING_DIMS = 384
+            try:
+                with duckdb.connect(VECTORDB) as con:
+                    query = f"CREATE TABLE IF NOT EXISTS sections (project_id TEXT, section_id INTEGER, embedding FLOAT[{EMBEDDING_DIMS}])"
+                    con.execute(query)
+            except Exception:
+                print("[ERROR] Cannot initialize app database.")
+                tools.log_traceback()
+                return False
+            print("[OK] vector database created.")
+            return True
+        else:
+            print("[OK] vector database exists.")
             return True
 
     @property
@@ -1343,4 +1380,22 @@ class AiUtils(ProjectsUtils):
             }
         )
         return chat_history
+
+    def is_section_embedding_stored(self, project_id:str, section_id:int, section_content:str) -> bool:
+        try:
+            section_title = self. get_section_title(project_id, section_id)
+            section_content_clean = self._clean_section_content(section_content)
+            section_content = f"# {section_title}\n\n{section_content_clean}"
+            section_embedding = tools.create_section_embedding(section_content)
+        except Exception:
+            return False
+        
+        try:
+            with duckdb.connect(VECTORDB) as con:
+                query = "INSERT INTO sections (project_id, section_id, embedding) VALUES (?,?,?)"
+                con.execute(query, [project_id, section_id, section_embedding])
+        except Exception:
+            tools.log_traceback()
+            return False
+        return True
 

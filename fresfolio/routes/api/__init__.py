@@ -5,6 +5,7 @@ from platform import system
 import subprocess
 import json
 from datetime import datetime
+import threading
 from fresfolio.utils import tools
 from fresfolio.utils.classes import ProjectsUtils, AiUtils
 
@@ -207,6 +208,11 @@ def app_api_set_section_content():
         newSectionContent = data['newSectionContent']
         # This is a fix for the extra newline Quasar editor sometimes adds.
         newSectionContent = re.sub(r'\n{3,}', '\n\n', newSectionContent)
+        threading.Thread(
+            target=AIUTL.is_section_embedding_stored,
+            args=(projectID, sectionID, newSectionContent),
+            daemon=True
+        ).start()
         if PUTL.section_content_is_set(projectID, sectionID, newSectionContent):
             data = PUTL.get_section_content_rendered(projectID, sectionID) 
             return jsonify({"sectionData": data}), 200
