@@ -681,3 +681,31 @@ body.body--dark .app-note-green {
   opacity: 0.6;
   white-space: nowrap;
 }
+
+.mode-column {
+  line-height: 0.5 !important;
+  font-size: 15px !important;
+  min-height: 0;
+  margin-top: 4px;      /* push checkbox down */
+  margin-bottom: -4px;  /* compensate so total column height doesn't grow */
+}
+
+.threshold-display {
+  height: 32px;
+  color: white;
+}
+.threshold-value {
+  font-size: 13px;
+  min-width: 20px;
+  text-align: right;
+}
+.stepper-arrows {
+  line-height: 1;
+}
+.stepper-arrow {
+  font-size: 16px;
+  color: var(--q-primary, #1976d2);
+}
+.stepper-arrow:hover {
+  opacity: 0.7;
+}

@@ -61,6 +61,8 @@ const ProjectLayout = defineComponent({
             isSaving: false,
             expandAll: false,
             searchText: '',
+            useRAG: false,
+            searchThreshold: 0.7,
             sectionIDToUploadFiles: null,
             uploadToSectionRoute: "/api/upload-files-to-section",
             uploadToSectionFields: [],
@@ -92,10 +94,10 @@ const ProjectLayout = defineComponent({
             ai_api_key_found: false,
             ai_models: [],
             selectedModel: "",
-            extras_installed: false,
             logViewerContent: "",
             showLogViewer: false,
-            creatingRag: false
+            creatingRag: false,
+            initChecks: {}
         }
     },
     methods: {
@@ -446,6 +448,11 @@ const ProjectLayout = defineComponent({
             }
         },
         async search() {
+            if (this.useRAG) {
+                const searchQuery = "@rag-"+this.searchThreshold+":"+this.searchText
+            } else {
+                const searchQuery = this.searchText
+            }
             try {
                 const response = await fetch("/api/get-sections-for-search", {
                     method: "POST",
@@ -454,7 +461,7 @@ const ProjectLayout = defineComponent({
                     },
                     body: JSON.stringify({
                         "projectID": this.selectedProjectID,
-                        "query": this.searchText
+                        "query": searchQuery
                     }),
                 });
                 if (response.ok) {
@@ -1137,32 +1144,6 @@ const ProjectLayout = defineComponent({
         refreshChatSections() {
             this.getChatSections()
         },
-        async checkExtrasInstalled() {
-            try {
-                const response = await fetch("/api/check-extras-installed", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify()
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    this.extras_installed = data['extras_installed']
-                } else {
-                    const responseText = await response.text();
-                    this.$q.notify({
-                        message: responseText,
-                        color: 'negative',
-                        position: "top-right"
-                    })
-                }
-            } catch (error) {
-                console.error(error);
-            }
-
-        },
         async getFresfolioLog() {
             try {
                 const response = await fetch("/api/get-fresfolio-log", {
@@ -1222,13 +1203,48 @@ const ProjectLayout = defineComponent({
                 this.creatingRag = false;
                 console.error(error);
             }
-        }
+        },
+        incrementThreshold() {
+            this.searchThreshold = Math.min(1, Math.round((this.searchThreshold + 0.1) * 10) / 10);
+        },
+        decrementThreshold() {
+            this.searchThreshold = Math.max(0, Math.round((this.searchThreshold - 0.1) * 10) / 10);
+        },
+        async makeInitChecks() {
+            try {
+                const response = await fetch("/api/make-init-checks", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify()
+                });
+
+                if (response.ok) {
+                    this.initChecks = await response.json();
+                    this.useRAG = this.initChecks['vector_db_exists'];
+                    if (this.initChecks['ai_api_key_found']) {
+                        this.get_ai_models()
+                    }
+                } else {
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
+
+        },
     },
     async mounted () {
         this.get_notebooks();
         this.getProcesses();
+        this.makeInitChecks();
         this.checkExtrasInstalled();
-        this.checkAiAPIKeyExists();
         window.addEventListener('keydown', this.handleShortcut)
     },
     beforeUnmount() {
@@ -1304,7 +1320,7 @@ const ProjectLayout = defineComponent({
             />
 
             <q-btn
-                v-if="extras_installed"
+                v-if="initChecks.extras_installed"
                 round
                 class="q-mr-md"
                 color="primary"
@@ -1314,7 +1330,7 @@ const ProjectLayout = defineComponent({
             />
 
             <q-btn
-                v-if="extras_installed"
+                v-if="initChecks.extras_installed"
                 round
                 class="q-mr-md"
                 color="primary"
@@ -1333,21 +1349,47 @@ const ProjectLayout = defineComponent({
             />
 
             <!-- SEARCH BAR START -->
-            <q-input 
-                filled
+            <q-input
+                v-model="searchText"
+                type="textarea"
+                autogrow
                 dense
-                v-model="searchText" 
-                standout="bg-info text-white"
-                input-style="color: white"
-                label-color="white"
-                class="col-4 q-mr-lg text-h6" 
-                placeholder="Search" 
+                dark
+                placeholder="Search"
+                class="col-4 q-mr-sm"
                 @keydown.enter.prevent="searchText && search()"
                 :dense="dense">
                     <template v-slot:append>
                         <q-icon id="search-bar-icon" name="close" @click="searchText = ''" class="cursor-pointer" />
                     </template>
             </q-input>
+
+            <div v-if="initChecks.vector_db_exists" class="column mode-column q-mr-sm">
+                <q-checkbox
+                    v-model="useRAG"
+                    size="sm"
+                    dense
+                    dark
+                    label="RAG"
+                    color="primary"
+                    keep-color
+                />
+                <div v-if="useRAG" class="threshold-display row items-center no-wrap">
+                    <span class="threshold-value">{{ searchThreshold.toFixed(1) }}</span>
+                    <div class="row items-center stepper-arrows q-ml-xs">
+                        <q-icon
+                            name="keyboard_arrow_left"
+                            class="cursor-pointer stepper-arrow"
+                            @click="decrementThreshold"
+                        />
+                        <q-icon
+                            name="keyboard_arrow_right"
+                            class="cursor-pointer stepper-arrow"
+                            @click="incrementThreshold"
+                        />
+                    </div>
+                </div>
+            </div>
             <!-- SEARCH BAR END -->
 
             <q-btn color="primary" label="Menu">
@@ -1368,7 +1410,7 @@ const ProjectLayout = defineComponent({
                         </q-item>
 
                         <q-item 
-                            v-if="extras_installed" 
+                            v-if="initChecks.extras_installed" 
                             clickable 
                             :disable="creatingRag"
                             @click="createProjectRag"

@@ -21,6 +21,18 @@ OSname = system().lower()
 
 # APP RELATED ROUTES
 #========================
+@apiroutes.route('/api/make-init-checks', methods=['POST'])
+def app_api_make_init_checks():
+    checks = {}
+    try:
+        checks['ai_api_key_found'] = tools.get_app_setting("ai_api_key") is None
+        checks['vector_db_exists'] = tools.VECTORDB.exists()
+        checks['extras_installed'] = extras_installed
+    except Exception:
+        tools.log_traceback()
+        return "Something went wrong", 400
+    return jsonify(checks)
+
 @apiroutes.route('/api/check-app-setting-is-set', methods=['POST'])
 def app_api_check_app_setting_is_set():
     try:
@@ -1027,7 +1039,7 @@ def api_create_rag_for_project():
     data = request.get_json()
     project_id = data['projectID']
     try:
-        sections = PUTL.get_sections_ids_titles_and_contents_for_project(project_id)
+        sections = PUTL.get_sections_for_project(project_id)
     except Exception:
         tools.log_traceback()
         return "Failed to get project sections", 400

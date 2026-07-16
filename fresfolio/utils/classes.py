@@ -541,20 +541,20 @@ class ProjectsUtils:
             return False
         return True
 
-    def get_sections_ids_titles_and_contents_for_project(self, project_id:str) -> list:
+    def get_sections_for_project(self, project_id:str) -> list[dict]:
         project_dir, project_db = tools.get_paths_for_project_dir_and_db(project_id)
         try:
             with contextlib.closing(sqlite3.connect(project_db)) as conn:
                 with contextlib.closing(conn.cursor()) as c:
-                    query = "SELECT id, section, content FROM sections"
+                    query = "SELECT id, section, content, tags FROM sections"
                     c.execute(query)
                     sections = c.fetchall()
             if sections:
-                return [[project_id, s[0], s[1], s[2]] for s in sections]
-            return []
+                return [{"project_id":project_id, "section_id":s[0], 'title':s[1], 'content':s[2], 'tags':s[3]} for s in sections]
+            return {}
         except Exception:
             tools.log_traceback()
-            return []
+            return {}
 
     def get_sections_IDs_for_chapter(self, projectID:str, chapterID:int) -> list:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
@@ -1439,7 +1439,7 @@ class AiUtils(ProjectsUtils):
         return True
 
 
-    def store_sections_embeddings(self, sections: list[list]) -> bool:
+    def store_sections_embeddings(self, sections: list[dict]) -> bool:
         """
         sections: list of [project_id, section_id, section_title, section_content]
         Returns True only if all sections were stored successfully.
@@ -1450,10 +1450,14 @@ class AiUtils(ProjectsUtils):
             with duckdb.connect(VECTORDB) as con:
                 for entry in sections:
                     try:
-                        project_id, section_id, section_title, section_content = entry
+                        project_id = entry['project_id']
+                        section_id = entry['section_id']
+                        section_title = entry['title']
+                        section_content = entry['content']
+                        section_tags = ','.join(json.loads(entry['tags']))
 
                         section_content_clean = self._clean_section_content(section_content)
-                        full_content = f"# {section_title}\n\n{section_content_clean}"
+                        full_content = f"# {section_title}\n\nkeywords: {section_tags}\n\n{section_content_clean}"
                         section_embedding = tools.create_section_embedding(full_content)
 
                         if len(section_embedding) == 0:
