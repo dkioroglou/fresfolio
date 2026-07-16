@@ -43,6 +43,8 @@ const ProjectLayout = defineComponent({
             renderedChapterName: "",
             renderedChapterSectionsOrder: "",
             showRearrangeChapterSectionsDialog: false,
+            showSearchSectionsDialog: false,
+            searchSectionsOrder: "",
             showFileUploaderDialog: false,
             fetchedSectionsToRender: true,
             fetchingChatSectionsToRender: false,
@@ -449,9 +451,9 @@ const ProjectLayout = defineComponent({
         },
         async search() {
             if (this.useRAG) {
-                const searchQuery = "@rag-"+this.searchThreshold+":"+this.searchText
+                var searchQuery = "@rag-"+this.searchThreshold+":"+this.searchText
             } else {
-                const searchQuery = this.searchText
+                var searchQuery = this.searchText
             }
             try {
                 const response = await fetch("/api/get-sections-for-search", {
@@ -860,6 +862,13 @@ const ProjectLayout = defineComponent({
             })
             this.showRearrangeChapterSectionsDialog = true;
         },
+        getSearchSectionsOrder() {
+            this.searchSectionsOrder = "";
+            this.searchSections.forEach(section => {
+                this.searchSectionsOrder += section['ID'] + "-" + section['title'] + "\n"
+            })
+            this.showSearchSectionsDialog = true;
+        },
         async setChapterSectionsOrder() {
             try {
                 const response = await fetch("/api/set-chapter-sections-order", {
@@ -1108,39 +1117,6 @@ const ProjectLayout = defineComponent({
                 console.error(error);
             }
         },
-        async checkAiAPIKeyExists() {
-            try {
-                const response = await fetch("/api/check-app-setting-is-set", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(
-                        {
-                            "setting": "ai_api_key"
-                        }
-                    )
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    this.ai_api_key_found = data.is_setting_set;
-                    if (this.ai_api_key_found) {
-                        this.get_ai_models()
-                    }
-                } else {
-                    const responseText = await response.text();
-                    this.$q.notify({
-                        message: responseText,
-                        color: 'negative',
-                        position: "top-right"
-                    })
-                }
-            } catch (error) {
-                console.error(error);
-            }
-
-        },
         refreshChatSections() {
             this.getChatSections()
         },
@@ -1223,7 +1199,8 @@ const ProjectLayout = defineComponent({
                 if (response.ok) {
                     this.initChecks = await response.json();
                     this.useRAG = this.initChecks['vector_db_exists'];
-                    if (this.initChecks['ai_api_key_found']) {
+                    this.ai_api_key_found = this.initChecks['ai_api_key_found'];
+                    if (this.ai_api_key_found) {
                         this.get_ai_models()
                     }
                 } else {
@@ -1244,7 +1221,6 @@ const ProjectLayout = defineComponent({
         this.get_notebooks();
         this.getProcesses();
         this.makeInitChecks();
-        this.checkExtrasInstalled();
         window.addEventListener('keydown', this.handleShortcut)
     },
     beforeUnmount() {
@@ -1677,12 +1653,21 @@ const ProjectLayout = defineComponent({
                     />
                     <h3 class="q-ml-md q-ma-none">Search results</h3>
                 </div>
-                <q-btn 
-                    color="primary" 
-                    size='sm' 
-                    @click="clearSearchSections()" 
-                    label="Clear"
-                />
+                <div>
+                    <q-btn 
+                        color="primary" 
+                        class="q-mr-md"
+                        size='sm' 
+                        @click="getSearchSectionsOrder()" 
+                        label="Sections"
+                    />
+                    <q-btn 
+                        color="primary" 
+                        size='sm' 
+                        @click="clearSearchSections()" 
+                        label="Clear"
+                    />
+                </div>
             </div>
 
             <template v-if="searchSections.length" class="q-px-md">
@@ -2223,6 +2208,29 @@ const ProjectLayout = defineComponent({
                 </q-card>
             </q-dialog>
             <!--REARRANGE CHAPTER SECTIONS DIALOG END-->
+
+            <!--VIEW SEARCH SECTIONS DIALOG START-->
+            <q-dialog v-model="showSearchSectionsDialog">
+                <q-card class="app-bg-color-5" style="min-width: 700px; max-width: 90vw;">
+                    <q-card-section>
+                        <div class="text-h6">Search sections</div>
+                    </q-card-section>
+
+                    <q-card-section>
+                        <q-input
+                            v-model="searchSectionsOrder"
+                            type="textarea"
+                            autogrow
+                            outlined
+                        />
+                    </q-card-section>
+
+                    <q-card-actions align="right">
+                        <q-btn flat color="secondary" label="Cancel" v-close-popup />
+                    </q-card-actions>
+                </q-card>
+            </q-dialog>
+            <!--VIEW SEARCH SECTIONS DIALOG END-->
 
 
             <!--UPLOAD FILES DIALOG START-->

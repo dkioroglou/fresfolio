@@ -25,7 +25,7 @@ OSname = system().lower()
 def app_api_make_init_checks():
     checks = {}
     try:
-        checks['ai_api_key_found'] = tools.get_app_setting("ai_api_key") is None
+        checks['ai_api_key_found'] = tools.get_app_setting("ai_api_key") is not None
         checks['vector_db_exists'] = tools.VECTORDB.exists()
         checks['extras_installed'] = extras_installed
     except Exception:

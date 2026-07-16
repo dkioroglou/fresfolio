@@ -390,7 +390,8 @@ def is_flat_file(file_full_path:Path) -> bool:
 
 def create_section_embedding(section: str) -> list:
     try:
-        embedding_model = TextEmbedding()
+        # NOTE: fastembed_cache is where fastembed will download the model.
+        embedding_model = TextEmbedding(cache_dir=APPDIR.joinpath("fastembed_cache"))
         section_embedding = next(embedding_model.embed(section))
     except Exception:
         log_traceback()
