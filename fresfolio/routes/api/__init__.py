@@ -18,6 +18,8 @@ PUTL = ProjectsUtils()
 AIUTL = AiUtils()
 OSname = system().lower()
 
+app_tasks_lock = threading.Lock()
+
 
 # APP RELATED ROUTES
 #========================
@@ -338,6 +340,15 @@ def app_api_delete_notebook():
         projectID = data['projectID']
         notebookID = data['notebookID']
         sectionsFate = data['sections-fate']
+
+        if sectionsFate != "keep_sections" and extras_installed and tools.VECTORDB.exists():
+            sections_ids = PUTL.get_section_ids_for_notebook(projectID, notebookID)
+            threading.Thread(
+                target=AIUTL.delete_section_embedding,
+                args=(projectID, sections_ids),
+                daemon=True
+            ).start()
+
         if PUTL.notebook_is_deleted(projectID, notebookID, keep_sections=(sectionsFate=="keep-sections")):
             return "", 200
         return "Cannot delete notebook.", 400
@@ -352,6 +363,15 @@ def app_api_delete_chapter():
         projectID = data['projectID']
         chapterID = data['chapterID']
         sectionsFate = data['sections-fate']
+
+        if sectionsFate != "keep_sections" and extras_installed and tools.VECTORDB.exists():
+            sections_ids = PUTL.get_sections_IDs_for_chapter(projectID, chapterID)
+            threading.Thread(
+                target=AIUTL.delete_section_embedding,
+                args=(projectID, sections_ids),
+                daemon=True
+            ).start()
+
         if PUTL.chapter_is_deleted(projectID, chapterID, keep_sections=(sectionsFate=="keep-sections")):
             return "", 200
         return "Cannot delete notebook.", 400
@@ -1044,11 +1064,51 @@ def api_create_rag_for_project():
         tools.log_traceback()
         return "Failed to get project sections", 400
 
+    task_id = tools.generate_uuid()
+    with app_tasks_lock:
+        tasks = tools.read_tasks()
+        tasks[task_id] = {"status": "running", "error": None}
+        tools.write_tasks(tasks)
+
+    def run_task():
+        try:
+            AIUTL.store_sections_embeddings(sections)
+            with app_tasks_lock:
+                tasks = tools.read_tasks()
+                tasks[task_id]["status"] = "done"
+                tools.write_tasks(tasks)
+        except Exception:
+            tools.log_traceback()
+            with app_tasks_lock:
+                tasks = tools.read_tasks()
+                tasks[task_id]["status"] = "failed"
+                tasks[task_id]["error"] = "Failed to store embeddings"
+                tools.write_tasks(tasks)
+
+    threading.Thread(target=run_task, daemon=True).start()
+    return jsonify({"taskID": task_id}), 200
+
+@apiroutes.route('/api/get-task-status', methods=['POST'])
+def api_get_task_status():
+    data = request.get_json()
+    task_id = data['taskID']
+    with app_tasks_lock:
+        tasks = tools.read_tasks()
+        task = tasks.get(task_id)
+    if task is None:
+        return jsonify({"status": "failed", "error": "No task found"}), 200
+    return jsonify(task), 200
+
+@apiroutes.route('/api/clear-task', methods=['POST'])
+def api_clear_task():
+    data = request.get_json()
+    task_id = data['taskID']
     try:
-        all_stored = AIUTL.store_sections_embeddings(sections)
+        with app_tasks_lock:
+            tasks = tools.read_tasks()
+            tasks.pop(task_id, None)
+            tools.write_tasks(tasks)
     except Exception:
         tools.log_traceback()
-        return "Failed to create project RAG", 400
-    if not all_stored:
-        return "Some sections could not be stored", 400
+        return "Error clearing task", 400
     return "", 200

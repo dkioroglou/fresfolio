@@ -23,6 +23,7 @@ if importlib.util.find_spec("fastembed") is not None:
 APPDIR = Path("~/fresfolio").expanduser()
 APPDB = APPDIR.joinpath("fresfolio.db")
 VECTORDB = APPDIR.joinpath("fresfolio_vector.duckdb")
+APPTASKS = APPDIR.joinpath("fresfolio_tasks.json")
 
 def log_traceback():
     with open(APPDIR.joinpath("fresfolio.log"), 'w') as outf:
@@ -427,4 +428,17 @@ def fetch_k_section_neighbors_of_query(query: str, similarity_threshold: float =
             projects.setdefault(project_id, []).append(section_id)
     return projects
 
+def read_tasks():
+    if not APPTASKS.exists():
+        return {}
+    try:
+        content = APPTASKS.read_text().strip()
+        return json.loads(content) if content else {}
+    except json.JSONDecodeError:
+        return {}
 
+def write_tasks(tasks):
+    # write to a temp file then replace, to avoid leaving a corrupt/partial file
+    tmp_path = APPTASKS.with_suffix(".tmp")
+    tmp_path.write_text(json.dumps(tasks))
+    tmp_path.replace(APPTASKS)

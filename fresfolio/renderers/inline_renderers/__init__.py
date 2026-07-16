@@ -1,5 +1,4 @@
 import re
-import traceback
 import ast
 from fresfolio.utils import tools
 
@@ -109,7 +108,7 @@ class InlineRenderers:
                     else:
                         renderedText = f'<a class="app-link" href="{url}">{label}</a>'
                 except Exception:
-                    traceback.print_exc()
+                    tools.log_traceback()
                     renderedText = f'<a class="app-link" href="{url}">{label}</a>'
                     return renderedText
             else:

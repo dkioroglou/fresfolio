@@ -1,7 +1,6 @@
 from pathlib import Path
 from fresfolio.renderers.inline_renderers import InlineRenderers, PDFInlineRenderers
 from fresfolio.utils import tools
-import traceback
 import json
 
 if tools.is_module_installed("omilayers"):
@@ -252,7 +251,7 @@ class HtmlTableTag:
                 if self.tagArgs.get("sep", False):
                     self.delimiter = self.tagArgs['sep']
             except Exception:
-                traceback.print_exc()
+                tools.log_traceback()
                 report_emtpy_table_due_to_error(self.tagArgs)
                 return (tablesJSON, self.tableIDX)
 
@@ -296,7 +295,7 @@ class HtmlTableTag:
                             jsonLines = []
                             self.tableIDX += 1
                         except Exception:
-                            traceback.print_exc()
+                            tools.log_traceback()
                             report_emtpy_table_due_to_error(self.tagArgs)
                             continue
                     else:
@@ -339,7 +338,7 @@ class HtmlTableTag:
                         jsonLines = []
                         self.tableIDX += 1
                     except Exception:
-                        traceback.print_exc()
+                        tools.log_traceback()
                         report_emtpy_table_due_to_error(self.tagArgs)
                 else:
                     report_emtpy_table_due_to_error(filePath.name)
@@ -407,7 +406,7 @@ class PDFTableTag:
                 if self.tagArgs.get("sep", False):
                     self.delimiter = self.tagArgs['sep']
             except Exception:
-                traceback.print_exc()
+                tools.log_traceback()
                 report_emtpy_table_due_to_error(self.tagArgs)
                 return (tablesJSON, self.tableIDX)
 
@@ -446,7 +445,7 @@ class PDFTableTag:
                             jsonLines = []
                             self.tableIDX += 1
                         except Exception:
-                            traceback.print_exc()
+                            tools.log_traceback()
                             report_emtpy_table_due_to_error(self.tagArgs)
                             continue
                     else:
@@ -484,7 +483,7 @@ class PDFTableTag:
                         jsonLines = []
                         self.tableIDX += 1
                     except Exception:
-                        traceback.print_exc()
+                        tools.log_traceback()
                         report_emtpy_table_due_to_error(self.tagArgs)
                 else:
                     report_emtpy_table_due_to_error(filePath.name)
@@ -558,7 +557,7 @@ class HtmlFiguresTag:
                 if self.tagArgs.get("title", False):
                     self.figsTitle = self.tagArgs['title']
             except Exception:
-                traceback.print_exc()
+                tools.log_traceback()
                 return (figsJSON, self.figureIDX, self.figsTitle)
         
         if self.filename:
@@ -600,7 +599,7 @@ class HtmlFiguresTag:
                 try:
                     tmpJSON['project'] = tools.get_project_info(line.split(":")[-1].strip())
                 except Exception:
-                    traceback.print_exc()
+                    tools.log_traceback()
                     continue
             elif line.startswith("figure"):
                 if len(tmpJSON) != 0 and tmpJSON.get('filename', False):
@@ -676,7 +675,7 @@ class PDFFiguresTag:
                 if self.tagArgs.get("title", False):
                     self.figsTitle = self.tagArgs['title']
             except Exception:
-                traceback.print_exc()
+                tools.log_traceback()
                 return (figsJSON, self.figureIDX, self.figsTitle)
         
         if self.filename:
@@ -716,7 +715,7 @@ class PDFFiguresTag:
                 try:
                     tmpJSON['project'] = tools.get_project_info(line.split(":")[-1].strip())
                 except Exception:
-                    traceback.print_exc()
+                    tools.log_traceback()
                     continue
             elif line.startswith("figure"):
                 if len(tmpJSON) != 0 and tmpJSON.get('filename', False):
@@ -776,7 +775,7 @@ class HtmlFilesTag:
                 if self.tagArgs.get("title", False):
                     self.filesTitle = self.tagArgs['title']
             except Exception:
-                traceback.print_exc()
+                tools.log_traceback()
                 self.filesTitle = ""
 
         tmpJSON = {}
@@ -791,7 +790,7 @@ class HtmlFilesTag:
                 try:
                     tmpJSON['project'] = tools.get_project_info(line.split(":")[-1].strip())
                 except Exception:
-                    traceback.print_exc()
+                    tools.log_traceback()
                     continue
             elif line.startswith("file"):
                 if len(tmpJSON) != 0 and tmpJSON.get('filename', False):
@@ -800,13 +799,13 @@ class HtmlFilesTag:
                 try:
                     tmpJSON['filename'] = line.split(":", 1)[-1].strip()
                 except Exception:
-                    traceback.print_exc()
+                    tools.log_traceback()
                     continue
             elif line.startswith("caption"):
                 try:
                     tmpJSON['caption'] = line.split(":", 1)[-1].strip()
                 except Exception:
-                    traceback.print_exc()
+                    tools.log_traceback()
                     continue
 
         if len(tmpJSON) != 0 and tmpJSON.get('filename', False):
@@ -905,7 +904,7 @@ class HtmlOmilayersTableTag:
                     field = field.strip()
                     value = value.strip()
                 except Exception:
-                    traceback.print_exc()
+                    tools.log_traceback()
                     return [{"errors":{"message":"Syntax error", "line":line}}]
 
                 if field == 'project':
@@ -915,7 +914,7 @@ class HtmlOmilayersTableTag:
                     try:
                         tmpJSON['project'] = tools.get_project_info(value)
                     except Exception:
-                        traceback.print_exc()
+                        tools.log_traceback()
                         return [{"errors":{"message":"Cannot get project info.", "line":line}}]
 
                 elif field == 'file':

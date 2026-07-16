@@ -955,19 +955,25 @@ class ProjectsUtils:
                 projects[_projectID] = IDs
         return projects
 
+    def get_section_ids_for_notebook(self, projectID:str, notebookID:int):
+        chapters = ProjectsUtils.get_chapters_for_notebook_of_project(projectID, notebookID)
+        if chapters:
+            chaptersIDs = [chapter[0] for chapter in chapters]
+            sectionsIDs = []
+            for chapterID in chaptersIDs:
+                sectionsIDs.extend(self.get_sections_IDs_for_chapter(projectID, chapterID))
+            if sectionsIDs:
+                sectionsIDs = list(set(sectionsIDs))
+        else:
+            sectionsIDs = []
+        return sectionsIDs
+
     def notebook_is_deleted(self, projectID:str, notebookID:int, keep_sections:bool) -> bool:
         projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
         try:
             sectionsIDs = []
             if not keep_sections:
-                chapters = ProjectsUtils.get_chapters_for_notebook_of_project(projectID, notebookID)
-                if chapters:
-                    chaptersIDs = [chapter[0] for chapter in chapters]
-                    sectionsIDs = []
-                    for chapterID in chaptersIDs:
-                        sectionsIDs.extend(self.get_sections_IDs_for_chapter(projectID, chapterID))
-                    if sectionsIDs:
-                        sectionsIDs = list(set(sectionsIDs))
+                sectionsIDs = self.get_section_ids_for_notebook(projectID, notebookID)
 
             with contextlib.closing(sqlite3.connect(projectDB)) as conn:
                 with contextlib.closing(conn.cursor()) as c:
@@ -1426,18 +1432,19 @@ class AiUtils(ProjectsUtils):
             return False
         return True
 
-    def delete_section_embedding(self, project_id:str, section_id:int) -> bool:
+    def delete_section_embedding(self, project_id: str, section_id: int | list[int]) -> bool:
         try:
+            section_ids = section_id if isinstance(section_id, list) else [section_id]
             with duckdb.connect(VECTORDB) as con:
+                placeholders = ", ".join("?" for _ in section_ids)
                 con.execute(
-                    "DELETE FROM sections WHERE project_id = ? AND section_id = ?",
-                    [project_id, section_id]
+                    f"DELETE FROM sections WHERE project_id = ? AND section_id IN ({placeholders})",
+                    [project_id, *section_ids]
                 )
         except Exception:
             tools.log_traceback()
             return False
         return True
-
 
     def store_sections_embeddings(self, sections: list[dict]) -> bool:
         """

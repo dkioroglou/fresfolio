@@ -99,7 +99,9 @@ const ProjectLayout = defineComponent({
             logViewerContent: "",
             showLogViewer: false,
             creatingRag: false,
-            initChecks: {}
+            initChecks: {},
+            taskID: null,
+            monitorTaskTimer: null,
         }
     },
     methods: {
@@ -1160,14 +1162,67 @@ const ProjectLayout = defineComponent({
                 });
 
                 if (response.ok) {
-                    this.creatingRag = false;
-                    this.$q.notify({
-                        message: 'RAG created',
-                        color: 'green',
-                        position: "top-right"
-                    })
+                    const data = await response.json();
+                    this.taskID = data['taskID'];
+                    this.monitorTaskStatus();
                 } else {
                     this.creatingRag = false;
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                this.creatingRag = false;
+                console.error(error);
+            }
+        },
+        monitorTaskStatus() {
+            this.monitorTaskTimer = setInterval(async () => {
+                const res = await fetch("/api/get-task-status", {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ taskID: this.taskID })
+                });
+                const data = await res.json();
+                if (data.status === 'done' || data.status === 'failed' || data.status === 'unknown') {
+                    clearInterval(this.monitorTaskTimer);
+                    this.monitorTaskTimer = null;
+                    if (data.status === 'done') {
+                        this.$q.notify({
+                            message: "RAG created",
+                            color: 'green',
+                            position: "top-right"
+                        })
+                        this.creatingRag = false;
+                    } else {
+                        this.$q.notify({
+                            message: data.error,
+                            color: 'negative',
+                            position: "top-right"
+                        })
+                    }
+                    this.clearTask()
+                }
+            }, 5000); // poll every 5s
+        },
+        async clearTask() {
+            try {
+                const response = await fetch("/api/clear-task", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        "taskID": this.taskID, 
+                    })
+                });
+
+                if (response.ok) {
+                    this.taskID = null;
+                } else {
                     const responseText = await response.text();
                     this.$q.notify({
                         message: responseText,

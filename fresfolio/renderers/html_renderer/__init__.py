@@ -1,5 +1,4 @@
 import re
-import traceback
 from fresfolio.utils import tools
 from pathlib import Path
 import json
@@ -107,7 +106,7 @@ class HtmlRenderer:
             try:
                 rendererCLS = self.html_tags[self.begin_tag]
             except Exception:
-                traceback.print_exc()
+                tools.log_traceback()
                 self._report_syntax_error
             try:
                 if self.begin_tag == "table":
@@ -158,7 +157,7 @@ class HtmlRenderer:
                 self.end_tag = None
                 self.tag_args = None
             except Exception:
-                traceback.print_exc()
+                tools.log_traceback()
                 self._report_syntax_error
 
     @property
@@ -396,7 +395,7 @@ class PDFRenderer:
             try:
                 rendererCLS = self.pdf_tags[self.begin_tag]
             except Exception:
-                traceback.print_exc()
+                tools.log_traceback()
                 self._report_syntax_error
             try:
                 if self.begin_tag == "table":
@@ -441,7 +440,7 @@ class PDFRenderer:
                 self.end_tag = None
                 self.tag_args = None
             except Exception:
-                traceback.print_exc()
+                tools.log_traceback()
                 self._report_syntax_error
 
     @property
