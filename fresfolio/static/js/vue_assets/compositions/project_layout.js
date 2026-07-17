@@ -1568,11 +1568,12 @@ const ProjectLayout = defineComponent({
                     <q-list dense>
 
                         <q-item-label header class="row text-white items-center justify-between">
-                            <div>
+                            <div class="row">
                                 <q-chip
-                                    v-if="selectedNotebookID != null"
+                                    ref="chapterChip"
+                                    v-show="selectedNotebookID != null"
                                     clickable
-                                    @click="showCreateChapterDialog=true"
+                                    @click="$event.currentTarget.blur(); showCreateChapterDialog = true"
                                     color="primary"
                                     text-color="white"
                                     icon="add"
@@ -2197,7 +2198,7 @@ const ProjectLayout = defineComponent({
 
 
             <!--CREATE NOTEBOOK DIALOG START-->
-            <q-dialog v-model="showCreateNotebookDialog" persistent>
+            <q-dialog v-model="showCreateNotebookDialog" persistent :no-refocus="true">
                 <q-card class="app-bg-color-5" style="width: 700px; max-width: 80vw;">
                     <q-card-section>
                         <div class="row items-start q-col-gutter-md">

@@ -414,6 +414,11 @@ def app_api_delete_project():
         data = request.get_json()
         projectID = data['projectID']
         if PUTL.project_is_deleted(projectID):
+            threading.Thread(
+                target=AIUTL.delete_project_embeddings,
+                args=(projectID, ),
+                daemon=True
+            ).start()
             return "", 200
         return "Cannot delete project.", 400
     except Exception:

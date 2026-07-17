@@ -1446,6 +1446,18 @@ class AiUtils(ProjectsUtils):
             return False
         return True
 
+    def delete_project_embeddings(self, project_id: str) -> bool:
+        try:
+            with duckdb.connect(VECTORDB) as con:
+                con.execute(
+                    "DELETE FROM sections WHERE project_id = ?",
+                    [project_id]
+                )
+        except Exception:
+            tools.log_traceback()
+            return False
+        return True
+
     def store_sections_embeddings(self, sections: list[dict]) -> bool:
         """
         sections: list of [project_id, section_id, section_title, section_content]
