@@ -953,7 +953,7 @@ const ProjectLayout = defineComponent({
         handleShortcut(e) {
             if (e.altKey && e.key === 'j') {
                 e.preventDefault()
-                this.toggleTodosDrawer()
+                this.toggleDrawer("todos")
             }
 
         },
@@ -1271,6 +1271,35 @@ const ProjectLayout = defineComponent({
             }
 
         },
+        async clearFresfolioLog() {
+            try {
+                const response = await fetch("/api/clear-log-traceback", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify()
+                });
+
+                if (response.ok) {
+                    this.showLogViewer = false;
+                    this.$q.notify({
+                        message: "Log cleared",
+                        color: 'green',
+                        position: "top-right"
+                    })
+                } else {
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
     },
     async mounted () {
         this.get_notebooks();
@@ -1482,8 +1511,19 @@ const ProjectLayout = defineComponent({
                         <q-list dense v-else>
 
                             <q-item-label header class="row text-white items-center justify-between">
-                                <div style="margin-top: 4px;">
-                                    Notebooks
+                                <div class="row">
+                                    <q-chip
+                                        clickable
+                                        @click="showCreateNotebookDialog=true"
+                                        color="primary"
+                                        text-color="white"
+                                        icon="add"
+                                    >
+                                        <q-tooltip class="bg-primary" :offset="[10, 10]">
+                                            Create new notebook.
+                                        </q-tooltip>
+                                        Notebooks
+                                    </q-chip>
                                 </div>
                             </q-item-label>
 
@@ -1491,7 +1531,7 @@ const ProjectLayout = defineComponent({
                                 <p class="row justify-center centers text-white">No available notebooks.</p>
                             </div>
 
-                            <div v-else style="margin-top: 5px;">
+                            <div v-else>
                                 <q-item
                                     class="text-white"
                                     v-for="notebook in notebooks"
@@ -1504,7 +1544,8 @@ const ProjectLayout = defineComponent({
                                 >
                                     <q-item-section>
                                         <div class="ellipsis" style="max-width: 160px">
-                                            {{ notebook.notebookName }}
+                                            <q-badge rounded color="primary">{{ notebook.chapters.length }}</q-badge>
+                                            <span class="q-ml-sm">{{ notebook.notebookName }}</span>
                                         </div>
 
                                         <q-tooltip :delay="1000" :offset="[10, 10]">
@@ -1517,18 +1558,6 @@ const ProjectLayout = defineComponent({
                         </q-list>
                     </Transition>
 
-                    <q-btn-group rounded class="absolute-bottom-right q-mb-md q-mr-md">
-                        <q-btn color="primary" icon="add" @click="showCreateNotebookDialog=true">
-                            <q-tooltip class="bg-primary" :offset="[10, 10]">
-                                Create new notebook.
-                            </q-tooltip>
-                        </q-btn>
-                        <q-btn color="primary" icon="update" @click="refreshNotebooks">
-                            <q-tooltip class="bg-primary" :offset="[10, 10]">
-                                Refresh notebooks
-                            </q-tooltip>
-                        </q-btn>
-                    </q-btn-group>
                 </q-scroll-area>
             </div>
             <!-- NOTEBOOKS DRAWER END -->
@@ -1540,8 +1569,21 @@ const ProjectLayout = defineComponent({
 
                         <q-item-label header class="row text-white items-center justify-between">
                             <div>
-                                Chapters
+                                <q-chip
+                                    v-if="selectedNotebookID != null"
+                                    clickable
+                                    @click="showCreateChapterDialog=true"
+                                    color="primary"
+                                    text-color="white"
+                                    icon="add"
+                                >
+                                    <q-tooltip class="bg-primary" :offset="[10, 10]">
+                                        Add chapter.
+                                    </q-tooltip>
+                                    Chapters
+                                </q-chip>
                             </div>
+
                             <div>
                                 <q-btn 
                                     v-if="selectedNotebookID != null"
@@ -1588,19 +1630,6 @@ const ProjectLayout = defineComponent({
                         </div>
 
                     </q-list>
-                    <q-btn 
-                        v-if="selectedNotebookID != null"
-                        round 
-                        color="primary" 
-                        icon="add" 
-                        @click="showCreateChapterDialog=true" 
-                        this.selectedChapterID
-                        class="absolute-bottom-right q-mb-md q-mr-md"
-                    >
-                            <q-tooltip class="bg-primary" :offset="[10, 10]">
-                                Add chapter.
-                            </q-tooltip>
-                    </q-btn>
                 </q-scroll-area>
             </div>
             <!-- CHAPTERS DRAWER END -->
@@ -2399,6 +2428,14 @@ const ProjectLayout = defineComponent({
                     <q-card-section class="row items-center q-pb-none">
                         <div class="text-h6">Fresfolio log viewer</div>
                             <q-space />
+                            <q-btn 
+                                class="q-mr-md"
+                                round 
+                                size="sm"
+                                icon="delete" 
+                                color="primary"
+                                @click="clearFresfolioLog"
+                            />
                             <q-btn icon="close" flat round dense v-close-popup />
                             </q-card-section>
 

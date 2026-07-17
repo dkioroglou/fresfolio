@@ -1464,7 +1464,7 @@ class AiUtils(ProjectsUtils):
                         section_tags = ','.join(json.loads(entry['tags']))
 
                         section_content_clean = self._clean_section_content(section_content)
-                        full_content = f"# {section_title}\n\nkeywords: {section_tags}\n\n{section_content_clean}"
+                        full_content = f"Title: {section_title}\nKeywords: {section_tags}\n\n{section_content_clean}"
                         section_embedding = tools.create_section_embedding(full_content)
 
                         if len(section_embedding) == 0:

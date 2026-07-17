@@ -272,6 +272,7 @@ def app_api_get_sections_for_search():
         if query.startswith("@rag"):
             if extras_installed:
                 rag_term, query_text = query.split(":", 1)
+                query_text = f"Represent this sentence for searching relevant passages: {query_text}"
                 query_text = query_text.strip()
                 similarity_thres = 0.7
                 if "-" in rag_term:
@@ -281,7 +282,7 @@ def app_api_get_sections_for_search():
                     except Exception:
                         tools.log_traceback()
                         return "Could no parse similarity threshold", 400
-                sectionsIDsPerProject = tools.fetch_k_section_neighbors_of_query(query_text, similarity_thres)
+                sectionsIDsPerProject = tools.fetch_query_neighbors(query_text, similarity_thres)
             else:
                 return "Extras not installed", 400
         else:
@@ -1111,4 +1112,13 @@ def api_clear_task():
     except Exception:
         tools.log_traceback()
         return "Error clearing task", 400
+    return "", 200
+
+@apiroutes.route('/api/clear-log-traceback', methods=['POST'])
+def api_clear_log_traceback():
+    try:
+        tools.empty_log_traceback()
+    except Exception:
+        tools.log_traceback()
+        return "Failed to emtpy log", 400
     return "", 200

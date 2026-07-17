@@ -29,6 +29,10 @@ def log_traceback():
     with open(APPDIR.joinpath("fresfolio.log"), 'w') as outf:
         traceback.print_exc(file=outf)
 
+def empty_log_traceback():
+    with open(APPDIR.joinpath("fresfolio.log"), 'w') as outf:
+        pass
+
 def is_module_installed(module_name):
     return importlib.util.find_spec(module_name) is not None
 
@@ -399,7 +403,7 @@ def create_section_embedding(section: str) -> list:
         return []
     return section_embedding.tolist()
 
-def fetch_k_section_neighbors_of_query(query: str, similarity_threshold: float = 0.7) -> dict: 
+def fetch_query_neighbors(query: str, similarity_threshold: float = 0.7) -> dict: 
     query_embedding = create_section_embedding(query)
     try:
         with duckdb.connect(VECTORDB) as con:
