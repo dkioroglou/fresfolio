@@ -1,4 +1,7 @@
 import * as vg from "/static/js/vgplot.js";
+import { parse } from 'https://esm.sh/yaml@2.7.0';
+import { parseSpec, astToDOM } from 'https://cdn.jsdelivr.net/npm/@uwdata/mosaic-spec/+esm';
+
 const { defineComponent } = Vue;
 
 const PlotRenderer = defineComponent({
@@ -31,7 +34,8 @@ const PlotRenderer = defineComponent({
                 x: null,
                 y: null
             },
-            plotErrorMessage: ""
+            plotErrorMessage: "",
+            yamlSpec: ""
         };
     },
     methods: {
@@ -161,27 +165,28 @@ const PlotRenderer = defineComponent({
             this.isPlotRendering = true;
             this.plotErrorMessage = "";
             this.$refs.container.innerHTML = "";
-            this.showPlotConfigurationDialog = false;
+
             try {
                 this.$refs.container.innerHTML = "";
-                const dashboard = vg.plot(
-                    vg.dot(
-                        vg.from("plotdata"),
-                        {
-                            x:this.plotSpecs['x'], 
-                            y:this.plotSpecs['y'],
-                            r:this.plotPointsSize
-                        }
-                    ),
-                    vg.grid(true),
-                    vg.width(680),
-                    vg.height(500)
-                )
 
-                this.$refs.container.appendChild(dashboard);
+                // this.yamlSpec is a string containing your YAML
+                const spec = parse(this.yamlSpec);
+
+                // Parse into Mosaic AST
+                const ast = parseSpec(spec);
+                console.log("spec", spec);
+
+                console.log("before astToDOM");
+                const result = await astToDOM(ast);
+                console.log(result);
+
+                this.$refs.container.appendChild(result.element);
+                this.isPlotRendering = false;
+
             } catch (err) {
-                // this.plotErrorMessage = err.message;
-                this.plotErrorMessage = "ERROR";
+                this.isPlotRendering = false;
+                console.error(err);
+                this.plotErrorMessage = err.message;
             } finally {
                 this.isPlotRendering = false;
             }
@@ -296,6 +301,30 @@ const PlotRenderer = defineComponent({
             </div>
             <div class="row items-center q-gutter-x-sm q-mb-sm q-ml-xs">
                 Selected layer: {{selectedLayer}}
+            </div>
+
+            <div>
+                <q-input
+                    v-model="yamlSpec"
+                    type="textarea"
+                    autogrow
+                    dense
+                    dark
+                    placeholder="Plot spec..."
+                    class="prompt-input"
+                    :input-style="{ overflowY: 'auto' }"
+                >
+                    <template v-slot:after>
+                        <q-btn
+                            round
+                            dense
+                            flat
+                            color="primary"
+                            icon="send"
+                            @click="renderPlot"
+                        />
+                    </template>
+                </q-input>
             </div>
 
         </div>
