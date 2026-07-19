@@ -95,6 +95,7 @@ const OmilayersRenderer = {
             this.selectedLayer = null;
             this.showSelectDBDialog = false;
             this.reset_sqlQuery();
+            this.getOmilayers();
         },
         selectLayer(layerName){
             this.selectedLayer = layerName;
@@ -165,7 +166,7 @@ const OmilayersRenderer = {
                 settings: true
             });
         },
-        async fetchLayerData() {
+        async fetchLayerData(layerName) {
             if (!this.dbInitialized) {
                 this._db = await this.initializeDuckDB();
                 this._server = perspective.createMessageHandler(new DuckDBHandler(this._db));
@@ -199,7 +200,7 @@ const OmilayersRenderer = {
                     body: JSON.stringify({
                         projectID: this.projectid,
                         DBpath: this.selectedDb,
-                        selectedLayer: this.selectedLayer,
+                        selectedLayer: layerName,
                         sqlQuery: this.sqlQuery
                     })
                 });
@@ -230,6 +231,8 @@ const OmilayersRenderer = {
 
                 await this.bindTable();
                 this.fetchingLayer = false;
+                this.selectedLayer = layerName;
+                this.showSelectOmilayerDialog = false;
             } catch (err) {
                 console.error(err);
             }
@@ -303,30 +306,6 @@ const OmilayersRenderer = {
                     @click="showSelectDBDialog=true"
                 />
 
-                <q-btn
-                    color="primary"
-                    outline
-                    label="Select layer"
-                    :disable="selectedDb === null"
-                    @click="getOmilayers()"
-                />
-
-                <q-btn
-                    color="primary"
-                    outline
-                    label="Query layer"
-                    :disable="selectedLayer === null"
-                    @click="showQueryLayerDialog = true"
-                />
-
-                <q-btn
-                    color="primary"
-                    label="Fetch layer"
-                    :loading="fetchingLayer"
-                    :disable="selectedLayer === null"
-                    @click="fetchLayerData()"
-                />
-
             </div>
             <div class="row items-center q-gutter-x-sm q-mb-xs q-ml-xs">
                 Selected database: {{selectedDb}}
@@ -336,7 +315,7 @@ const OmilayersRenderer = {
             </div>
 
             <div class="col" style="position: relative;">
-                <perspective-viewer ref="query" id="query" style="position: absolute; inset: 0; width: 100%; height: 100%;"></perspective-viewer>
+                <perspective-viewer ref="query" id="query" style="position: absolute; inset: 0; width: 100%; height: 90%;"></perspective-viewer>
             </div>
         </div>
 
@@ -424,16 +403,22 @@ const OmilayersRenderer = {
                             <q-item-section class="full-width">
                                 <div class="q-mb-sm row items-center justify-between">
                                     <q-item-label><b>{{JSON['name']}}</b></q-item-label>
-                                    <div>
-                                        <q-btn class='q-mr-sm' round color="secondary" size="sm" icon="table_rows" @click="selectLayer(JSON['name'])">
-                                            <q-tooltip>Select</q-tooltip>
+                                    <div class="row">
+                                        <q-btn class='q-mr-sm' round color="secondary" size="sm" icon="filter_alt" @click="showQueryLayerDialog=true">
+                                            <q-tooltip>SQL query</q-tooltip>
                                         </q-btn>
-
-                                        <q-btn round color="negative" size="sm" icon="delete" 
-                                            @click="() => { selectedOmilayersJSON['layer'] = JSON['name']; deleteSelectedLayer(selectedOmilayersJSON, selectedOmilayersIDX); }">
+                                        <q-btn class='q-mr-sm' round color="secondary" size="sm" icon="table_rows" @click="fetchLayerData(JSON['name'])">
+                                            <q-tooltip>Fetch data</q-tooltip>
+                                        </q-btn>
+                                        <q-btn 
+                                            round 
+                                            color="negative" 
+                                            size="sm" 
+                                            icon="delete"
+                                            @click="() => { selectedOmilayersJSON['layer'] = JSON['name']; deleteSelectedLayer(selectedOmilayersJSON, selectedOmilayersIDX); }"
+                                        >
                                             <q-tooltip>Delete layer</q-tooltip>
                                         </q-btn>
-
                                     </div>
                                 </div>
                                 <div class="full-width">

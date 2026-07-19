@@ -709,3 +709,8 @@ body.body--dark .app-note-green {
 .stepper-arrow:hover {
   opacity: 0.7;
 }
+
+regular-table,
+regular-table * {
+    background-image: none !important;
+}
