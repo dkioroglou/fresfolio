@@ -2,14 +2,12 @@ const { defineComponent } = Vue;
 
 import SectionCard from '/static/js/vue_assets/components/section_card.js'
 import Todos from '/static/js/vue_assets/components/todos.js'
-import PlotRenderer from '/static/js/vue_assets/components/plot_renderer.js'
 import OmilayersRenderer from '/static/js/vue_assets/components/omilayers_renderer.js';
 
 const ProjectLayout = defineComponent({
     components: {
         SectionCard,
         Todos,
-        PlotRenderer,
         OmilayersRenderer
 
     },
@@ -25,7 +23,6 @@ const ProjectLayout = defineComponent({
                 chat: false,
                 todos: false,
                 processes: false,
-                plot: false,
                 omilayers: false,
             },
             notebooksDrawerOpen: true,
@@ -1390,16 +1387,6 @@ const ProjectLayout = defineComponent({
             />
 
             <q-btn
-                v-if="initChecks.extras_installed"
-                round
-                class="q-mr-md"
-                color="primary"
-                size="md"
-                icon="bar_chart"
-                @click="toggleDrawer('plot')"
-            />
-
-            <q-btn
                 round
                 class="q-mr-md"
                 color="primary"
@@ -1978,32 +1965,6 @@ const ProjectLayout = defineComponent({
     <!-- CHAT DRAWER END -->
 
 
-    <!-- PLOT DRAWER START -->
-    <q-drawer 
-        overlay
-        v-model="drawers.plot" 
-        side='right' 
-        class="app-page-container-color" 
-        :width="searchDrawerWidth()"
-    >
-        <div class="col q-px-xl">
-            <div class="q-mt-md q-mb-md row items-center justify-between">
-                <div class="row items-center">
-                    <q-btn 
-                        round
-                        color="primary" 
-                        size='sm' 
-                        @click="toggleDrawer('plot')" 
-                        icon="close"
-                    />
-                    <h3 class="q-ml-md q-ma-none">Plot viewer</h3>
-                </div>
-            </div>
-                <plot-renderer :projectid="selectedProjectID" />
-            </div>
-        </div>
-    </q-drawer>
-    <!-- PLOT DRAWER END -->
 
     <!-- OMIRENDERER DRAWER START -->
     <q-drawer 

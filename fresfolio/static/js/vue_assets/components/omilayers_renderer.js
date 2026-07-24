@@ -306,6 +306,15 @@ const OmilayersRenderer = {
                     @click="showSelectDBDialog=true"
                 />
 
+                <q-btn
+                    v-if="selectedDb !== null"
+                    class="q-ml-md"
+                    color="primary"
+                    outline
+                    label="Select layer"
+                    @click="showSelectOmilayerDialog=true"
+                />
+
             </div>
             <div class="row items-center q-gutter-x-sm q-mb-xs q-ml-xs">
                 Selected database: {{selectedDb}}
@@ -315,7 +324,7 @@ const OmilayersRenderer = {
             </div>
 
             <div class="col" style="position: relative;">
-                <perspective-viewer ref="query" id="query" style="position: absolute; inset: 0; width: 100%; height: 90%;"></perspective-viewer>
+                <perspective-viewer ref="query" id="query" style="position: absolute; inset: 0; width: 100%; height: 95%;"></perspective-viewer>
             </div>
         </div>
 
