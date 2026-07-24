@@ -952,8 +952,8 @@ def api_fetch_layer_data():
         layer = data['selectedLayer']
         query = data['sqlQuery']
 
-        layerCols = query['cols'].strip().replace("--", "_")
-        queryCondition = query['condition'].strip().replace("--", "_")
+        layerCols = query['cols'].strip()
+        queryCondition = query['condition'].strip()
 
         if not PUTL.omilayer_exists(projectID, DBpath, layer):
             return "Layer does not exist.", 400
@@ -967,7 +967,7 @@ def api_fetch_layer_data():
         return "Error executing query", 400
 
     # Perspective does not like "_" in column names.
-    df.columns = [x.replace("_", "#") for x in df.columns]
+    df.columns = [x.replace("_", "*") for x in df.columns]
 
     table = pa.Table.from_pandas(df, preserve_index=False)
     sink = pa.BufferOutputStream()
