@@ -323,7 +323,7 @@ const OmilayersRenderer = {
                 Selected layer: {{selectedLayer}}
             </div>
 
-            <div class="col" style="position: relative;">
+            <div v-show="selectedDb !== null && selectedLayer !== null" class="col" style="position: relative;">
                 <perspective-viewer ref="query" id="query" style="position: absolute; inset: 0; width: 100%; height: 95%;"></perspective-viewer>
             </div>
         </div>
