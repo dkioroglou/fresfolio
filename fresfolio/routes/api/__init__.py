@@ -966,8 +966,8 @@ def api_fetch_layer_data():
     except Exception as e:
         return "Error executing query", 400
 
-    # Perspective does not like "_"
-    df.columns = [x.replace("_", "--") for x in df.columns]
+    # Perspective does not like "_" in column names.
+    df.columns = [x.replace("_", "#") for x in df.columns]
 
     table = pa.Table.from_pandas(df, preserve_index=False)
     sink = pa.BufferOutputStream()
