@@ -1344,19 +1344,19 @@ class AiUtils(ProjectsUtils):
             line = line.strip()
             if line.startswith("@section"):
                 section_id = int(line.split(":", 1)[1].strip())
-                self._append_section_content(projectID, section_id, expanded_prompt, is_strict=True)
+                self._append_section_content(projectID, section_id, expanded_prompt)
             elif line.startswith("@chapter"):
                 chapter_id = int(line.split(":", 1)[1].strip())
                 sections_ids = self.get_sections_IDs_for_chapter(projectID, chapter_id)
                 for section_id in sections_ids:
-                    self._append_section_content(projectID, section_id, expanded_prompt, is_strict=False)
+                    self._append_section_content(projectID, section_id, expanded_prompt)
             elif line.startswith("@notebook"):
                 notebook_id = int(line.split(":", 1)[1].strip())
                 chapters_ids = self.get_chapters_ids_for_notebook(projectID, notebook_id)
                 for chapter_id in chapters_ids:
                     sections_ids = self.get_sections_IDs_for_chapter(projectID, chapter_id)
                     for section_id in sections_ids:
-                        self._append_section_content(projectID, section_id, expanded_prompt, is_strict=False)
+                        self._append_section_content(projectID, section_id, expanded_prompt)
             elif line.startswith("@file"):
                 file_relative_path = line.split(":", 1)[1].strip()
                 projectDir, projectDB = tools.get_paths_for_project_dir_and_db(projectID)

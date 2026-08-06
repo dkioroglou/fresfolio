@@ -344,22 +344,22 @@ def get_ai_response(ai_model:str, conversation_history:list) -> dict:
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{ai_model}:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
     modelInstructions = r"""
-    Instructions: 
-    1. If you need to include tables in your responses, use the following format:
-    \begin{table}
-    [YOUR TABLE]
-    \end{table} 
-    2. Also for tables consider the following:
-        2.a. separate all columns with a comma.
-        2.b. do not include any commas inside the column values themselves.
-    3. If you need to include programming code in your responses, use the standard markdown way but don't specify programming language.
-    4. If you need to include math in your responses, use sinlge '$' for inline math. For equations, put them between double '$$' as following:
-    $$
-    [YOU EQUATION]
-    $$
-    5. Keep markdown headers till level 3.
-    6. If you need to style text in italics, use the following format:
-    __[YOUR TEXT]__
+    Instructions:
+    1. Include tables, equations, or code ONLY when directly requested or strictly necessary to answer the prompt.
+    2. IF you include a table, format it like this:
+       \begin{table}
+       [Column Header 1], [Column Header 2]
+       [Value 1], [Value 2]
+       \end{table}
+       - Separate all columns with a comma.
+       - Do not use commas inside column values.
+    3. IF you include programming code, use standard Markdown code blocks without specifying the language name.
+    4. IF you include mathematical equations, wrap them in double dollar signs on separate lines:
+       $$
+       [EQUATION]
+       $$
+    5. Do not use Markdown headers deeper than level 3 (###).
+    6. Format italic text using double underscores: __text__.
     """
     payload = {
         "systemInstruction": {
