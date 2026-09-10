@@ -1385,11 +1385,11 @@ class AiUtils(ProjectsUtils):
                 chat_history.extend([
                     {
                         "role": "user",
-                        "parts": [{"text": user_prompt}]
+                        "content": user_prompt
                     },
                     {
-                        "role": "model",
-                        "parts": [{"text": ai_response}]
+                        "role": "assistant",
+                        "content": ai_response
                     },
 
                 ])
@@ -1397,7 +1397,7 @@ class AiUtils(ProjectsUtils):
         chat_history.append(
             {
                 "role": "user",
-                "parts": [{"text": new_prompt}]
+                "content": new_prompt
             }
         )
         return chat_history

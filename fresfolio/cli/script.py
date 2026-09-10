@@ -60,21 +60,21 @@ def set_ai_api_key():
     api_key = input("api-key: ")
 
     try:
-        file_path = APPDIR.joinpath("ai_models.json")
-        with open(file_path, 'w') as outf:
-            print(json.dumps([]), file=outf)
-    except Exception:
-        traceback.print_exc()
-        exit("Could not create ai_models.json.")
-
-    try:
         tools.set_app_setting(setting='ai_api_key', value=api_key)
     except Exception:
         traceback.print_exc()
-        exit("Could not add API key.")
+        exit("Could not set API key.")
+    print("AI API KEY has been set successfully.")
 
-    print("API key was added successfully.")
-    print(f"Add AI models to file: {file_path}")
+    file_path = APPDIR.joinpath("ai_models.json")
+    if not file_path.exists():
+        try:
+            with open(file_path, 'w') as outf:
+                print(json.dumps([]), file=outf)
+        except Exception:
+            traceback.print_exc()
+            exit("Could not create ai_models.json.")
+        print(f"Add AI models to file: {file_path}")
 
 @frescli.command()
 @click.option("--port", "-p", type=int, default=5000, help="Port to be used by fresfolio.")

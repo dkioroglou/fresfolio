@@ -99,6 +99,7 @@ const ProjectLayout = defineComponent({
             initChecks: {},
             taskID: null,
             monitorTaskTimer: null,
+            showSelectAiModelDialog: false
         }
     },
     methods: {
@@ -167,7 +168,8 @@ const ProjectLayout = defineComponent({
         computed: {
             selectedItem() {
                   return this.notebooks.find(notebook => notebook.notebookID === this.selectedNotebookID);
-            }
+            },
+
             
         },
         async getChapterSections() {
@@ -1102,7 +1104,7 @@ const ProjectLayout = defineComponent({
                     const data = await response.json();
                     this.ai_models = data['ai_models'];
                     if (this.ai_models.length !== 0) {
-                        this.selectedModel = data['ai_models'][0]
+                        this.getDefaultAiModel();
                     }
                 } else {
                     const responseText = await response.text();
@@ -1289,6 +1291,56 @@ const ProjectLayout = defineComponent({
                     const responseText = await response.text();
                     this.$q.notify({
                         message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        },
+        getDefaultAiModel() {
+            for (const vendor of this.ai_models) {
+                // iterate every model inside that vendor's "models" array
+                for (const m of vendor.models) {
+                    if (m.default === "yes") {
+                        this.selectedModel = m.model
+                        return
+                    }
+                }
+            }
+            this.selectedModel = null
+        },
+        selectAiModel(model) {
+            this.selectedModel = model;
+            this.showSelectAiModelDialog = false;
+        },
+        setAiModelDefault(vendorName, modelName) {
+            this.selectedModel = modelName;
+            this.ai_models.forEach(v => {
+                v.models.forEach(m => {
+                    m.default = 'no'
+                })
+            })
+            const vendor = this.ai_models.find(v => v.vendor === vendorName)
+            const model = vendor.models.find(m => m.model === modelName)
+            model.default = 'yes'
+            this.showSelectAiModelDialog = false;
+            this.storeAiModels();
+        },
+        async storeAiModels() {
+            try {
+                const response = await fetch("/api/store-ai-models", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({"ai_models":this.ai_models})
+                });
+
+                if (!response.ok) {
+                    this.$q.notify({
+                        message: "Error storing AI models",
                         color: 'negative',
                         position: "top-right"
                     })
@@ -1872,7 +1924,7 @@ const ProjectLayout = defineComponent({
                         @click="toggleDrawer('chat')" 
                         icon="close"
                     />
-                    <h3 class="q-ml-md q-ma-none">AI chat</h3>
+                    <h3 class="q-ml-md q-ma-none">AI chat with:</h3> &nbsp; {{selectedModel}}
                 </div>
 
                 <div class="row">
@@ -1888,14 +1940,15 @@ const ProjectLayout = defineComponent({
                             Refresh chat
                         </q-tooltip>
                     </q-btn>
-                    <q-select
-                        v-model="selectedModel"
-                        :options="ai_models"
+
+                    <q-btn
+                        class="q-mr-md"
                         label="Select model"
-                        dense
-                        outlined
-                        style="min-width: 200px"
-                    />
+                        color="primary"
+                        @click="showSelectAiModelDialog=true"
+                    >
+                    </q-btn>
+
                 </div>
             </div>
 
@@ -2409,6 +2462,97 @@ const ProjectLayout = defineComponent({
                 </q-card>
             </q-dialog>
             <!-- FRESFOLIO LOG VIEWER DIALOG END -->
+
+            <!-- SELECT AI MODEL DIALOG START -->
+            <q-dialog v-model="showSelectAiModelDialog">
+                <q-card style="width: 1200px; max-width: 80vw;" class="model-select-card">
+                    <!-- Header -->
+                    <q-card-section class="row items-center q-py-md bg-primary text-white">
+                        <q-icon name="smart_toy" size="28px" class="q-mr-sm" />
+                        <div class="text-h6">Select AI Model</div>
+                        <q-space />
+                        <q-btn icon="close" flat round dense v-close-popup />
+                    </q-card-section>
+
+                    <q-separator />
+
+                    <!-- Scrollable body -->
+                    <q-card-section class="q-pa-none" style="max-height: 65vh;">
+                        <q-scroll-area style="height: 65vh;">
+                            <q-list class="q-pa-md">
+                                <q-expansion-item
+                                    v-for="vendor in ai_models"
+                                    :key="vendor.vendor"
+                                    group="vendors"
+                                    icon="dns"
+                                    :label="vendor.vendor"
+                                    header-class="text-weight-bold text-capitalize vendor-header"
+                                    class="q-mb-sm vendor-group"
+                                >
+                                    <q-list separator class="q-pl-md q-pb-sm">
+                                        <q-item
+                                            v-for="m in vendor.models"
+                                            :key="m.model"
+                                            clickable
+                                            v-ripple
+                                            :active="selectedModel === m.model"
+                                            active-class="bg-blue-grey-10 text-primary"
+                                            class="model-item rounded-borders q-my-xs"
+                                            @click="selectAiModel(m.model)"
+                                        >
+                                            <q-item-section avatar>
+                                                <q-icon
+                                                    :name="selectedModel === m.model ? 'radio_button_checked' : 'radio_button_unchecked'"
+                                                    :color="selectedModel === m.model ? 'primary' : 'grey-8'"
+                                                />
+                                            </q-item-section>
+
+                                            <q-item-section>
+                                                <q-item-label class="text-weight-medium">{{ m.model }}</q-item-label>
+                                                <q-item-label caption>
+                                                    <q-badge outline color="green" class="q-mr-xs">
+                                                        in {{ m.input }}
+                                                    </q-badge>
+                                                    <q-badge outline color="deep-orange">
+                                                        out {{ m.output }}
+                                                    </q-badge>
+                                                </q-item-label>
+                                            </q-item-section>
+
+                                            <q-item-section side top>
+                                                <q-btn
+                                                    flat
+                                                    round
+                                                    dense
+                                                    :icon="m.default === 'yes' ? 'star' : 'star_border'"
+                                                    :color="m.default === 'yes' ? 'amber' : 'grey-5'"
+                                                    @click.stop="setAiModelDefault(vendor.vendor, m.model)"
+                                                >
+                                                    <q-tooltip>
+                                                        {{ m.default === 'yes' ? 'Default model' : 'Set as default' }}
+                                                    </q-tooltip>
+                                                </q-btn>
+                                            </q-item-section>
+                                        </q-item>
+                                    </q-list>
+                                </q-expansion-item>
+                            </q-list>
+                        </q-scroll-area>
+                    </q-card-section>
+
+                    <q-separator />
+
+                    <!-- Footer -->
+                    <q-card-actions align="right" class="q-pa-md">
+                        <div class="q-mr-auto text-caption text-grey-7" v-if="selectedModel">
+                            Selected: <span class="text-weight-medium text-primary">{{ selectedModel }}</span>
+                        </div>
+                        <q-btn flat label="Cancel" v-close-popup />
+                        <q-btn unelevated color="primary" label="Confirm" v-close-popup />
+                    </q-card-actions>
+                </q-card>
+            </q-dialog>
+            <!-- SELECT AI MODEL DIALOG END -->
 
 
             <!-- PAGE FLOATING BUTTONS -->

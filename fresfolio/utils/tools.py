@@ -341,8 +341,11 @@ def run_and_log(
     
 def get_ai_response(ai_model:str, conversation_history:list) -> dict:
     api_key = get_app_setting('ai_api_key')
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{ai_model}:generateContent?key={api_key}"
-    headers = {"Content-Type": "application/json"}
+    url = "https://router.requesty.ai/v1/chat/completions"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"
+    }
     modelInstructions = r"""
     Instructions:
     1. Include tables, equations, or code ONLY when directly requested or strictly necessary to answer the prompt.
@@ -361,13 +364,12 @@ def get_ai_response(ai_model:str, conversation_history:list) -> dict:
     5. Do not use Markdown headers deeper than level 3 (###).
     6. Format italic text using double underscores: __text__.
     """
+
+    messages = [{"role": "system", "content": modelInstructions}] + conversation_history
+
     payload = {
-        "systemInstruction": {
-                "parts": [
-                    {"text": modelInstructions}
-                ]
-            },
-        "contents": conversation_history
+        "model": ai_model,
+        "messages": messages
     }
 
     try:
@@ -375,7 +377,7 @@ def get_ai_response(ai_model:str, conversation_history:list) -> dict:
         response_status_code = response.status_code
         data = response.json()
         if response_status_code  == 200:
-            text_response = data['candidates'][0]['content']['parts'][0]['text']
+            text_response = data['choices'][0]['message']['content']
         else:
             text_response = ""
     except requests.exceptions.RequestException as e:

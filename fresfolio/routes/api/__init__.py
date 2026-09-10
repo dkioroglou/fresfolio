@@ -1127,3 +1127,17 @@ def api_clear_log_traceback():
         tools.log_traceback()
         return "Failed to emtpy log", 400
     return "", 200
+
+@apiroutes.route('/api/store-ai-models', methods=['POST'])
+def api_store_ai_models():
+    data = request.get_json()
+    ai_models = data['ai_models']
+    JSONfile = tools.APPDIR.joinpath("ai_models.json")
+    try:
+        with open(JSONfile, 'w') as outf:
+            json.dump(ai_models, outf, indent=4)
+    except Exception:
+        tools.log_traceback()
+        return "", 400
+    return "", 200
+
