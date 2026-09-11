@@ -263,18 +263,15 @@ Specify figures manually.
 .. code-block:: latex
 
     \begin{figures}[title:My title]
-    project: PROJECT
     figure: figure_1.png
     caption: This is the caption of the Figure 1
 
-    project: PROJECT
     figure: figure_2.png
     caption: This is the caption of the Figure 2
     \end{figures}
 
 Figures can have one or more entries. Each entry is consisted of the following fields:
 
-* ``project``: refers to the name of an existing project and is optional. If omitted, the current project is considered.
 * ``figure``: should be the path to an existing figure relative to the root directory of the project.
 * ``caption``: refers to the caption of the figure and is optional. If omitted, the caption "**Caption not available**" is rendered. 
 
@@ -314,22 +311,18 @@ Files can have one or more entries.
 .. code-block:: latex
 
     \begin{files}[title:My title]
-    project: PROJECT
     file: sections/2/file1.csv
     caption: This is the caption for file1.
 
-    project: PROJECT
     file: sections/2/file2.xlsx
     caption: This is the caption for file2.
 
-    project: PROJECT
     file: sections/2/file3.pdf
     caption: This is the caption for file3.
     \end{figures}
 
 Each entry is consisted of the following fields:
 
-* ``project``: refers to the name of an existing project and is optional. If omitted, the current project is considered.
 * ``file``: should be the path to an existing file relative to the root directory of the project.
 * ``caption``: refers to the caption of the figure and is optional. If omitted, the caption "**Caption not available**" is rendered. 
 

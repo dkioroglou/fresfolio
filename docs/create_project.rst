@@ -54,3 +54,7 @@ When creating a new project, *fresfolio* creates the following file structure fo
 
 The user can create any directory within the project directory.
 
+.. danger::
+
+    Creating and deleting directories inside the ``sections`` directory should be done within *fresfolio* and not from a file manager.
+

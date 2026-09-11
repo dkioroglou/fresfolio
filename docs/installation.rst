@@ -7,27 +7,17 @@ To install *fresfolio* run:
 
     pip install fresfolio
 
+**Note**: this installs the basic functionality of *fresfolio* that is sufficient to create and manage notebooks, chapters and sections.
 
-.. _Optional packages:
-
-Optional packages
------------------
-
-The above installation provides all the necessary functionality for creating and managing documentation. To take advantage of the extended functionality of *fresfolio*, such as data management and interactive plots, the following packages need to be installed:
+To take advantage of the full functionality of *fresfolio*, install the full version:
 
 .. code-block:: bash
 
-   pip install omilayers
-   pip install bokeh
+    pip install fresfolio[full]
 
-working with excel files with *omilayers* requires the following packages:
+or if *fresfolio* is already installed, install the extra functionality:
 
 .. code-block:: bash
 
-    pip install xlrd
-    pip install openpyxl
-
-
-``xlrd`` is necessary for working with ``.xls`` files, whereas ``openpyxl`` is necessary for ``.xlsx`` files.
-
+    pip install fresfolio[extra]
 
