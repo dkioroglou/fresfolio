@@ -24,11 +24,27 @@ The rationale behind *fresfolio* is the following:
 pip install fresfolio
 ```
 
-## Demo
+## Demo core functionality
 
 <p align="center">
   <br>
-  <img width="800" src="./docs/images/fresfolio_demo.gif" alt="demo of fresfolio">
+  <img width="800" src="./docs/images/fresfolio_demo1.gif" alt="demo1 of fresfolio">
+  <br>
+  <br>
+</p>
+
+## Demo AI integration
+
+<p align="center">
+  <br>
+  <img width="800" src="./docs/images/fresfolio_demo2.gif" alt="demo2 of fresfolio">
+  <br>
+  <br>
+</p>
+
+<p align="center">
+  <br>
+  <img width="800" src="./docs/images/fresfolio_demo3.gif" alt="demo3 of fresfolio">
   <br>
   <br>
 </p>

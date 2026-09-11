@@ -16,10 +16,10 @@ Welcome to fresfolio documentation!
    creating_notebooks_chapters_and_sections
    section_anatomy
    section_content
-   omilayers
-   omiplots
    import_projects
-   broadcasting
+   omilayers
+   chat_with_ai
+   create_rag
 
 |br|
 

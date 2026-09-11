@@ -3,11 +3,11 @@
    <br />
 
 Omilayers
-=========
+==========
 
 .. note::
 
-    This section belongs to the extended functionality of *fresfolio* and requires the python package ``omilayers``. Check :ref:`Optional packages` on how to install it.
+    This section belongs to the extended functionality of *fresfolio* and requires the python package ``omilayers``. Check :ref:`installation-process` process.
 
 *omilayers* is a Python packages for data management, where data are stored in tables called layers. Please refer to the `Github repository <https://github.com/dkioroglou/omilayers>`_ of *omilayers* for more information. *fresfolio* uses *omilayers* as a way to create and render stored data in the form of tables. 
 
@@ -20,11 +20,9 @@ To render stored layers the following syntax can be used:
 .. code-block:: latex
 
     \begin{omitable}
-    project: PROJECT
     file: dir1/dir2/foo.db
     \end{omitable}
 
-* ``project``: it refers to the name of an existing project and is optional. If omitted, the current project is considered.
 * ``file``: it refers to the path of an existing *omilayers* database. The path should be relative to the root directory of the project.
 
 **HTML rendering**
@@ -58,32 +56,6 @@ The user needs to select a stored layer and whether all or the top 5 rows will b
    :height: 200
    :alt: omilayers_rendering_3
    :align: center
-
-|br|
-
-The user can also set a layer as the default layer:
-
-.. code-block:: latex
-
-    \begin{omitable}
-    project: PROJECT
-    file: dir1/dir2/foo.db
-    layer: layer1
-    nrows: 5
-    \end{omitable}
-
-* ``layer``: the name of the stored layer to use as default layer.
-* ``nrows``: the number of rows to render from the default layer. To render all rows set ``nrows: all``.
-
-.. image:: images/omilayers_rendering_4.png
-   :width: 600
-   :height: 130
-   :alt: omilayers_rendering_4
-   :align: center
-
-|br|
-
-this way the user have the option to directly render the default layer or select a different layer to render.
 
 
 Create new layers
