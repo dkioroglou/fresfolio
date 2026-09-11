@@ -982,6 +982,11 @@ def api_fetch_layer_data():
         headers={"Content-Type": "application/vnd.apache.arrow.stream"}
     )
 
+@apiroutes.route('/api/cancel-prompt-to-ai', methods=['POST'])
+def api_cancel_prompt_to_ai():
+    tools.cancel_current_ai_response()
+    return '', 200
+
 @apiroutes.route('/api/submit-prompt-to-ai', methods=['POST'])
 def api_submit_prompt_to_ai():
     try:
@@ -1016,6 +1021,10 @@ def api_submit_prompt_to_ai():
     except Exception:
         tools.log_traceback()
         return 'Failed to get ai response', 400
+
+    if response['status_code'] == 499:
+        print("AI response got cancelled")
+        return "", 200
 
     if response['status_code'] != 200:
         return "Model could not respond", 400

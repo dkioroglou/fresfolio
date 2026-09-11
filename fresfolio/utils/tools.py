@@ -12,6 +12,9 @@ import requests
 from datetime import datetime
 import json
 import mimetypes
+import threading
+
+_cancel_event = threading.Event()
 
 if importlib.util.find_spec("omilayers") is not None:
     from omilayers import Omilayers
@@ -338,8 +341,13 @@ def run_and_log(
     t = threading.Thread(target=_collect_and_log, daemon=True)
     t.start()
     return proc, t
-    
-def get_ai_response(ai_model:str, conversation_history:list) -> dict:
+
+def cancel_current_ai_response():
+    _cancel_event.set()
+
+def get_ai_response(ai_model: str, conversation_history: list) -> dict:
+    _cancel_event.clear()
+
     api_key = get_app_setting('ai_api_key')
     url = "https://router.requesty.ai/v1/chat/completions"
     headers = {
@@ -350,17 +358,17 @@ def get_ai_response(ai_model:str, conversation_history:list) -> dict:
     Instructions:
     1. Include tables, equations, or code ONLY when directly requested or strictly necessary to answer the prompt.
     2. IF you include a table, format it like this:
-       \begin{table}
-       [Column Header 1], [Column Header 2]
-       [Value 1], [Value 2]
-       \end{table}
-       - Separate all columns with a comma.
-       - Do not use commas inside column values.
+    \begin{table}
+    [Column Header 1], [Column Header 2]
+    [Value 1], [Value 2]
+    \end{table}
+    - Separate all columns with a comma.
+    - Do not use commas inside column values.
     3. IF you include programming code, use standard Markdown code blocks without specifying the language name.
     4. IF you include mathematical equations, wrap them in double dollar signs on separate lines:
-       $$
-       [EQUATION]
-       $$
+    $$
+    [EQUATION]
+    $$
     5. Do not use Markdown headers deeper than level 3 (###).
     6. Format italic text using double underscores: __text__.
     """
@@ -369,23 +377,47 @@ def get_ai_response(ai_model:str, conversation_history:list) -> dict:
 
     payload = {
         "model": ai_model,
-        "messages": messages
+        "messages": messages,
+        "stream": True,
     }
 
+    text_parts = []
+    response = None
     try:
-        response = requests.post(url, headers=headers, json=payload)
-        response_status_code = response.status_code
-        data = response.json()
-        if response_status_code  == 200:
-            text_response = data['choices'][0]['message']['content']
-        else:
-            text_response = ""
+        response = requests.post(url, headers=headers, json=payload, stream=True)
+
+        if response.status_code != 200:
+            return {'status_code': response.status_code, 'text': ""}
+
+        for line in response.iter_lines(decode_unicode=True):
+            if _cancel_event.is_set():
+                response.close()
+                return {'status_code': 499, 'text': ""}
+
+            if not line or not line.startswith("data: "):
+                continue
+
+            chunk = line[len("data: "):]
+            if chunk.strip() == "[DONE]":
+                break
+
+            try:
+                event = json.loads(chunk)
+                delta = event['choices'][0]['delta'].get('content')
+                if delta:
+                    text_parts.append(delta)
+            except (json.JSONDecodeError, KeyError, IndexError):
+                continue
+
+        return {'status_code': 200, 'text': ''.join(text_parts)}
+
     except requests.exceptions.RequestException as e:
         log_traceback()
         print(f"\nAn error occurred: {e}")
-        return {'status_code': "400", 'text':""}
-    return {'status_code': response_status_code, 'text':text_response}
-
+        return {'status_code': 400, 'text': ""}
+    finally:
+        if response is not None:
+            response.close()
 
 def is_flat_file(file_full_path:Path) -> bool:
     mime_type, _ = mimetypes.guess_type(str(file_full_path))

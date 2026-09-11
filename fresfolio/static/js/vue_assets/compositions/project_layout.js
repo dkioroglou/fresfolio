@@ -99,7 +99,8 @@ const ProjectLayout = defineComponent({
             initChecks: {},
             taskID: null,
             monitorTaskTimer: null,
-            showSelectAiModelDialog: false
+            showSelectAiModelDialog: false,
+            abortController: null
         }
     },
     methods: {
@@ -1051,22 +1052,23 @@ const ProjectLayout = defineComponent({
                 e.preventDefault();
                 this.submitChatPrompt();
             }
-            },
+        },
+
         async submitChatPrompt() {
             this.isSubmittingPrompt = true;
+            this.abortController = new AbortController();
             try {
                 const response = await fetch("/api/submit-prompt-to-ai", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify(
-                        {
-                            "projectID": this.selectedProjectID,
-                            "prompt": this.chatPrompt,
-                            "model": this.selectedModel
-                        }
-                    )
+                    signal: this.abortController.signal,
+                    body: JSON.stringify({
+                        "projectID": this.selectedProjectID,
+                        "prompt": this.chatPrompt,
+                        "model": this.selectedModel
+                    })
                 });
 
                 if (response.ok) {
@@ -1074,12 +1076,10 @@ const ProjectLayout = defineComponent({
                     const data = await response.json();
                     localStorage.setItem(data['sectionData']['ID'], 'true')
                     this.chatSections.unshift(data['sectionData']);
-                    this.isSubmittingPrompt = false;
                     this.chatPrompt = "";
                     this.fetchingChatSectionsToRender = false;
                 } else {
                     const responseText = await response.text();
-                    this.isSubmittingPrompt = false;
                     this.$q.notify({
                         message: responseText,
                         color: 'negative',
@@ -1087,8 +1087,27 @@ const ProjectLayout = defineComponent({
                     })
                 }
             } catch (error) {
-                console.error(error);
+                if (error.name === 'AbortError') {
+                    this.$q.notify({
+                        message: 'Prompt cancelled',
+                        color: 'warning',
+                        position: "top-right"
+                    })
+                } else {
+                    console.error(error);
+                }
+            } finally {
+                this.isSubmittingPrompt = false;
+                this.abortController = null;
             }
+        },
+        stopChatPrompt() {
+            if (this.abortController) {
+                this.abortController.abort();
+            }
+            fetch('/api/cancel-prompt-to-ai', { method: 'POST' }).catch(error => {
+                console.error('Failed to send cancel request:', error);
+            });
         },
         async get_ai_models() {
             try {
@@ -1968,6 +1987,15 @@ const ProjectLayout = defineComponent({
                 >
                     <template v-slot:after>
                         <q-btn
+                            v-if="isSubmittingPrompt"
+                            round
+                            dense
+                            flat
+                            color="negative"
+                            icon="stop"
+                            @click="stopChatPrompt"
+                        />
+                        <q-btn
                             round
                             dense
                             flat
@@ -2545,10 +2573,8 @@ const ProjectLayout = defineComponent({
                     <!-- Footer -->
                     <q-card-actions align="right" class="q-pa-md">
                         <div class="q-mr-auto text-caption text-grey-7" v-if="selectedModel">
-                            Selected: <span class="text-weight-medium text-primary">{{ selectedModel }}</span>
+                            Selected as default: <span class="text-weight-medium text-primary">{{ selectedModel }}</span>
                         </div>
-                        <q-btn flat label="Cancel" v-close-popup />
-                        <q-btn unelevated color="primary" label="Confirm" v-close-popup />
                     </q-card-actions>
                 </q-card>
             </q-dialog>
