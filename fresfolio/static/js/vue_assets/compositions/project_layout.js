@@ -129,6 +129,11 @@ const ProjectLayout = defineComponent({
                 this.getChatSections();
             }
             this.toggleDrawer('chat');
+            if (this.drawers.chat) {
+            this.$nextTick(() => {
+                this.$refs.chatInput?.focus();
+            });
+            }
         },
         clearSearchSections() {
             this.toggleDrawer("search")
@@ -950,10 +955,17 @@ const ProjectLayout = defineComponent({
             }
 
         },
-        handleShortcut(e) {
+        todoDrawerKeybinding(e) {
             if (e.altKey && e.key === 'j') {
                 e.preventDefault()
                 this.toggleDrawer("todos")
+            }
+
+        },
+        aiChatDrawerKeybinding(e) {
+            if (e.altKey && e.key === 'h') {
+                e.preventDefault()
+                this.toggleChatDrawer()
             }
 
         },
@@ -1373,11 +1385,13 @@ const ProjectLayout = defineComponent({
         this.get_notebooks();
         this.getProcesses();
         this.makeInitChecks();
-        window.addEventListener('keydown', this.handleShortcut)
+        window.addEventListener('keydown', this.todoDrawerKeybinding)
+        window.addEventListener('keydown', this.aiChatDrawerKeybinding)
     },
     beforeUnmount() {
         this.stopPolling(); // prevent memory leaks
-        window.removeEventListener('keydown', this.handleShortcut)
+        window.removeEventListener('keydown', this.todoDrawerKeybinding)
+        window.removeEventListener('keydown', this.aiChatDrawerKeybinding)
     },
     template: `
 <q-layout view="hHh LpR fFf">
@@ -1973,6 +1987,7 @@ const ProjectLayout = defineComponent({
 
             <div class="prompt-box q-pa-sm q-mb-md">
                 <q-input
+                    ref="chatInput"
                     v-model="chatPrompt"
                     type="textarea"
                     autogrow
