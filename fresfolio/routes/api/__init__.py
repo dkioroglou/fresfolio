@@ -994,27 +994,31 @@ def api_submit_prompt_to_ai():
         projectID = data['projectID']
         new_user_prompt = data['prompt']
         ai_model = data['model']
+        oneShotPromptsFlag = data['oneShotPrompts']
     except Exception:
         return "Failed to parse request data", 400
 
-    try:
-        projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
-        chatSections = AIUTL.get_chat_sections_content(projectID)
-    except Exception:
-        tools.log_traceback()
-        return 'Failed to get chat sections', 400
+    if oneShotPromptsFlag:
+        chat_history = AIUTL.create_chat_history(projectID, new_user_prompt, chatSections=[])
+    else:
+        try:
+            projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
+            chatSections = AIUTL.get_chat_sections_content(projectID)
+        except Exception:
+            tools.log_traceback()
+            return 'Failed to get chat sections', 400
 
-    try:
-        chat_history = AIUTL.create_chat_history(projectID, new_user_prompt, chatSections)
-    except ValueError:
-        tools.log_traceback()
-        return "Wrong ID or path in prompt", 400
-    except SyntaxError :
-        tools.log_traceback()
-        return "A section content is missing ais or aie", 400
-    except Exception:
-        tools.log_traceback()
-        return 'Failed to parse user prompt', 400
+        try:
+            chat_history = AIUTL.create_chat_history(projectID, new_user_prompt, chatSections)
+        except ValueError:
+            tools.log_traceback()
+            return "Wrong ID or path in prompt", 400
+        except SyntaxError :
+            tools.log_traceback()
+            return "A section content is missing ais or aie", 400
+        except Exception:
+            tools.log_traceback()
+            return 'Failed to parse user prompt', 400
 
     try:
         response = tools.get_ai_response(ai_model, chat_history)

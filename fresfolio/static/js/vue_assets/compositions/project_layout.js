@@ -61,6 +61,7 @@ const ProjectLayout = defineComponent({
             expandAll: false,
             searchText: '',
             useRAG: false,
+            oneShotPrompts: true,
             searchThreshold: 0.7,
             sectionIDToUploadFiles: null,
             uploadToSectionRoute: "/api/upload-files-to-section",
@@ -1079,7 +1080,8 @@ const ProjectLayout = defineComponent({
                     body: JSON.stringify({
                         "projectID": this.selectedProjectID,
                         "prompt": this.chatPrompt,
-                        "model": this.selectedModel
+                        "model": this.selectedModel,
+                        "oneShotPrompts": this.oneShotPrompts
                     })
                 });
 
@@ -1111,6 +1113,9 @@ const ProjectLayout = defineComponent({
             } finally {
                 this.isSubmittingPrompt = false;
                 this.abortController = null;
+                this.$nextTick(() => {
+                    this.$refs.chatInput?.focus();
+                });
             }
         },
         stopChatPrompt() {
@@ -1949,15 +1954,33 @@ const ProjectLayout = defineComponent({
         <div class="col q-px-xl">
 
             <div class="q-mt-md q-mb-md row items-center justify-between">
-                <div class="row items-center">
-                    <q-btn 
-                        round
-                        color="primary" 
-                        size='sm' 
-                        @click="toggleDrawer('chat')" 
-                        icon="close"
-                    />
-                    <h3 class="q-ml-md q-ma-none">AI chat with:</h3> &nbsp; {{selectedModel}}
+                <div class="column">
+                    <div class="row items-center">
+                        <q-btn 
+                            round
+                            color="primary" 
+                            size='sm' 
+                            @click="toggleDrawer('chat')" 
+                            icon="close"
+                        />
+                        <h3 class="q-ml-md q-ma-none">AI chat with:</h3> &nbsp; {{selectedModel}}
+                    </div>
+
+                    <div class="row items-center" style="padding-left:45px;">
+                        <q-checkbox
+                            v-model="oneShotPrompts"
+                            size="sm"
+                            dense
+                            dark
+                            label="One-shot prompts"
+                            color="primary"
+                            keep-color
+                        >
+                            <q-tooltip class="bg-primary" :offset="[10, 10]">
+                                Uncheck to send whole conversations to AI.
+                            </q-tooltip>
+                        </q-checkbox>
+                    </div>
                 </div>
 
                 <div class="row">
