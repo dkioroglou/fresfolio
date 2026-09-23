@@ -52,6 +52,8 @@ class InlineRenderers:
             text = "<h2>{}</h2>".format(text.split("## ", 1)[-1])
         elif text.startswith("### "):
             text = "<h3>{}</h3>".format(text.split("### ", 1)[-1])
+        elif text.startswith("#### "):
+            text = "<h4>{}</h4>".format(text.split("#### ", 1)[-1])
         return text
 
     def render_markdown_ruler_markups(self, text: str) -> str:

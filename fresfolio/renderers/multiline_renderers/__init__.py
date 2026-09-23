@@ -45,6 +45,8 @@ class HtmlParagraphTag:
 
     def render_lines(self) -> str: 
         renderedLines = [pass_line_through_inline_renderers(line) for line in self.lines]
+        if renderedLines[0].startswith(("<h1>", "<h2>", "<h3>", "<h4>")):
+            return self.open_tag+renderedLines[0]+"<br>".join(renderedLines[1:])+self.close_tag
         return self.open_tag+"<br>".join(renderedLines)+self.close_tag
 
 class PDFParagraphTag:
@@ -113,7 +115,7 @@ class HtmlListTag:
         if isListNumbered:
             self.open_tag = "<ol>"
             self.close_tag = "</ol>"
-        return self.open_tag+"<br>".join(renderedLines)+self.close_tag+"<br>"
+        return self.open_tag+"<br>".join(renderedLines)+self.close_tag
 
 class PDFlListTag:
 

@@ -110,7 +110,7 @@ body {
 
 h1, .h1 {
     line-height: 1rem !important;
-    font-size: 1.4em !important;
+    font-size: 2.0em !important;
     font-weight: 400 !important;
     color: var(--app-text-color-2);
     margin-top: 20px !important;
@@ -120,25 +120,29 @@ h1, .h1 {
 
 h2, .h2 {
     line-height: 1rem !important;
-    font-size: 1.3em !important;
+    font-size: 1.5em !important;
     font-weight: 400 !important;
     color: var(--app-text-color-2);
-    margin-bottom: 0px !important;
     position: relative;
 }
 
 h3, .h3 {
     line-height: 1rem !important;
-    font-size: 1.1em !important;
+    font-size: 1.2em !important;
     font-weight: 400 !important;
     color: var(--app-text-color-2);
-    margin-bottom: 0px !important;
     position: relative;
+}
+
+h4, .h4 {
+    line-height: 1rem !important;
+    font-size: 1.1em !important;
+    font-weight: 500 !important;
 }
 
 ul {
   margin-top: 1em;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
 }
 
 li {
