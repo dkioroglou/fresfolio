@@ -753,3 +753,18 @@ regular-table * {
 .model-item:hover {
     border-color: rgba(0, 0, 0, 0.08);
 }
+
+
+/* PERSPECTIVE VIEWER STYLING */
+
+body.body--dark perspective-export-menu,
+body.body--dark perspective-export-menu *,
+body.body--dark [class*="perspective-"],
+body.body--dark [class*="perspective-"] * {
+  background-color: #1e1e1e !important;
+}
+
+perspective-viewer#query {
+  --psp-sidebar--background: #1e1e1e !important;
+}
+
