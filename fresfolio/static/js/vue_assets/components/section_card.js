@@ -12,7 +12,9 @@ const SectionCard = defineComponent({
             showChangeSectionTitle: false,
             newSectionTitle: "",
             showEditor: false,
+            aceEditorMode: "markdown",
             sectionContentFetched: true,
+            editorInstance: null,
             qEditorContent: "",
             selectedSectionDirectoryTreeData: [],
             showSectionDirectoryTreeDialog: false,
@@ -74,7 +76,8 @@ const SectionCard = defineComponent({
                     body: JSON.stringify(
                         {
                             "projectID": this.sectionData['projectID'], 
-                            "sectionID": this.sectionData['ID']
+                            "sectionID": this.sectionData['ID'],
+                            "keepNewLine": 1
                         }
                     )
                 });
@@ -83,7 +86,28 @@ const SectionCard = defineComponent({
                     const data = await response.json();
                     this.qEditorContent = data['sectionRawContent']
                     this.sectionContentFetched = true;
-                    this.showEditor = true;
+                    if (this.editorInstance != null) {
+                        this.$q.dialog({
+                            title: 'Close open section editor?',
+                            message: 'Any unsaved changes will be lost.',
+                            cancel: true,
+                        }).onOk(async () => {
+                            this.destroyAceEditor();   // destroy before loading new file
+                            this.$nextTick(() => {
+                                this.showEditor = true;
+                                this.$nextTick(() => {
+                                    this.$nextTick(() => this.initAceEditor())
+                                })
+                            })
+                        });
+                    } else {
+                        this.$nextTick(() => {
+                            this.showEditor = true;
+                            this.$nextTick(() => {
+                                this.$nextTick(() => this.initAceEditor())
+                            })
+                        })
+                    }
                 } else {
                     const responseText = await response.text();
                     this.sectionContentFetched = true;
@@ -138,6 +162,7 @@ const SectionCard = defineComponent({
         cancelSetSectionContent() {
             this.showEditor = false;
             this.qEditorContent = "";
+            this.destroyAceEditor();
         },
         async setSectionContent() {
             try {
@@ -150,7 +175,7 @@ const SectionCard = defineComponent({
                         {
                             "projectID": this.sectionData['projectID'], 
                             "sectionID": this.sectionData['ID'],
-                            "newSectionContent": this.$refs.sectionEditorRef.getContentEl().innerText
+                            "newSectionContent": this.editorInstance.getValue()
                         }
                     )
                 });
@@ -159,9 +184,11 @@ const SectionCard = defineComponent({
                     const data = await response.json();
                     this.sectionData['content'] = data['sectionData']['content']
                     this.showEditor = false;
+                    this.destroyAceEditor();
                 } else {
                     const responseText = await response.text();
                     this.showEditor = false;
+                    this.destroyAceEditor();
                     this.$q.notify({
                         message: responseText,
                         color: 'negative',
@@ -569,7 +596,131 @@ const SectionCard = defineComponent({
         },
         startProcess(fileJSON) {
             this.$emit('start-process', fileJSON)
-        }
+        },
+        initAceEditor() {
+            // Initialize using the Vue ref instead of document.getElementById
+            this.editorInstance = ace.edit(this.$refs.aceEditor);
+
+            // Set themes and modes if you brought them in via Flask static
+            this.editorInstance.setTheme("ace/theme/dracula");
+            this.editorInstance.session.setMode("ace/mode/"+this.aceEditorMode);
+
+            this.editorInstance.setOption("fontSize", "14px");
+            
+            // Remove vertical line that marks 80 characters width
+            this.editorInstance.setOption("showPrintMargin", false);
+
+            // Enable text wrap
+            this.editorInstance.setOption("wrap", true);
+            this.editorInstance.session.setUseWrapMode(true);
+
+            // Set the initial value
+            this.editorInstance.setValue(this.qEditorContent, -1); // -1 moves cursor to the start
+
+            // Activate vim mode
+            this.editorInstance.setKeyboardHandler("ace/keyboard/vim")
+            // Access the Vim extension core
+            const vimApi = ace.require("ace/keyboard/vim").CodeMirror.Vim;
+            // Map 'jk' to behave exactly like '<Esc>' during insert mode
+            vimApi.map("jk", "<Esc>", "insert");
+
+            // :w → trigger a save (emit an event or call your save method)
+            vimApi.defineEx("write", "w", () => {
+                this.setSectionContent();
+            });
+
+            vimApi.defineEx("wq", "wq", () => {
+                this.setSectionContent();
+            });
+
+            // :q → trigger a close/quit (e.g. navigate away, close a panel)
+            vimApi.defineEx("quit", "q", () => {
+                this.cancelSetSectionContent();
+            });
+
+            vimApi.defineEx("q!", "q!", () => {
+                this.cancelSetSectionContent();
+            });
+
+            // Force the cursor to the top-left (Line 1, Column 0)
+            this.editorInstance.gotoLine(1, 0, true);
+            
+            // Clear selection to prevent the whole text from being highlighted
+            this.editorInstance.clearSelection();
+
+            // Force HTML focus onto the editor
+            this.editorInstance.focus();
+
+            // Optional: Resize handler to ensure it fits perfectly inside Quasar's card
+            this.editorInstance.setOption("scrollPastEnd", 0.2);   // allow scrolling a bit past the last line
+            this.editorInstance.renderer.setScrollMargin(0, 10);   // 10px padding at the bottom
+            this.editorInstance.resize();
+
+            ace.config.loadModule("ace/ext/language_tools", () => {
+                this.editorInstance.setOptions({
+                    enableSnippets: true,
+                    enableBasicAutocompletion: true,
+                    enableLiveAutocompletion: false,
+                });
+
+                this.editorInstance.commands.addCommand({
+                    name: "triggerAutocomplete",
+                    bindKey: { win: "Ctrl-l", mac: "Ctrl-l" },   // or "Ctrl-Space", "Alt-N", ...
+                    exec: (editor) => editor.execCommand("startAutocomplete"),
+                });
+
+                const snippetManager = ace.require("ace/snippets").snippetManager;
+
+                // Custom snippets
+                const mySnippets = {
+                    link:  "[${1:name}](${2:url})",
+                    files: "\\begin{files}\nfile: ${1:path}\ncaption:\n\\end{files}",
+                    table: "\\begin{table}\n${1:table}\n\\end{table}",
+                    figures: "\\begin{figures}\nfigure: ${1:path}\ncaption:\n\\end{figures}",
+                    process: "\\begin{process}\ntitle:NA\nconda:NA\nworkdir: ${1:path}\nscript:\n\\end{process}",
+                    noteblue: "\\begin{note}[blue]\n${1:note}\n\\end{note}",
+                    notered: "\\begin{note}[red]\n${1:note}\n\\end{note}",
+                    notegreen: "\\begin{note}[green]\n${1:note}\n\\end{note}",
+                    fold: "\\begin{fold}[Fold name]\n${1:content}\n\\end{fold}",
+                    aifold: "\\ais\n${1:content}\n\\aie",
+                    code: "```\n${1:code}\n```",
+                    math: "$$\n${1:equation}\n$$",
+                    leftarrow: " ⟶ "
+                };
+
+                snippetManager.register(
+                    Object.entries(mySnippets).map(([name, content]) => ({
+                        name,
+                        tabTrigger: name,
+                        content,
+                    })),
+                    this.aceEditorMode
+                );
+
+                const centerCursor = () => {
+                    setTimeout(() => this.editorInstance.renderer.scrollCursorIntoView(null, 0.5), 0);
+                };
+
+                this.editorInstance.commands.on("afterExec", (e) => {
+                    if (e.command.name === "expandSnippet") centerCursor();
+                });
+
+                vimApi.defineEx("snippet", "snip", (cm, params) => {
+                    const content = mySnippets[params.args && params.args[0]];
+                    if (content) {
+                        snippetManager.insertSnippet(this.editorInstance, content);
+                        centerCursor();
+                    }
+                });
+            });
+
+        },
+        destroyAceEditor() {
+            if (this.editorInstance) {
+                this.editorInstance.destroy();
+                this.editorInstance = null;
+            }
+        },
     },
     watch: {
         expandSection(newVal) {
@@ -799,225 +950,10 @@ const SectionCard = defineComponent({
                             <q-spinner size="2em" />
                             <p class="app-spinner-text">Loading data, please wait...</p>
                         </div>
-                        <div class="q-mt-md" v-if="showEditor">
-                            <q-editor 
-                                ref="sectionEditorRef"
-                                v-model="qEditorContent" 
-                                @paste="onPaste"
-                                :toolbar="[
-                                [
-                                'linktag',
-                                'files', 
-                                'figures',
-                                'process',
-                                'table',
-                                'noteblue',
-                                'notered',
-                                'notegreen',
-                                'fold',
-                                'codeblock',
-                                'math',
-                                'omitable',
-                                'aifold',
-                                'arrows'
-                                ]
-                                ]"
-                                class="app-section-editor"
-                                :content-style="{ overflowY: 'auto', flex: 1 }"
-                                style="display: flex; flex-direction: column; height: 600px;"
-                            >
-                                <template v-slot:linktag>
-                                    <q-btn
-                                        dense
-                                        unelevated
-                                        color="secondary"
-                                        text-color="white"
-                                        size="sm"
-                                        label="Link"
-                                        @click="insertLinkTagToSectionEditor"
-                                    />
-                                </template>
-
-                                <template v-slot:files>
-                                    <q-btn
-                                        dense
-                                        unelevated
-                                        color="secondary"
-                                        text-color="white"
-                                        size="sm"
-                                        label="Files"
-                                        @click="insertFilesTagToSectionEditor"
-                                    />
-                                </template>
-
-                                <template v-slot:figures>
-                                    <q-btn
-                                        dense
-                                        unelevated
-                                        color="secondary"
-                                        text-color="white"
-                                        size="sm"
-                                        label="Figures"
-                                        @click="insertFiguresTagToSectionEditor"
-                                    />
-                                </template>
-
-                                <template v-slot:process>
-                                    <q-btn
-                                        dense
-                                        unelevated
-                                        color="secondary"
-                                        text-color="white"
-                                        size="sm"
-                                        label="Process"
-                                        @click="insertProcessTagToSectionEditor"
-                                    />
-                                </template>
-
-                                <template v-slot:table>
-                                    <q-btn
-                                        dense
-                                        unelevated
-                                        color="secondary"
-                                        text-color="white"
-                                        size="sm"
-                                        label="Table"
-                                        @click="insertTableTagToSectionEditor"
-                                    />
-                                </template>
-
-                                <template v-slot:noteblue>
-                                    <q-btn
-                                        dense
-                                        unelevated
-                                        color="secondary"
-                                        text-color="white"
-                                        size="sm"
-                                        label="Note-blue"
-                                        @click="insertNoteBlueTagToSectionEditor"
-                                    />
-                                </template>
-
-                                <template v-slot:notered>
-                                    <q-btn
-                                        dense
-                                        unelevated
-                                        color="secondary"
-                                        text-color="white"
-                                        size="sm"
-                                        label="Note-red"
-                                        @click="insertNoteRedTagToSectionEditor"
-                                    />
-                                </template>
-
-                                <template v-slot:notegreen>
-                                    <q-btn
-                                        dense
-                                        unelevated
-                                        color="secondary"
-                                        text-color="white"
-                                        size="sm"
-                                        label="Note-green"
-                                        @click="insertNoteGreenTagToSectionEditor"
-                                    />
-                                </template>
-
-                                <template v-slot:fold>
-                                    <q-btn
-                                        dense
-                                        unelevated
-                                        color="secondary"
-                                        text-color="white"
-                                        size="sm"
-                                        label="Fold"
-                                        @click="insertFoldTagToSectionEditor"
-                                    />
-                                </template>
-
-                                <template v-slot:codeblock>
-                                    <q-btn
-                                        dense
-                                        unelevated
-                                        color="secondary"
-                                        text-color="white"
-                                        size="sm"
-                                        label="Code"
-                                        @click="insertCodeTagToSectionEditor"
-                                    />
-                                </template>
-
-                                <template v-slot:math>
-                                    <q-btn
-                                        dense
-                                        unelevated
-                                        color="secondary"
-                                        text-color="white"
-                                        size="sm"
-                                        label="Math"
-                                        @click="insertMathTagToSectionEditor"
-                                    />
-                                </template>
-
-                                <template v-slot:omitable>
-                                    <q-btn
-                                        dense
-                                        unelevated
-                                        color="secondary"
-                                        text-color="white"
-                                        size="sm"
-                                        label="Omitable"
-                                        @click="insertOmilayersTableTagToSectionEditor"
-                                    />
-                                </template>
-
-                                <template v-slot:aifold>
-                                    <q-btn
-                                        dense
-                                        unelevated
-                                        color="secondary"
-                                        text-color="white"
-                                        size="sm"
-                                        label="AiS/E"
-                                        @click="insertAiFoldTagToSectionEditor"
-                                    />
-                                </template>
-
-                                <template v-slot:arrows>
-                                    <q-btn-dropdown
-                                        dense
-                                        unelevated
-                                        color="secondary"
-                                        text-color="white"
-                                        size="sm"
-                                        label="Arrows"
-                                        dropdown-icon="arrow_drop_down"
-                                    >
-                                        <q-list dense>
-                                            <q-item clickable v-close-popup @click="insertArrowToSectionEditor('⟶')">
-                                                <q-item-section>
-                                                <q-item-label>⟶</q-item-label>
-                                                </q-item-section>
-                                            </q-item>
-                                            <q-item clickable v-close-popup @click="insertArrowToSectionEditor('⟹ ')">
-                                                <q-item-section>
-                                                <q-item-label>⟹ </q-item-label>
-                                                </q-item-section>
-                                            </q-item>
-                                            <q-item clickable v-close-popup @click="insertArrowToSectionEditor('↳')">
-                                                <q-item-section>
-                                                <q-item-label>↳</q-item-label>
-                                                </q-item-section>
-                                            </q-item>
-                                            <q-item clickable v-close-popup @click="insertArrowToSectionEditor('⮕')">
-                                                <q-item-section>
-                                                <q-item-label>⮕</q-item-label>
-                                                </q-item-section>
-                                            </q-item>
-                                        </q-list>
-                                    </q-btn-dropdown>
-                                </template>
-
-                            </q-editor>
+                        <div v-if="showEditor" class="section-ace-editor app-bg-color-5" style="height:400px;">
+                            <div style="display: flex; flex-direction: column; height:400px;" >
+                                <div ref="aceEditor" class="section-ace-editor__inner">></div>
+                            </div>
                         </div>
                         <!-- SECTION EDITOR END -->
 

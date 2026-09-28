@@ -2,6 +2,7 @@ from pathlib import Path
 from fresfolio.renderers.inline_renderers import InlineRenderers, PDFInlineRenderers
 from fresfolio.utils import tools
 import json
+import html
 
 if tools.is_module_installed("omilayers"):
     from omilayers import Omilayers
@@ -79,7 +80,8 @@ class HtmlCodeTag:
         self.close_tag = "</pre>"
 
     def render_lines(self) -> str: 
-        return self.open_tag+"<br>".join(self.lines)+self.close_tag
+        escaped = [html.escape(line) for line in self.lines]
+        return self.open_tag + "\n".join(escaped) + self.close_tag
 
 class PDFCodeTag:
 

@@ -3,3 +3,4 @@ This is a bug fix release for various issues discovered after the release v0.3.3
 
 ## What's Changed
 OPTIMIZED: added keybinding "Alt+h" to toggle AI chat drawer.
+FEATURE: Quasar editor has been replaces with ACE editor for editing sections.
