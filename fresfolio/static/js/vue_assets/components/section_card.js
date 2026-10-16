@@ -95,17 +95,17 @@ const SectionCard = defineComponent({
                             this.destroyAceEditor();   // destroy before loading new file
                             this.$nextTick(() => {
                                 this.showEditor = true;
-                                this.$nextTick(() => {
-                                    this.$nextTick(() => this.initAceEditor())
-                                })
+                                // this.$nextTick(() => {
+                                //     this.$nextTick(() => this.initAceEditor())
+                                // })
                             })
                         });
                     } else {
                         this.$nextTick(() => {
                             this.showEditor = true;
-                            this.$nextTick(() => {
-                                this.$nextTick(() => this.initAceEditor())
-                            })
+                            // this.$nextTick(() => {
+                            //     this.$nextTick(() => this.initAceEditor())
+                            // })
                         })
                     }
                 } else {
@@ -721,6 +721,11 @@ const SectionCard = defineComponent({
                 this.editorInstance = null;
             }
         },
+        onAfterEnter(el) {
+            if (el.classList.contains('section-ace-editor') && this.$refs.aceEditor) {
+                this.initAceEditor(); // your existing Ace setup
+        }
+    },
     },
     watch: {
         expandSection(newVal) {
@@ -944,57 +949,56 @@ const SectionCard = defineComponent({
                     <!-- SECTION MENU BUTTONS END -->
 
 
-                    <Transition name="fade">
-                        <!-- SECTION EDITOR START -->
-                        <div v-if="!sectionContentFetched" class="app-spinner-container q-mt-xl">
+                    <!-- SECTION BODY START -->
+                    <Transition name="fade" mode="out-in" @enter="onAfterEnter">
+                        <!-- LOADING -->
+                        <div v-if="!sectionContentFetched" key="loading" class="app-spinner-container q-mt-xl">
                             <q-spinner size="2em" />
                             <p class="app-spinner-text">Loading data, please wait...</p>
                         </div>
-                        <div v-if="showEditor" class="section-ace-editor app-bg-color-5" style="height:400px;">
-                            <div style="display: flex; flex-direction: column; height:400px;" >
-                                <div ref="aceEditor" class="section-ace-editor__inner">></div>
+
+                        <!-- SECTION EDITOR -->
+                        <div v-else-if="showEditor" key="editor" class="section-ace-editor app-bg-color-5" style="height:400px;">
+                            <div style="display: flex; flex-direction: column; height:400px;">
+                                <div ref="aceEditor" class="section-ace-editor__inner"></div>
                             </div>
                         </div>
-                        <!-- SECTION EDITOR END -->
 
-
-                        <!-- SECTION CONTENT START -->
-                        <div v-else>
+                        <!-- SECTION CONTENT -->
+                        <div v-else key="content">
                             <template v-for="(sJSON, index) in sectionData['content']" :key="index">
                                 <div class="q-mt-md">
                                     <div v-if="sJSON['container'] === 'fold'">
-                                        <div>
-                                            <q-expansion-item 
-                                                expand-separator 
-                                                switch-toggle-side 
-                                                class="app-section-fold" 
-                                            >
-                                                <template v-slot:header>
-                                                    <div v-html="sJSON.title" class="q-mt-xs"></div>
-                                                </template>
+                                        <q-expansion-item
+                                            expand-separator
+                                            switch-toggle-side
+                                            class="app-section-fold"
+                                        >
+                                            <template v-slot:header>
+                                                <div v-html="sJSON.title" class="q-mt-xs"></div>
+                                            </template>
 
-                                                <q-card class="app-card no-padding">
-                                                    <q-card-section class="no-padding">
-                                                        <template v-for="(cJSON, cIDX) in sJSON['content']" :key="cIDX">
-                                                            <section-content 
-                                                                :cJSON=cJSON 
-                                                                :cIDX=cIDX 
-                                                                @get-view="getView"
-                                                                @open-with-ace-editor="openWithAceEditor"
-                                                                @start-process="startProcess"
-                                                            />
-                                                        </template>
-                                                    </q-card-section>
-                                                </q-card>
-                                            </q-expansion-item>
-                                        </div>
+                                            <q-card class="app-card no-padding">
+                                                <q-card-section class="no-padding">
+                                                    <template v-for="(cJSON, cIDX) in sJSON['content']" :key="cIDX">
+                                                        <section-content
+                                                            :cJSON="cJSON"
+                                                            :cIDX="cIDX"
+                                                            @get-view="getView"
+                                                            @open-with-ace-editor="openWithAceEditor"
+                                                            @start-process="startProcess"
+                                                        />
+                                                    </template>
+                                                </q-card-section>
+                                            </q-card>
+                                        </q-expansion-item>
                                     </div>
 
                                     <div v-else>
                                         <template v-for="(cJSON, cIDX) in sJSON['content']" :key="cIDX">
-                                            <section-content 
-                                                :cJSON=cJSON 
-                                                :cIDX=cIDX 
+                                            <section-content
+                                                :cJSON="cJSON"
+                                                :cIDX="cIDX"
                                                 @get-view="getView"
                                                 @open-with-ace-editor="openWithAceEditor"
                                                 @start-process="startProcess"
@@ -1004,8 +1008,8 @@ const SectionCard = defineComponent({
                                 </div>
                             </template>
                         </div>
-                        <!-- SECTION CONTENT END -->
                     </Transition>
+                    <!-- SECTION BODY END -->
 
                 </q-card-section>
             </q-card>
