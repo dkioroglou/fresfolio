@@ -95,17 +95,11 @@ const SectionCard = defineComponent({
                             this.destroyAceEditor();   // destroy before loading new file
                             this.$nextTick(() => {
                                 this.showEditor = true;
-                                // this.$nextTick(() => {
-                                //     this.$nextTick(() => this.initAceEditor())
-                                // })
                             })
                         });
                     } else {
                         this.$nextTick(() => {
                             this.showEditor = true;
-                            // this.$nextTick(() => {
-                            //     this.$nextTick(() => this.initAceEditor())
-                            // })
                         })
                     }
                 } else {
@@ -723,7 +717,7 @@ const SectionCard = defineComponent({
         },
         onAfterEnter(el) {
             if (el.classList.contains('section-ace-editor') && this.$refs.aceEditor) {
-                this.initAceEditor(); // your existing Ace setup
+                this.initAceEditor();
         }
     },
     },
