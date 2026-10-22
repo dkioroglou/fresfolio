@@ -1,3 +1,4 @@
+import traceback
 from flask import Blueprint, jsonify, request, send_from_directory, Response
 from pathlib import Path
 import re
@@ -8,6 +9,7 @@ from datetime import datetime
 import threading
 from fresfolio.utils import tools
 from fresfolio.utils.classes import ProjectsUtils, AiUtils
+from operator import itemgetter
 
 extras_installed = tools.has_extras()
 if extras_installed:
@@ -989,6 +991,7 @@ def api_cancel_prompt_to_ai():
 
 @apiroutes.route('/api/submit-prompt-to-ai', methods=['POST'])
 def api_submit_prompt_to_ai():
+    to_stdout = None
     try:
         data = request.get_json()
         projectID = data['projectID']
@@ -999,7 +1002,7 @@ def api_submit_prompt_to_ai():
         return "Failed to parse request data", 400
 
     if oneShotPromptsFlag:
-        chat_history = AIUTL.create_chat_history(projectID, new_user_prompt, chatSections=[])
+        to_stdout, chat_history = itemgetter("to_stdout", "chat_history")(AIUTL.create_chat_history(projectID, new_user_prompt, chatSections=[]))
     else:
         try:
             projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
@@ -1009,7 +1012,7 @@ def api_submit_prompt_to_ai():
             return 'Failed to get chat sections', 400
 
         try:
-            chat_history = AIUTL.create_chat_history(projectID, new_user_prompt, chatSections)
+            to_stdout, chat_history = itemgetter("to_stdout", "chat_history")(AIUTL.create_chat_history(projectID, new_user_prompt, chatSections))
         except ValueError:
             tools.log_traceback()
             return "Wrong ID or path in prompt", 400
@@ -1033,6 +1036,14 @@ def api_submit_prompt_to_ai():
     if response['status_code'] != 200:
         return "Model could not respond", 400
 
+    if to_stdout is not None:
+        try:
+            with open(to_stdout, 'w') as outf:
+                print(response['text'], file=outf)
+        except Exception:
+            return "Failed to write response to stdout", 400
+        return jsonify({"to_stdout":True, "sectionData": ""}), 200
+
     today = datetime.today().strftime('%Y-%m-%d')
     new_section_title = f"{ai_model} response on {today}"
     new_section_content = f"{new_user_prompt}\n\n## Response\n\n{response['text']}"
@@ -1050,7 +1061,7 @@ def api_submit_prompt_to_ai():
     except Exception:
         tools.log_traceback()
         return "Failed to render model response", 400
-    return jsonify({"sectionData": section}), 200
+    return jsonify({"to_stdout":False, "sectionData": section}), 200
 
 @apiroutes.route('/api/get-ai-models', methods=['POST'])
 def api_get_ai_models():
@@ -1152,5 +1163,17 @@ def api_store_ai_models():
     except Exception:
         tools.log_traceback()
         return "", 400
+    return "", 200
+
+@apiroutes.route('/api/clear-ai-chat-sections', methods=['POST'])
+def api_clear_ai_chat_sections():
+    data = request.get_json()
+    projectID = data['projectID']
+    try:
+        if not PUTL.remove_tag_from_sections_ok(projectID, 'ai-chat'):
+            return "Error removing tag from sections", 400
+    except Exception:
+        tools.log_traceback()
+        return "Error clearing chat sections", 400
     return "", 200
 

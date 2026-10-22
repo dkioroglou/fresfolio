@@ -1088,8 +1088,16 @@ const ProjectLayout = defineComponent({
                 if (response.ok) {
                     this.fetchingChatSectionsToRender = true;
                     const data = await response.json();
-                    localStorage.setItem(data['sectionData']['ID'], 'true')
-                    this.chatSections.unshift(data['sectionData']);
+                    if (data['to_stdout']) {
+                        this.$q.notify({
+                            message: "Response written to stdout",
+                            color: 'green',
+                            position: "top-right"
+                        })
+                    } else {
+                        localStorage.setItem(data['sectionData']['ID'], 'true')
+                        this.chatSections.unshift(data['sectionData']);
+                    }
                     this.chatPrompt = "";
                     this.fetchingChatSectionsToRender = false;
                 } else {
@@ -1156,6 +1164,34 @@ const ProjectLayout = defineComponent({
         },
         refreshChatSections() {
             this.getChatSections()
+        },
+        async clearChat() {
+            try {
+                const response = await fetch("/api/clear-ai-chat-sections", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(
+                        {
+                            "projectID": this.selectedProjectID
+                        }
+                    )
+                });
+
+                if (response.ok) {
+                    this.chatSections = []
+                } else {
+                    const responseText = await response.text();
+                    this.$q.notify({
+                        message: responseText,
+                        color: 'negative',
+                        position: "top-right"
+                    })
+                }
+            } catch (error) {
+                console.error(error);
+            }
         },
         async getFresfolioLog() {
             try {
@@ -1984,6 +2020,18 @@ const ProjectLayout = defineComponent({
                 </div>
 
                 <div class="row">
+                    <q-btn
+                        v-if="chatSections.length"
+                        round
+                        class="q-mr-md"
+                        icon="cleaning_services"
+                        color="primary"
+                        @click="clearChat"
+                    >
+                        <q-tooltip class="bg-primary" :offset="[10, 10]">
+                            Clear chat
+                        </q-tooltip>
+                    </q-btn>
                     <q-btn
                         round
                         class="q-mr-md"

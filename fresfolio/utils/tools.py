@@ -12,7 +12,6 @@ import requests
 from datetime import datetime
 import json
 import mimetypes
-import threading
 
 _cancel_event = threading.Event()
 

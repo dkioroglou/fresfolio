@@ -9,6 +9,8 @@ import re
 import secrets
 import pandas as pd
 from fresfolio.utils import tools
+from operator import itemgetter
+import traceback
 
 extras_installed = tools.has_extras()
 if extras_installed:
@@ -1220,6 +1222,31 @@ class ProjectsUtils:
             return False
         return True
 
+    def remove_tag_from_sections_ok(self, projectID:str, tag:str) -> bool:
+        try:
+            projectDirectory, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
+            def strip_tag(tags):
+                try:
+                    lst = json.loads(tags)
+                except (TypeError, ValueError):
+                    return tags  # leave malformed/NULL rows untouched
+                return json.dumps([t for t in lst if t != tag])
+
+            needle = json.dumps(tag)[1:-1]  # tag as it appears inside the stored JSON
+
+            with contextlib.closing(sqlite3.connect(projectDB)) as conn:
+                conn.create_function("strip_tag", 1, strip_tag, deterministic=True)
+                with contextlib.closing(conn.cursor()) as c:
+                    c.execute(
+                        "UPDATE sections SET tags = strip_tag(tags) WHERE instr(tags, ?) > 0",
+                        (needle,),
+                    )
+                conn.commit()
+        except Exception:
+            tools.log_traceback()
+            return False
+        return True
+
 
 class SectionUtils:
 
@@ -1337,9 +1364,10 @@ class AiUtils(ProjectsUtils):
                 file_content = inf.read() 
         return file_content
 
-    def expand_user_prompt(self, projectID:str, user_prompt:str) -> str:
+    def expand_user_prompt(self, projectID:str, user_prompt:str) -> dict:
         prompt_lines = user_prompt.split("\n")
         expanded_prompt = []
+        to_stdout = None
         for line in prompt_lines:
             line = line.strip()
             if line.startswith("@section"):
@@ -1357,10 +1385,19 @@ class AiUtils(ProjectsUtils):
                     sections_ids = self.get_sections_IDs_for_chapter(projectID, chapter_id)
                     for section_id in sections_ids:
                         self._append_section_content(projectID, section_id, expanded_prompt)
+            elif line.startswith("@stdout"):
+                stdout_path = line.split(":", 1)[1].strip()
+                # Note: the stdout file could not exist, thus test the parent path for existence.
+                if Path(stdout_path).parent.exists():
+                    to_stdout = stdout_path
             elif line.startswith("@file"):
-                file_relative_path = line.split(":", 1)[1].strip()
-                projectDir, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
-                file_full_path = Path(projectDir).joinpath(file_relative_path)
+                file_raw_path = line.split(":", 1)[1].strip()
+
+                # Check if user provided full path, otherwise treat path as relative to the project.
+                file_full_path = Path(file_raw_path)
+                if not file_full_path.is_absolute():
+                    projectDir, projectDB = tools.get_paths_for_project_dir_and_db(projectID)
+                    file_full_path = Path(projectDir).joinpath(file_raw_path)
 
                 if not file_full_path.exists():
                     raise ValueError
@@ -1372,15 +1409,16 @@ class AiUtils(ProjectsUtils):
                 expanded_prompt.append(file_content)
             else:
                 expanded_prompt.append(line)
-        return "\n".join(expanded_prompt)
+        return {"to_stdout":to_stdout, 'expanded_prompt':"\n".join(expanded_prompt)} 
 
-    def create_chat_history(self, projectID:str, new_prompt:str, chatSections:list) -> list:
+    def create_chat_history(self, projectID:str, new_prompt:str, chatSections:list) -> dict:
         chat_history = []
+        to_stdout = None
         if chatSections:
             for section in chatSections:
                 previous_user_prompt, ai_response = section.split("## Response")
 
-                user_prompt = self.expand_user_prompt(projectID, previous_user_prompt)
+                user_prompt = itemgetter("expanded_prompt")(self.expand_user_prompt(projectID, previous_user_prompt))
 
                 chat_history.extend([
                     {
@@ -1393,14 +1431,14 @@ class AiUtils(ProjectsUtils):
                     },
 
                 ])
-        new_prompt = self.expand_user_prompt(projectID, new_prompt)
+        to_stdout, new_prompt = itemgetter("to_stdout", "expanded_prompt")(self.expand_user_prompt(projectID, new_prompt))
         chat_history.append(
             {
                 "role": "user",
                 "content": new_prompt
             }
         )
-        return chat_history
+        return {"to_stdout":to_stdout, "chat_history": chat_history}
 
     def store_section_embedding(self, project_id:str, section_id:int, section_content:str) -> bool:
         try:
