@@ -1044,6 +1044,9 @@ def api_submit_prompt_to_ai():
             return "Failed to write response to stdout", 400
         return jsonify({"to_stdout":True, "sectionData": ""}), 200
 
+    if oneShotPromptsFlag:
+        _ = PUTL.remove_tag_from_sections_ok(projectID, 'ai-chat')
+
     today = datetime.today().strftime('%Y-%m-%d')
     new_section_title = f"{ai_model} response on {today}"
     new_section_content = f"{new_user_prompt}\n\n## Response\n\n{response['text']}"

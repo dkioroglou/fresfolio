@@ -1094,8 +1094,11 @@ const ProjectLayout = defineComponent({
                             color: 'green',
                             position: "top-right"
                         })
+                    } else if (this.oneShotPrompts) {
+                        localStorage.setItem(data['sectionData']['ID'], 'true');
+                        this.chatSections = [data['sectionData']];
                     } else {
-                        localStorage.setItem(data['sectionData']['ID'], 'true')
+                        localStorage.setItem(data['sectionData']['ID'], 'true');
                         this.chatSections.unshift(data['sectionData']);
                     }
                     this.chatPrompt = "";
