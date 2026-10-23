@@ -93,6 +93,7 @@ const ProjectLayout = defineComponent({
             isSubmittingPrompt: false,
             ai_api_key_found: false,
             ai_models: [],
+            allAiModels: [],
             selectedModel: "",
             logViewerContent: "",
             showLogViewer: false,
@@ -176,8 +177,6 @@ const ProjectLayout = defineComponent({
             selectedItem() {
                   return this.notebooks.find(notebook => notebook.notebookID === this.selectedNotebookID);
             },
-
-            
         },
         async getChapterSections() {
             this.fetchedSectionsToRender = false;
@@ -1152,6 +1151,7 @@ const ProjectLayout = defineComponent({
                     this.ai_models = data['ai_models'];
                     if (this.ai_models.length !== 0) {
                         this.getDefaultAiModel();
+                        this.allAiModels = this.ai_models.flatMap(v => v.models.map(m => ({ ...m, vendor: v.vendor })))
                     }
                 } else {
                     const responseText = await response.text();
@@ -2057,6 +2057,26 @@ const ProjectLayout = defineComponent({
                     </q-btn>
 
                 </div>
+            </div>
+
+            <div class="row q-gutter-xs q-mb-sm">
+                <q-btn
+                    v-for="m in allAiModels"
+                    :key="m.model"
+                    dense
+                    no-caps
+                    size="sm"
+                    class="q-px-sm"
+                    :label="m.name"
+                    :color="selectedModel === m.model ? 'primary' : 'grey-7'"
+                    :outline="selectedModel !== m.model"
+                    :disable="isSubmittingPrompt"
+                    @click="selectedModel = m.model"
+                >
+                    <q-tooltip>
+                        {{ m.vendor }} · in: {{ m.input }} · out: {{ m.output }}
+                    </q-tooltip>
+                </q-btn>
             </div>
 
             <div class="prompt-box q-pa-sm q-mb-md">
