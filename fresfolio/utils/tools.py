@@ -386,6 +386,7 @@ def get_ai_response(ai_model: str, conversation_history: list) -> dict:
         response = requests.post(url, headers=headers, json=payload, stream=True)
 
         if response.status_code != 200:
+            print(response.text)
             return {'status_code': response.status_code, 'text': ""}
 
         for line in response.iter_lines(decode_unicode=True):
