@@ -2,7 +2,7 @@ import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@4.5.1/dist/cdn/pers
 import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid@4.5.1/dist/cdn/perspective-viewer-datagrid.js";
 import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-charts@4.5.1/dist/cdn/perspective-viewer-charts.js";
 import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@4.5.1/dist/cdn/perspective.js";
-import { DuckDBHandler } from "https://cdn.jsdelivr.net/npm/@perspective-dev/client/dist/esm/virtual_servers/duckdb.js";
+import { DuckDBHandler } from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@4.5.1/dist/esm/virtual_servers/duckdb.js";
 import * as duckdb from "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.33.1-dev18.0/+esm";
 
 const OmilayersRenderer = {
@@ -166,9 +166,20 @@ const OmilayersRenderer = {
                 settings: true
             });
         },
+        async waitForPerspective() {
+            // Make sure the <perspective-viewer> custom element is registered
+            await customElements.whenDefined("perspective-viewer");
+            // Make sure the element instance (and its wasm runtime) is ready
+            const viewerEl = this.$refs.query;
+            if (viewerEl && typeof viewerEl.flush === "function") {
+                await viewerEl.flush();
+            }
+        },
         async fetchLayerData(layerName) {
             if (!this.dbInitialized) {
                 this._db = await this.initializeDuckDB();
+                // perspective-js must be initialized before constructing DuckDBHandler
+                await this.waitForPerspective();
                 this._server = perspective.createMessageHandler(new DuckDBHandler(this._db));
                 this._client = await perspective.worker(this._server);
                 this.dbInitialized = true
@@ -180,12 +191,7 @@ const OmilayersRenderer = {
                 this.viewer.removeAttribute("sort");
                 await this.viewer.reset();
 
-                this._server = null;
-                this._client = null;
-
-                this._server = perspective.createMessageHandler(new DuckDBHandler(this._db));
-                this._client = await perspective.worker(this._server);
-
+                // Reuse the existing handler/server/client, only replace the table
                 await this._db.query("DROP TABLE IF EXISTS table_data;");
             }
 
@@ -230,11 +236,12 @@ const OmilayersRenderer = {
                 }
 
                 await this.bindTable();
-                this.fetchingLayer = false;
                 this.selectedLayer = layerName;
                 this.showSelectOmilayerDialog = false;
             } catch (err) {
                 console.error(err);
+            } finally {
+                this.fetchingLayer = false;
             }
         },
         async initializeDuckDB() {
@@ -259,7 +266,7 @@ const OmilayersRenderer = {
         },
         async initViewer() {
             this.viewer = this.$refs.query;
-            this.viewer.load(this._client);
+            await this.viewer.load(this._client);
         },
         async closeDB() {
             try {
